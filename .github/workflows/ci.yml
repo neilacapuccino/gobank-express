@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main, staging, develop]
+  pull_request:
+    branches: [main, staging, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: gobank
+
+jobs:
+  check:
+    name: Lint, typecheck & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # Placeholder — satisfies the Prisma datasource and the env schema.
+      # No database is contacted during lint/typecheck/build.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gobank
+      SKIP_ENV_VALIDATION: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: gobank/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
