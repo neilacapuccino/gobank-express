@@ -75,6 +75,10 @@ Built on the [T3 Stack](https://create.t3.gg/) (`create-t3-app` v7.40.0).
 
 ## Getting started
 
+> **Every command below runs from the `gobank/` subdirectory, not the
+> repository root.** `package.json` lives in `gobank/`. Running npm from the
+> root fails with `ENOENT: no such file or directory, open 'package.json'`.
+
 ### Prerequisites
 
 - [Node.js](https://nodejs.org) 20 or later
@@ -89,13 +93,20 @@ Built on the [T3 Stack](https://create.t3.gg/) (`create-t3-app` v7.40.0).
 
 ```bash
 git clone https://github.com/neilacapuccino/gobank-express.git
+```
+
+### 2. Change into the application directory
+
+```bash
 cd gobank-express/gobank
 ```
 
-The application lives in the `gobank/` subdirectory. Every command below is run
-from there.
+This step is easy to miss. The repository root holds only `README.md`,
+`CONTRIBUTING.md` and `.github/` — the application itself lives one level down
+in `gobank/`. If you already have the repository, `cd` into the `gobank` folder
+inside it. Stay in this directory for every remaining step.
 
-### 2. Install dependencies
+### 3. Install dependencies
 
 ```bash
 npm install
@@ -104,7 +115,7 @@ npm install
 The `postinstall` hook runs `prisma generate` automatically, emitting the client
 to `generated/prisma`.
 
-### 3. Configure environment variables
+### 4. Configure environment variables
 
 Copy the example file, then fill in the values.
 
@@ -122,7 +133,7 @@ Values are validated at build and dev time against the schema in `src/env.js`.
 An invalid or missing variable fails the build rather than surfacing at runtime.
 Setting `SKIP_ENV_VALIDATION=1` bypasses the check, which is what CI does.
 
-### 4. Start the database
+### 5. Start the database
 
 With Docker or Podman running:
 
@@ -133,13 +144,13 @@ With Docker or Podman running:
 The script reads `DATABASE_URL` from `.env` and starts a container named after
 your database. Skip this step when pointing at an existing PostgreSQL server.
 
-### 5. Apply the schema
+### 6. Apply the schema
 
 ```bash
 npm run db:push
 ```
 
-### 6. Run the development server
+### 7. Run the development server
 
 ```bash
 npm run dev
