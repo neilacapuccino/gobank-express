@@ -3,8 +3,90 @@
 @theme {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f7f8fa;
+  --color-surface-raised: #f2f4f7;
+
+  --color-line: #e7e9ee;
+  --color-line-strong: #d3d7e0;
+
+  --color-ink: #0d1220;
+  --color-ink-soft: #475069;
+  --color-ink-muted: #7b8499;
+  --color-ink-faint: #a6adbd;
+
+  --color-brand: #059669;
+  --color-brand-hover: #047857;
+  --color-brand-soft: #ecfdf5;
+  --color-brand-line: #a7f3d0;
+
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+
+  --animate-rise: rise 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.25s ease both;
+  --animate-pop: pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-shake: shake 0.36s ease both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
 }
 
 html {
   color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
