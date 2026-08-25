@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { cardholderName, type RegistrationDraft } from "~/lib/registration";
-import { CardPreview } from "./card-preview";
+import { VirtualCard } from "~/app/_components/money/virtual-card";
 
 export function AccountReady({ draft }: { draft: RegistrationDraft }) {
   return (
@@ -34,7 +34,7 @@ export function AccountReady({ draft }: { draft: RegistrationDraft }) {
       </div>
 
       <div className="mt-8">
-        <CardPreview brandId={draft.brand} holder={cardholderName(draft)} />
+        <VirtualCard brandId={draft.brand} holder={cardholderName(draft)} />
       </div>
 
       <dl className="divide-line border-line mt-6 flex divide-x rounded-xl border">

@@ -9,7 +9,7 @@ import {
   type RegistrationDraft,
 } from "~/lib/registration";
 import { cn } from "~/lib/utils";
-import { CardPreview } from "./card-preview";
+import { VirtualCard } from "~/app/_components/money/virtual-card";
 
 type StepReviewProps = {
   draft: RegistrationDraft;
@@ -45,7 +45,7 @@ export function StepReview({ draft, onSubmit, onBack }: StepReviewProps) {
       </div>
 
       <div className="mt-7">
-        <CardPreview
+        <VirtualCard
           brandId={draft.brand}
           holder={cardholderName(draft)}
           compact
