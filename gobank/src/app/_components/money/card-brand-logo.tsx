@@ -1,6 +1,6 @@
 import type { CardBrandId } from "~/lib/card-brands";
 
-export function CardLogo({
+export function CardBrandLogo({
   id,
   className,
 }: {

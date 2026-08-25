@@ -3,8 +3,8 @@
 import { Button } from "~/app/_components/ui/button";
 import { CARD_BRANDS, type CardBrandId } from "~/lib/card-brands";
 import { cn } from "~/lib/utils";
-import { CardLogo } from "./card-logo";
-import { CardPreview } from "./card-preview";
+import { CardBrandLogo } from "~/app/_components/money/card-brand-logo";
+import { VirtualCard } from "~/app/_components/money/virtual-card";
 
 type StepCardProps = {
   brand: CardBrandId;
@@ -33,7 +33,7 @@ export function StepCard({
       </div>
 
       <div className="mt-7">
-        <CardPreview brandId={brand} holder={holder} />
+        <VirtualCard brandId={brand} holder={holder} />
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-2.5">
@@ -58,7 +58,7 @@ export function StepCard({
                   option.gradient,
                 )}
               >
-                <CardLogo id={option.id} className="h-5 w-8 text-white" />
+                <CardBrandLogo id={option.id} className="h-5 w-8 text-white" />
               </span>
               <span className="text-ink min-w-0 truncate text-[13.5px] font-medium">
                 {option.name}
