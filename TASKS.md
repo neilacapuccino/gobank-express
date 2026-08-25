@@ -3,10 +3,109 @@
 Living status board and build guide. Update the **Status** cell as work moves,
 in the same pull request as the work itself.
 
-Read it in this order: [Scope](#scope) to see what is required versus added,
-[Roles](#roles) to find your track, [How to split the work](#how-to-split-the-work)
-to see what you can start today, then [Screen specifications](#screen-specifications)
-for exactly what to build.
+**Start with [What to do](#what-to-do)** — a written walkthrough of the build in
+order. After that: [Scope](#scope) for what the brief requires versus what we
+added, [Roles](#roles) to find your track, and
+[Screen specifications](#screen-specifications) for exactly what to build.
+
+## What to do
+
+A written walkthrough of the build, in order. The tables further down are the
+detail; this is the plan.
+
+### Before anyone writes code
+
+Settle **[D1](#open-decisions)**. The brief describes money moving between users
+and out to billers, but never describes money entering the system. As written,
+every account is created at ₱0.00 and stays there, which means no transfer can be
+made and there is nothing to demonstrate. Decide whether new accounts open with a
+starting balance, whether an administrator can top up, or whether there is a mock
+cash-in screen. Nothing downstream is safe to build until this is answered.
+
+While that is being decided, confirm **[D2](#open-decisions)**, the model naming.
+NextAuth's Prisma adapter requires a model literally called `Account`, and the
+banking side needs one too. This board assumes the banking one is `BankAccount`.
+Changing it after migrations exist is painful, so agree it now.
+
+### Phase 1 — the data model, by one person, first
+
+One person takes **M1** and merges it before anyone else starts backend work.
+Everything depends on the schema, and two people editing `prisma/schema.prisma`
+in parallel produces migration conflicts that are tedious to unpick.
+
+The rules that matter here: money columns are `Decimal` and never `Float`,
+because floating point silently loses centavos. The `Transaction` and
+`RewardLedger` tables are append-only — rows are never updated or deleted, and a
+correction is a new reversing row. Usernames are unique at the database level and
+compared case-insensitively, since the username is the sign-in identifier. Mobile
+numbers are optional but must also be unique when present, because they are a
+transfer handle.
+
+Merge M1, then everyone else starts.
+
+### Phase 2 — three tracks in parallel
+
+Once the schema is in, three people can work without touching each other's files.
+
+**Track A takes the money core (M4, M5).** This is the hardest and most dangerous
+part of the project and should go to whoever is strongest on the backend. Build
+the ledger write helper first — a single function that every balance change in
+the entire app flows through. Transfers, bill payments, Stash movements and
+reward conversions all use it. Once that exists and is correct, the features
+built on top are comparatively easy. Read [Transfer rules](#transfer-rules)
+before starting; the twelve ordered steps inside the database transaction are not
+suggestions, and getting the ordering wrong is how money gets created or
+destroyed.
+
+**Track B takes identity and the card (M2).** Registration is deliberately
+minimal: a username and a 6-digit PIN, and nothing else is required. Name, mobile
+number, email and Google are all optional and skippable, added later from
+settings. Nothing is verified — there is no SMS provider. The critical piece
+is M2-9, the failed-attempt lockout. A six-digit PIN is a million combinations,
+which a script walks through quickly, so without server-side attempt counting and
+rate limiting the PIN is decorative. Card issuance is the other half: the user
+picks a brand, the system generates a Luhn-valid number from a documented test
+range, a CVV and an expiry.
+
+**Track C takes the interface shell (M6).** Portrait first, always. Build the
+capped centre column, the design tokens, and the shared primitives — button,
+input, card, modal, list row — plus the numeric keypad the PIN screens need.
+Build against mock data and wire to real procedures as tracks A and B land them.
+Track D cannot start until M6-3 is merged, so this is on the critical path.
+
+### Phase 3 — the feature screens
+
+With primitives available, the fourteen screens get built in journey order:
+welcome, register, sign in, account ready, dashboard, then outward to send money,
+bill pay, Stashes, card management, rewards and history.
+
+Send money is the one to be careful with. It is four steps — resolve the
+recipient, enter the amount, confirm, then receipt — and money moves only on the
+confirm. The confirm button must disable on first press, and the request must
+carry an idempotency key, or a double tap sends twice.
+
+### Phase 4 — proving it works
+
+Testing is not optional on the money paths. The specific tests that matter are
+the failure cases rather than the happy path: insufficient funds, a locked card,
+a self-transfer, an exceeded daily limit, and above all M7-4, two simultaneous
+transfers from the same account. That last one is what proves the transaction
+boundary actually holds. A concurrency bug here silently creates money and will
+not show up in any single-threaded test.
+
+### Phase 5 — deployment
+
+Switch from `prisma db push` to real migrations before deploying, and commit the
+migration files. Provision managed PostgreSQL, deploy from `main`, and remember
+the Google OAuth redirect URI has to be registered again for the production
+domain.
+
+### How to keep the board honest
+
+Put the task ID in every pull request title. Update the **Status** cell in the
+same pull request as the work, not afterwards. Put your name in the **Owner**
+column when you pick something up so nobody duplicates effort. If you discover
+something the board does not cover, add a row rather than doing it silently.
 
 ## Legend
 
@@ -42,9 +141,9 @@ The brief never mentions authentication at all, so **everything below is Extra**
 
 | Addition | Rationale |
 | -------- | --------- |
-| Mobile-number registration, email optional | A banking app needs identity, and the mobile number is already required as a transfer handle |
-| PIN sign-in instead of a password | Matches how a real banking app behaves on a phone |
-| Google OAuth as an alternative sign-in | Convenience, agreed earlier |
+| Username plus 6-digit PIN as the only required credentials | The fastest possible registration. A banking app needs identity, and nothing else is strictly needed to open an account |
+| Mobile number, name, email and Google all optional | Skippable at registration, addable later from settings |
+| 6-digit PIN instead of a password | Matches how a real banking app behaves on a phone |
 | Card brand selection with generated number, CVV and expiry | The brief has a virtual card but never says where its details come from |
 | Portrait-first layout with a desktop treatment | The brief says mobile-first; rendering well on a wide screen is our addition |
 | Change PIN, profile editing, linked accounts | Standard account management the brief omits |
@@ -94,14 +193,14 @@ Boundaries that stop tracks colliding:
 | --------- | ----- | ----- | ---- | ----- | ------ |
 | [M0](#m0--repository--tooling) | Repository & tooling | OPS | 10 | 13 | 🟡 |
 | [M1](#m1--data-model) | Data model | DB | 0 | 9 | ⬜ |
-| [M2](#m2--registration-pin--card-issuance) | Registration, PIN & card | AUTH | 0 | 14 | ⬜ |
+| [M2](#m2--registration-pin--card-issuance) | Registration, PIN & card | AUTH | 0 | 17 | ⬜ |
 | [M3](#m3--main-account-virtual-card--stashes) | Account, card & Stashes | BE, FE | 0 | 15 | ⬜ |
-| [M4](#m4--transfers--bill-payments) | Transfers & bill pay | BE | 0 | 12 | ⬜ |
+| [M4](#m4--transfers--bill-payments) | Transfers & bill pay | BE | 0 | 13 | ⬜ |
 | [M5](#m5--loyalty-rewards) | Loyalty rewards | BE | 0 | 7 | ⬜ |
 | [M6](#m6--interface-shell) | Interface shell | FE | 0 | 9 | ⬜ |
 | [M7](#m7--testing) | Testing | QA | 0 | 6 | ⬜ |
 | [M8](#m8--deployment) | Deployment | OPS | 0 | 6 | ⬜ |
-| | **Total** | | **10** | **91** | |
+| | **Total** | | **10** | **95** | |
 
 ---
 
@@ -125,8 +224,8 @@ wide viewport to be usable.
 
 ```
 S1 Welcome
-   ├── S2 Register (5 steps) ──┐
-   └── S3 Sign in with PIN ────┴──▶ S4 Account ready ──▶ S5 Home dashboard
+   ├── S2 Register (username + PIN) ──┐
+   └── S3 Sign in ───────────────────┴──▶ S4 Account ready ──▶ S5 Home dashboard
                                                               │
         ┌──────────────┬──────────────┬─────────────┬─────────┼──────────────┐
         ▼              ▼              ▼             ▼         ▼              ▼
@@ -177,72 +276,72 @@ Unauthenticated landing. Redirect straight to S5 when a session exists.
 
 ### S2 — Register
 
-Five steps, one screen at a time, with a progress indicator. Nothing is written
-to the database until the final step, then everything is created in a single
-transaction. See [Card issuance rules](#card-issuance-rules) and
-[PIN security rules](#pin-security-rules).
+**Username and PIN are the only required fields.** Everything else — real name,
+mobile number, email, Google — is optional and can be skipped, then added later
+from [S14](#s14--profile--settings).
 
-**Step 1 — mobile number**
+Nothing is written to the database until the final step, which creates user,
+bank account and card in a single transaction. See
+[Card issuance rules](#card-issuance-rules) and [PIN security rules](#pin-security-rules).
 
-| Element | Type | Behaviour | Role | Backend |
-| ------- | ---- | --------- | ---- | ------- |
-| Mobile number | Tel input | **Required.** PH format `09XXXXXXXXX` or `+639XXXXXXXXX`, normalised to one stored form. Must be unique — it is the sign-in identifier and the transfer handle | FE, DB | M1-2 |
-| Availability check | Inline state | Debounced check that the number is not already registered | BE | `auth.checkMobile` |
-| Email | Email input | **Optional.** Unique when given. Used only for recovery and receipts | FE | M2-14 |
-| Why we ask | Helper text | Explains the number doubles as the transfer handle | FE | — |
-| **Continue** | Primary button | Disabled until the number is valid and free | FE | — |
-
-**Step 2 — your details**
+**Step 1 — username and PIN**
 
 | Element | Type | Behaviour | Role | Backend |
 | ------- | ---- | --------- | ---- | ------- |
-| Full name | Text input | Required, 2 to 60 characters. Printed on the card | FE | M1-2 |
-| Date of birth | Date input | Optional unless a minimum age is enforced, see [D7](#open-decisions) | FE | — |
-| **Continue** | Primary button | Advances to step 3 | FE | — |
+| Username | Text input | **Required.** 3 to 20 characters, letters, digits and underscore. Stored lowercase, unique **case-insensitively** so `Neil` and `neil` cannot both exist. This is the sign-in identifier | FE, DB | M1-2 |
+| Availability check | Inline state | Debounced. Also rejects reserved names such as `admin`, `support`, `gobank`, `help` | BE | M2-17 |
+| PIN entry | **6 digit** input | On-screen numeric keypad, masked dots, no system keyboard | FE | M2-8 |
+| Weak PIN rejection | Validation | Reject repeated digits like `111111` and runs like `123456` | FE, BE | M2-8 |
+| Confirm PIN | 6 digit input | Must match. Mismatch clears both and restarts entry | FE | — |
+| **Continue** | Primary button | Enabled when the username is free and both PIN entries match | FE | — |
 
-**Step 3 — choose your card**
+**Step 2 — choose your card**
 
 | Element | Type | Behaviour | Role | Backend |
 | ------- | ---- | --------- | ---- | ------- |
-| Brand selector | Card picker | User **chooses** the brand. Options: Visa, Mastercard, JCB, and GoBank as the unbranded fallback | FE | M3-12 |
-| Brand artwork | Static | Live preview of the card design as the selection changes | FE | — |
+| Brand selector | Card picker | User **chooses** the brand: Visa, Mastercard, JCB, or GoBank as the unbranded fallback | FE | M3-12 |
+| Brand artwork | Static | Live preview updating with the selection | FE | — |
 | Card colour | Optional selector | Cosmetic only | FE | — |
 | Generated notice | Helper text | Explains the number, CVV and expiry are issued automatically | FE | — |
-| **Continue** | Primary button | Records the chosen brand. Nothing is generated until step 5 commits | FE | M3-13 |
+| **Continue** | Primary button | Records the brand. Nothing is generated until the final commit | FE | M3-13 |
 
-The user never types a card number. They pick a brand and the system issues the
-credentials.
+The user never types a card number. They pick a brand and the system issues it.
 
-**Step 4 — create your PIN**
+**Step 3 — optional details**
 
-| Element | Type | Behaviour | Role | Backend |
-| ------- | ---- | --------- | ---- | ------- |
-| PIN entry | 6 digit input | On-screen numeric keypad, masked dots, no system keyboard. Length per [D8](#open-decisions) | FE | M2-8 |
-| Weak PIN rejection | Validation | Reject repeated digits like `111111`, sequences like `123456`, and a date of birth match | FE, BE | M2-8 |
-| Confirm PIN | 6 digit input | Must match. Mismatch clears both and restarts entry | FE | — |
-| **Create PIN** | Primary button | Enabled only when both entries match and pass the rules | FE | — |
-
-**Step 5 — review and finish**
+Every field here is skippable. The screen leads with that so nobody feels blocked.
 
 | Element | Type | Behaviour | Role | Backend |
 | ------- | ---- | --------- | ---- | ------- |
-| Summary | Static | Mobile, name, chosen card brand. PIN is never displayed | FE | — |
+| Skip notice | Helper text | "You can add all of this later" | FE | — |
+| Full name | Text input | Optional. Printed on the card. Falls back to the username in capitals when omitted | FE | M1-2 |
+| Mobile number | Tel input | Optional. PH format, unique when given. Adding it lets others pay you by number | FE, DB | M1-2 |
+| Email | Email input | Optional, unique when given | FE | M2-14 |
+| **Link Google** | OAuth button | Optional. Adds a second way to sign in | AUTH | M2-16 |
+| **Skip for now** | Text button | Jumps straight to review | FE | — |
+| **Continue** | Primary button | Carries whatever was filled in | FE | — |
+
+**Step 4 — review and finish**
+
+| Element | Type | Behaviour | Role | Backend |
+| ------- | ---- | --------- | ---- | ------- |
+| Summary | Static | Username, chosen brand, and which optional details were supplied. PIN is never displayed | FE | — |
 | Terms acceptance | Checkbox | Required if terms exist | FE | — |
 | **Create my account** | Primary button | One transaction creates user, PIN hash, bank account, and issues the card. Any failure rolls all of it back | AUTH, BE | `auth.register`, M2-10 |
-| **Continue with Google** | OAuth button | Alternative path. Still requires steps 3 and 4 afterwards, since a card and PIN are needed either way | AUTH | M2-5 |
 
 ### S3 — Sign in
 
 | Element | Type | Behaviour | Role | Backend |
 | ------- | ---- | --------- | ---- | ------- |
-| Mobile number | Tel input | The sign-in identifier. Remembered on the device after first use | FE | M2-7 |
+| Username | Text input | The sign-in identifier. Case-insensitive. Remembered on the device after first use | FE | M2-7 |
 | PIN entry | 6 digit input | On-screen keypad, masked dots. Submits automatically on the last digit | FE | M2-7 |
-| Failure message | Inline state | One generic message. Never reveal whether the number exists or the PIN was wrong | AUTH | M2-7 |
+| Failure message | Inline state | One generic message. Never reveal whether the username exists or the PIN was wrong | AUTH | M2-7 |
 | Attempts remaining | Inline state | Warn from the third failed attempt onward | BE | M2-9 |
 | Lockout notice | Inline state | After 5 failures, lock and show when it lifts | BE | M2-9 |
-| **Continue with Google** | OAuth button | Alternative sign-in | AUTH | M2-5 |
+| **Continue with Google** | OAuth button | Only works for accounts that linked Google | AUTH | M2-5 |
 | **Create an account** | Text link | Navigate to S2 | FE | — |
-| Forgot PIN | Text link | Recovery path, see [D9](#open-decisions) | AUTH | M2-13 |
+
+**There is no forgot-PIN flow.** See [Known limitations](#known-limitations).
 
 ### S4 — Account ready
 
@@ -287,7 +386,7 @@ the confirm in step 3.**
 
 | Element | Type | Behaviour | Role | Backend |
 | ------- | ---- | --------- | ---- | ------- |
-| Recipient input | Text input | Accepts an account number **or** a mobile number. Detect which by format | FE | M4-3, M4-4 |
+| Recipient input | Text input | Accepts an account number, a mobile number, or a username if [D11](#open-decisions) is agreed. Detect which by format | FE | M4-3, M4-4, M4-13 |
 | Lookup feedback | Inline state | Resolves to the recipient's name, or "account not found" | BE | `transfer.lookup` |
 | Recent recipients | List | Last 5 paid, tap to prefill | BE | `transfer.recentRecipients` |
 | **Continue** | Primary button | Disabled until a recipient resolves | FE | — |
@@ -311,7 +410,6 @@ number. Rate-limit it so it cannot enumerate accounts.
 | Element | Type | Behaviour | Role | Backend |
 | ------- | ---- | --------- | ---- | ------- |
 | Full summary | Static | Recipient, account, amount, note, points to earn | FE | — |
-| PIN confirmation | 6 digit input | Re-enter the PIN to authorise, see [D10](#open-decisions) | AUTH | M2-8 |
 | **Confirm and send** | Primary button | Fires the transfer. Disables on first press and shows a spinner so it cannot fire twice | FE, BE | `transfer.send`, M4-8 |
 | **Back** | Secondary button | Returns to step 2 with values preserved | FE | — |
 
@@ -416,11 +514,14 @@ Reached after every money movement, and from any history row.
 
 | Element | Type | Behaviour | Role | Backend |
 | ------- | ---- | --------- | ---- | ------- |
-| Name, mobile, email | Static | Read from the session user. Email shows "not set" when omitted | FE | `account.me` |
-| Edit profile | Button | Update name and mobile, uniqueness still enforced | BE | `account.update` |
+| Username | Static | The sign-in identifier. See [D12](#open-decisions) on whether it can change | FE | `account.me` |
+| Name, mobile, email | Static | Shows "not set" for whichever the account lacks | FE | `account.me` |
+| **Add a mobile number** | Button | Shown when none is set. Unlocks being paid by mobile number | AUTH | M2-15 |
+| **Add your name** | Button | Shown when none is set. Updates the name printed on the card | BE | M1-2 |
+| **Link Google** | Button | Adds Google as a second way in | AUTH | M2-16 |
 | Add or change email | Button | Optional email capture after registration | BE | M2-14 |
 | **Change PIN** | Button | Current PIN, new, confirm. Same strength rules as registration | AUTH | M2-13 |
-| Linked accounts | Static | Whether Google is connected | AUTH | M2-5 |
+| Sign-in methods | Static | Lists what this account can use: username and PIN, Google, or both | AUTH | M2-5 |
 | **Sign out** | Danger button | Clears the session, returns to S1 | AUTH | M2-3 |
 
 ---
@@ -437,11 +538,11 @@ limiting is not optional here the way it might be for a long password.**
 | Never log it | Not in error messages, analytics, or server logs |
 | Never send it back | No procedure returns the PIN or its hash for any reason |
 | Lock out after 5 failures | Progressive delay, then a timed lock. Count server-side, never in the browser |
-| Rate limit by number and by IP | Stops one attacker walking many accounts |
-| Generic failure message | "Mobile number or PIN is incorrect" — never say which was wrong |
-| Reject weak PINs | Repeated digits, ascending and descending runs, and a date of birth match |
+| Rate limit by username and by IP | Stops one attacker walking many accounts |
+| Generic failure message | "Username or PIN is incorrect" — never say which was wrong |
+| Reject weak PINs | Repeated digits and ascending or descending runs |
 | Constant-time comparison | The hash library handles this. Never compare with `===` |
-| Re-enter for sensitive actions | Revealing card details, changing the PIN, and possibly transfers per [D10](#open-decisions) |
+| Re-enter for sensitive actions | Revealing card details and changing the PIN. **Not** required for transfers — see [resolved decisions](#resolved-decisions) |
 
 ---
 
@@ -536,7 +637,7 @@ Owned by one person. Merge before backend work starts.
 | ID | Task | Scope | Role | Owner | Status | Depends on | Notes |
 | -- | ---- | ----- | ---- | ----- | ------ | ---------- | ----- |
 | M1-1 | Remove scaffold `Post` model and table | Infra | DB | | ⬜ | | Nothing references it |
-| M1-2 | `User` — name, unique mobile, optional email | Extra | DB | | ⬜ | | Mobile is the sign-in identifier and transfer handle |
+| M1-2 | `User` — unique username, PIN hash, optional name, mobile, email | Extra | DB | | ⬜ | | Username is the sign-in identifier, unique case-insensitively. Mobile is optional and only a transfer handle when set |
 | M1-3 | `BankAccount` — number, balance, status | Core | DB | | ⬜ | M1-2 | Named to avoid the NextAuth `Account` clash, see [D2](#open-decisions) |
 | M1-4 | `Stash` — name, target, balance, rate | Core | DB | | ⬜ | M1-3 | Cap of 5 enforced in the service layer |
 | M1-5 | `Card` — brand, number, CVV, expiry, state, limit | Core | DB | | ⬜ | M1-3 | See [Card issuance rules](#card-issuance-rules) for what is encrypted |
@@ -560,14 +661,17 @@ scaffolded without NextAuth, so it is a fresh install.
 | M2-4 | Add `AUTH_SECRET` to `src/env.js` and `.env.example` | Extra | AUTH | | ⬜ | M2-1 | |
 | M2-5 | Google OAuth provider | Extra | AUTH | | ⬜ | M2-3 | Needs `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` |
 | M2-6 | Register the OAuth app in Google Cloud Console | Extra | AUTH | | ⬜ | | Redirect URI `/api/auth/callback/google` |
-| M2-7 | Credentials provider keyed on **mobile plus PIN** | Extra | AUTH | | ⬜ | M2-3 | Forces `session.strategy = "jwt"` |
+| M2-7 | Credentials provider keyed on **username plus PIN** | Extra | AUTH | | ⬜ | M2-3 | Forces `session.strategy = "jwt"`. Look up case-insensitively |
 | M2-8 | PIN hashing and strength rules | Extra | AUTH | | ⬜ | M2-7, M1-9 | See [PIN security rules](#pin-security-rules) |
 | M2-9 | Failed-attempt counter, lockout and rate limiting | Extra | AUTH, BE | | ⬜ | M2-8 | **Mandatory.** A 6-digit PIN is brute-forceable without it |
 | M2-10 | Registration transaction: user, PIN, account, card | Extra | AUTH, BE | | ⬜ | M2-8, M3-13 | All or nothing. A user must never exist without an account |
 | M2-11 | Session in tRPC context and `protectedProcedure` | Extra | AUTH, BE | | ⬜ | M2-3 | Every banking route uses it |
 | M2-12 | Route protection for authenticated pages | Extra | AUTH | | ⬜ | M2-11 | See Cookbook Ch. 3 |
-| M2-13 | Change PIN, and the forgot-PIN recovery path | Extra | AUTH | | ⬜ | M2-8 | Recovery depends on [D9](#open-decisions) |
-| M2-14 | Optional email capture and verification | Extra | AUTH | | ⬜ | M1-2 | Email is optional, so every flow must work without one |
+| M2-13 | Change PIN | Extra | AUTH | | ⬜ | M2-8 | No recovery path exists, see [Known limitations](#known-limitations) |
+| M2-14 | Optional email capture | Extra | AUTH | | ⬜ | M1-2 | Email is optional, so every flow must work without one |
+| M2-15 | Add a mobile number after registration | Extra | AUTH, BE | | ⬜ | M1-2 | Unlocks being paid by mobile number |
+| M2-16 | Link Google to an existing account | Extra | AUTH | | ⬜ | M2-5, M2-7 | Adds a second sign-in method |
+| M2-17 | Username validation, availability check and reserved names | Extra | BE | | ⬜ | M1-2 | Block `admin`, `support`, `gobank`, `help` and similar |
 
 ---
 
@@ -602,7 +706,7 @@ Highest-risk milestone. Read [Transfer rules](#transfer-rules) first.
 | M4-1 | Transaction reference number generator | Core | BE | | ⬜ | M1-6 | Unique, collision-safe, human-readable |
 | M4-2 | Ledger write helper | Core | BE | | ⬜ | M4-1 | The one place all money movement flows through |
 | M4-3 | Recipient lookup by account number | Core | BE | | ⬜ | M1-3 | Returns the name only |
-| M4-4 | Recipient lookup by mobile number | Core | BE | | ⬜ | M1-2 | Same response shape |
+| M4-4 | Recipient lookup by mobile number | Core | BE | | ⬜ | M1-2 | Same response shape. Only resolves users who set a number |
 | M4-5 | `transfer.send` inside `prisma.$transaction` | Core | BE | | ⬜ | M4-2, M4-3 | Debit and credit commit together or not at all |
 | M4-6 | Insufficient funds, self-transfer, amount guards | Core | BE | | ⬜ | M4-5 | |
 | M4-7 | Daily limit and card-locked checks | Core | BE | | ⬜ | M3-11, M4-5 | |
@@ -611,6 +715,7 @@ Highest-risk milestone. Read [Transfer rules](#transfer-rules) first.
 | M4-10 | Seed the biller catalogue | Core | DB | | ⬜ | M1-7 | Electric, water, internet, credit card |
 | M4-11 | `bill.pay` reusing the ledger helper | Core | BE | | ⬜ | M4-2, M1-7 | Debit only, no crediting side |
 | M4-12 | Transaction history and receipts | Core | BE, FE | | ⬜ | M4-2 | S12 and S13, cursor pagination |
+| M4-13 | Recipient lookup by username | Extra | BE | | ⬜ | M1-2, [D11](#open-decisions) | Only if D11 is agreed. Most users will have no mobile number |
 
 ---
 
@@ -676,7 +781,7 @@ Track C builds these first. Track D consumes them.
 
 ## Open decisions
 
-Settle these before the dependent work starts. Each blocks real code.
+Still unsettled. Each blocks dependent work.
 
 | ID | Decision | Blocks | Why it matters |
 | -- | -------- | ------ | -------------- |
@@ -684,14 +789,35 @@ Settle these before the dependent work starts. Each blocks real code.
 | **D2** | Naming the banking account model. NextAuth's adapter requires a model literally named `Account` | M1-3, M2-2 | Board assumes `BankAccount`. Confirm before writing migrations |
 | **D3** | Interest accrual — rate, and daily or monthly | M3-7 | Changes the `Stash` schema and needs a scheduled job |
 | **D4** | Points rounding, and whether conversion allows remainders | M5-3, M5-5 | Board assumes floor and multiples of 100 |
-| **D5** | Can one identity use both Google and a PIN? | M2-5, M2-10 | Google gives an email but no mobile number, and the app is keyed on mobile. A Google user still needs to supply a number and set a PIN |
 | **D6** | Are transfers instant and irreversible, or is there a cancel window? | M4-5 | A cancel window means a pending state and a reversal path |
-| **D7** | Is a minimum age enforced at registration? | S2 step 2 | Decides whether date of birth is required or optional |
-| **D8** | PIN length — 4 or 6 digits | M2-8, M6-5 | Board assumes 6. Four is more familiar but 100× weaker |
-| **D9** | Forgot-PIN recovery when email is optional | M2-13 | With no email and no SMS provider there may be no recovery path at all. Consider requiring email, or accepting that a lost PIN means a lost account |
-| **D10** | Does sending money require PIN re-entry? | S6 step 3 | More secure and realistic, but adds friction to the most-used flow |
+| **D7** | Is a minimum age enforced at registration? | S2 step 3 | Decides whether date of birth is collected at all |
+| **D11** | **Can users transfer by username?** The brief allows account number or mobile number only | M4-13, S6 | Mobile is now optional, so most users will have only a long account number to share. Allowing `@username` transfers is a small change with a large usability payoff. **Recommend yes**, tagged Extra |
+| **D12** | Can a username be changed after registration? | S14, M1-2 | Simplest answer is no. If yes, decide whether old usernames are released or reserved, since transfers reference them |
 
----
+## Resolved decisions
+
+Settled on 2026-08-25. Recorded so nobody reopens them without cause.
+
+| ID | Decision | Resolution |
+| -- | -------- | ---------- |
+| **D5** | How do Google and PIN sign-in coexist? | **One registration path, with Google as an optional extra.** Everyone registers with a username and PIN. Google can be linked during registration or later from S14, and simply adds a second way in. Nothing conflicts, because the username always exists |
+| **D8** | PIN length | **6 digits.** Not 4 |
+| **D9** | Forgot-PIN recovery | **No recovery flow will be built.** See [Known limitations](#known-limitations) |
+| **D10** | Does sending money require PIN re-entry? | **No.** The session is sufficient. PIN re-entry is only required to reveal card details or change the PIN |
+
+## Known limitations
+
+Consequences of the decisions above. They are accepted, not oversights, and are
+listed here so they are not mistaken for bugs during review.
+
+| Limitation | Consequence |
+| ---------- | ----------- |
+| **Mobile numbers are not verified** | Registration sends no SMS or one-time code, so a number is not proof of identity. Acceptable for coursework, and it avoids needing an SMS provider |
+| **No forgot-PIN recovery** | A user who forgets their PIN and has not linked Google **loses the account permanently**. Linking Google from S14 is the only way back in, so the interface should encourage it |
+| **Most accounts cannot be paid by mobile number** | Mobile is optional, so unless a user adds one they can only be paid by account number. This is why [D11](#open-decisions) matters — without username transfers, users must exchange long account numbers |
+| **Usernames are enumerable** | The availability check confirms whether a username exists. Rate-limit it, and keep the sign-in failure message generic so it does not confirm the same thing |
+| **PIN lockout is the only brute-force defence** | With no second factor, M2-9 is load-bearing. Do not ship without it |
+| **Card details are simulated** | Generated numbers pass Luhn but belong to test ranges. They work nowhere outside this app |
 
 ## Working conventions
 
