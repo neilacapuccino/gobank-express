@@ -6,8 +6,9 @@ mobile-first model: a main spending account, high-interest goal-based savings
 called **Stashes**, instant peer-to-peer transfers, and cash-convertible reward
 points earned on everyday spending. All amounts are in Philippine Pesos (₱).
 
-> **Status:** early development. The application is currently the generated T3
-> scaffold — the domain models described below are specified but not yet built.
+> **Status:** early development. Registration and the welcome screen are built
+> as interface only; the remaining screens are scaffolded placeholders, and none
+> of the domain models below exist yet.
 
 ## Features
 
@@ -184,24 +185,33 @@ Run from the `gobank/` directory.
 
 ```
 .
-├── .github/              Workflows, issue and pull request templates
-├── CONTRIBUTING.md       Branching model and contribution guide
+├── .github/                    Workflows, issue and pull request templates
+├── CONTRIBUTING.md             Branching model, structure and conventions
+├── TASKS.md                    Milestone task board and build guide
 └── gobank/
-    ├── prisma/
-    │   └── schema.prisma Database schema
-    ├── generated/prisma/ Generated Prisma client
-    ├── public/           Static assets
+    ├── prisma/                 Database schema and seed
+    ├── generated/prisma/       Generated Prisma client
+    ├── public/                 Static assets
     ├── src/
-    │   ├── app/          Next.js App Router pages and layouts
-    │   │   └── api/trpc/ tRPC HTTP handler
+    │   ├── app/                Routes and screens
+    │   │   ├── _components/    Shared components (ui, layout, money)
+    │   │   ├── (auth)/         Public sign-up and sign-in
+    │   │   ├── (app)/          Authenticated screens
+    │   │   └── api/trpc/       tRPC HTTP handler
     │   ├── server/
-    │   │   ├── api/      Routers, procedures, context
-    │   │   └── db.ts     Prisma client singleton
-    │   ├── trpc/         Client and server tRPC setup
-    │   ├── styles/       Global stylesheet
-    │   └── env.js        Environment variable schema
-    └── start-database.sh Local PostgreSQL container helper
+    │   │   ├── api/routers/    One tRPC router per domain
+    │   │   ├── services/       Business logic, including the ledger writer
+    │   │   ├── auth/           NextAuth configuration
+    │   │   └── db.ts           Prisma client singleton
+    │   ├── lib/                Pure helpers, Zod schemas, money maths
+    │   ├── hooks/              Reusable React hooks
+    │   ├── styles/             Global stylesheet and design tokens
+    │   └── env.js              Environment variable schema
+    └── start-database.sh       Local PostgreSQL container helper
 ```
+
+Where new files belong, and how they are named, is documented in
+[CONTRIBUTING.md](CONTRIBUTING.md#project-structure).
 
 ## Contributing
 
