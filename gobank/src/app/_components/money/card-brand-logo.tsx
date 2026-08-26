@@ -1,26 +1,31 @@
 import type { CardBrandId } from "~/lib/card-brands";
 
-export function CardBrandLogo({
-  id,
-  className,
-}: {
+type CardBrandLogoProps = {
   id: CardBrandId;
   className?: string;
-}) {
-  if (id === "visa") return <VisaLogo className={className} />;
+  onDark?: boolean;
+};
+
+export function CardBrandLogo({ id, className, onDark }: CardBrandLogoProps) {
+  if (id === "visa")
+    return (
+      <VisaLogo className={className} tone={onDark ? "#ffffff" : "#1a1f71"} />
+    );
   if (id === "mastercard") return <MastercardLogo className={className} />;
   if (id === "jcb") return <JcbLogo className={className} />;
-  return <GoBankLogo className={className} />;
+  return (
+    <GoBankLogo className={className} tone={onDark ? "#ffffff" : "#047857"} />
+  );
 }
 
-function VisaLogo({ className }: { className?: string }) {
+function VisaLogo({ className, tone }: { className?: string; tone: string }) {
   return (
     <svg viewBox="0 0 48 30" className={className} role="img" aria-label="Visa">
       <text
         x="24"
         y="21"
         textAnchor="middle"
-        fill="currentColor"
+        fill={tone}
         fontSize="17"
         fontWeight="700"
         fontStyle="italic"
@@ -76,7 +81,7 @@ function JcbLogo({ className }: { className?: string }) {
   );
 }
 
-function GoBankLogo({ className }: { className?: string }) {
+function GoBankLogo({ className, tone }: { className?: string; tone: string }) {
   return (
     <svg
       viewBox="0 0 48 30"
@@ -88,7 +93,7 @@ function GoBankLogo({ className }: { className?: string }) {
         x="24"
         y="20"
         textAnchor="middle"
-        fill="currentColor"
+        fill={tone}
         fontSize="14"
         fontWeight="600"
         fontFamily="Geist, Helvetica, Arial, sans-serif"

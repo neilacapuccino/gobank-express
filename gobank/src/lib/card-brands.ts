@@ -4,7 +4,8 @@ export const CARD_BRANDS = [
     name: "Visa",
     mark: "VISA",
     cvvLength: 3,
-    gradient: "from-[#1a1f71] via-[#2b3a8f] to-[#4453b5]",
+    face: "#1a1f71",
+    ink: "#1a1f71",
     glow: "rgba(68,83,181,0.55)",
   },
   {
@@ -12,7 +13,8 @@ export const CARD_BRANDS = [
     name: "Mastercard",
     mark: "mastercard",
     cvvLength: 3,
-    gradient: "from-[#2b1206] via-[#7a2f10] to-[#eb001b]",
+    face: "#17171b",
+    ink: "#17171b",
     glow: "rgba(235,0,27,0.45)",
   },
   {
@@ -20,7 +22,8 @@ export const CARD_BRANDS = [
     name: "JCB",
     mark: "JCB",
     cvvLength: 3,
-    gradient: "from-[#0b3b74] via-[#0f7a3d] to-[#b3202e]",
+    face: "#0f2f5e",
+    ink: "#0e4c96",
     glow: "rgba(15,122,61,0.45)",
   },
   {
@@ -28,7 +31,8 @@ export const CARD_BRANDS = [
     name: "GoBank",
     mark: "GoBank",
     cvvLength: 3,
-    gradient: "from-[#04231c] via-[#0b5f4a] to-[#22d3ee]",
+    face: "#053f31",
+    ink: "#047857",
     glow: "rgba(34,211,238,0.5)",
   },
 ] as const;

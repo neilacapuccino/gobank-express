@@ -52,14 +52,7 @@ export function StepCard({
                   : "border-line hover:bg-surface-sunken",
               )}
             >
-              <span
-                className={cn(
-                  "grid h-9 w-13 shrink-0 place-items-center rounded-md bg-gradient-to-br",
-                  option.gradient,
-                )}
-              >
-                <CardBrandLogo id={option.id} className="h-5 w-8 text-white" />
-              </span>
+              <CardBrandLogo id={option.id} className="h-6 w-10 shrink-0" />
               <span className="text-ink min-w-0 truncate text-[13.5px] font-medium">
                 {option.name}
               </span>
