@@ -65,7 +65,7 @@ export function TextField({
       </div>
 
       {error ? (
-        <p className="text-danger animate-fade text-[12.5px]">{error}</p>
+        <p className="text-danger text-[12.5px]">{error}</p>
       ) : hint ? (
         <p className="text-ink-muted text-[12.5px]">{hint}</p>
       ) : null}

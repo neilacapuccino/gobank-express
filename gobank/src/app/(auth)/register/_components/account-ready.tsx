@@ -6,9 +6,9 @@ import { VirtualCard } from "~/app/_components/money/virtual-card";
 
 export function AccountReady({ draft }: { draft: RegistrationDraft }) {
   return (
-    <div className="animate-rise flex flex-1 flex-col justify-center py-6">
+    <div className="flex flex-1 flex-col justify-center py-6">
       <div className="flex flex-col items-center text-center">
-        <span className="bg-brand animate-pop grid h-14 w-14 place-items-center rounded-full">
+        <span className="bg-brand grid h-14 w-14 place-items-center rounded-full">
           <svg
             width="26"
             height="26"

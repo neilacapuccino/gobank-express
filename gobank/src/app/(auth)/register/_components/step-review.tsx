@@ -34,7 +34,7 @@ export function StepReview({ draft, onSubmit, onBack }: StepReviewProps) {
   ];
 
   return (
-    <div className="animate-rise flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col">
       <div className="flex flex-col gap-2">
         <h1 className="text-ink text-[24px] leading-tight font-semibold tracking-tight">
           Almost there

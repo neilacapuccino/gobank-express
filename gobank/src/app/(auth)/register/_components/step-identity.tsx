@@ -29,7 +29,7 @@ export function StepIdentity({
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
-  const [shake, setShake] = useState(false);
+  const [invalid, setInvalid] = useState(false);
 
   useEffect(() => {
     const result = validateUsername(username);
@@ -47,10 +47,10 @@ export function StepIdentity({
     const problem = validatePin(pin);
     if (problem) {
       setPinError(problem);
-      setShake(true);
+      setInvalid(true);
       const timer = setTimeout(() => {
         setPin("");
-        setShake(false);
+        setInvalid(false);
       }, 420);
       return () => clearTimeout(timer);
     }
@@ -63,11 +63,11 @@ export function StepIdentity({
     if (phase !== "confirm" || confirm.length !== PIN_LENGTH) return;
     if (confirm !== pin) {
       setPinError("Those did not match. Start again.");
-      setShake(true);
+      setInvalid(true);
       const timer = setTimeout(() => {
         setPin("");
         setConfirm("");
-        setShake(false);
+        setInvalid(false);
         setPhase("pin");
       }, 600);
       return () => clearTimeout(timer);
@@ -79,7 +79,7 @@ export function StepIdentity({
 
   if (phase === "username") {
     return (
-      <div className="animate-rise flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col">
         <Heading
           title="Pick your username"
           subtitle="This is how you sign in, and how friends find you."
@@ -93,7 +93,7 @@ export function StepIdentity({
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            placeholder="juandelacruz"
+            placeholder="yourusername"
             value={username}
             onChange={(event) =>
               onUsernameChange(
@@ -125,7 +125,7 @@ export function StepIdentity({
   const confirming = phase === "confirm";
 
   return (
-    <div key={phase} className="animate-rise flex flex-1 flex-col">
+    <div key={phase} className="flex flex-1 flex-col">
       <Heading
         title={confirming ? "Confirm your PIN" : "Create your PIN"}
         subtitle={
@@ -140,7 +140,7 @@ export function StepIdentity({
           value={confirming ? confirm : pin}
           onChange={confirming ? setConfirm : setPin}
           length={PIN_LENGTH}
-          shake={shake}
+          invalid={invalid}
         />
         <p className="text-danger mt-7 h-5 text-[13px]">{pinError}</p>
       </div>
@@ -178,12 +178,12 @@ function Heading({ title, subtitle }: { title: string; subtitle: string }) {
 function CheckState({ check }: { check: UsernameCheck }) {
   if (check.state === "checking") {
     return (
-      <span className="border-line-strong border-t-brand block h-4 w-4 animate-spin rounded-full border-2" />
+      <span className="border-line-strong block h-4 w-4 rounded-full border-2" />
     );
   }
   if (check.state === "available") {
     return (
-      <span className="bg-brand animate-pop grid h-5 w-5 place-items-center rounded-full text-white">
+      <span className="bg-brand grid h-5 w-5 place-items-center rounded-full text-white">
         <svg
           width="11"
           height="11"
