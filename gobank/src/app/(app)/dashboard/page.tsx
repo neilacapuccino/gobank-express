@@ -20,6 +20,8 @@ const ACCOUNT = {
   points: 500,
 };
 
+const STASH_COUNT = 3;
+
 const ACTIVITY = [
   {
     reference: "GB7K4M2Q",
@@ -77,7 +79,11 @@ export default function DashboardPage() {
 
         <QuickActions />
 
-        <FeatureGrid />
+        <FeatureGrid
+          points={ACCOUNT.points}
+          stashCount={STASH_COUNT}
+          stashLimit={5}
+        />
 
         <RecentActivity entries={ACTIVITY} />
       </div>

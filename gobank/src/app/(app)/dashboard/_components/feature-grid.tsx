@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  ChevronRight,
   PiggyBank,
   Receipt,
   Smartphone,
@@ -7,53 +8,104 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "~/lib/utils";
 
-type Feature = {
+type Row = {
   href: string;
   label: string;
+  description: string;
+  meta?: string;
   icon: LucideIcon;
 };
 
-const PRIMARY: Feature[] = [
-  { href: "/rewards", label: "GoRewards", icon: Sparkles },
-  { href: "/stashes", label: "GoalSave", icon: PiggyBank },
-  { href: "/stocks", label: "Stocks", icon: TrendingUp },
-];
+export function FeatureGrid({
+  points,
+  stashCount,
+  stashLimit,
+}: {
+  points: number;
+  stashCount: number;
+  stashLimit: number;
+}) {
+  const rows: Row[] = [
+    {
+      href: "/rewards",
+      label: "GoRewards",
+      description: "Turn your points into cash",
+      meta: `${points.toLocaleString()} pts`,
+      icon: Sparkles,
+    },
+    {
+      href: "/stashes",
+      label: "GoalSave",
+      description: "Savings goals that earn on their own",
+      meta: `${stashCount} of ${stashLimit}`,
+      icon: PiggyBank,
+    },
+    {
+      href: "/stocks",
+      label: "Stocks",
+      description: "Invest from as little as ₱50",
+      icon: TrendingUp,
+    },
+  ];
 
-const SECONDARY: Feature[] = [
-  { href: "/bills", label: "Pay bills", icon: Receipt },
-  { href: "/load", label: "Buy load", icon: Smartphone },
-];
-
-export function FeatureGrid() {
   return (
-    <section className="grid grid-cols-6 gap-2.5">
-      {PRIMARY.map((feature) => (
-        <Tile key={feature.href} feature={feature} className="col-span-2" />
-      ))}
-      {SECONDARY.map((feature) => (
-        <Tile key={feature.href} feature={feature} className="col-span-3" />
-      ))}
+    <section className="flex flex-col gap-2.5">
+      {rows.map((row) => {
+        const Icon = row.icon;
+        return (
+          <Link
+            key={row.href}
+            href={row.href}
+            className="group bg-surface-sunken hover:bg-surface-raised flex items-center gap-3.5 rounded-2xl px-4 py-3.5 transition-colors duration-150"
+          >
+            <span className="bg-brand-soft text-brand grid h-11 w-11 shrink-0 place-items-center rounded-xl">
+              <Icon size={19} strokeWidth={1.9} aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="text-ink block text-[14px] font-medium">
+                {row.label}
+              </span>
+              <span className="text-ink-muted block truncate text-[12px]">
+                {row.description}
+              </span>
+            </span>
+            {row.meta ? (
+              <span className="text-ink-soft shrink-0 text-[12.5px] font-medium tabular-nums">
+                {row.meta}
+              </span>
+            ) : null}
+            <ChevronRight
+              size={16}
+              strokeWidth={2}
+              aria-hidden
+              className="text-ink-faint group-hover:text-ink-muted shrink-0 transition-colors"
+            />
+          </Link>
+        );
+      })}
+
+      <div className="mt-0.5 grid grid-cols-2 gap-2.5">
+        <Compact href="/bills" label="Pay bills" icon={Receipt} />
+        <Compact href="/load" label="Buy load" icon={Smartphone} />
+      </div>
     </section>
   );
 }
 
-function Tile({
-  feature,
-  className,
+function Compact({
+  href,
+  label,
+  icon: Icon,
 }: {
-  feature: Feature;
-  className?: string;
+  href: string;
+  label: string;
+  icon: LucideIcon;
 }) {
-  const Icon = feature.icon;
   return (
     <Link
-      href={feature.href}
-      className={cn(
-        "bg-brand-soft hover:bg-brand-line flex h-14 items-center justify-center gap-2 rounded-xl px-2 transition-colors duration-150",
-        className,
-      )}
+      href={href}
+      className="bg-brand-soft hover:bg-brand-line flex h-14 items-center justify-center gap-2.5 rounded-2xl transition-colors duration-150"
     >
       <Icon
         size={18}
@@ -61,9 +113,7 @@ function Tile({
         aria-hidden
         className="text-brand shrink-0"
       />
-      <span className="text-ink truncate text-[12px] font-medium">
-        {feature.label}
-      </span>
+      <span className="text-ink text-[13px] font-medium">{label}</span>
     </Link>
   );
 }
