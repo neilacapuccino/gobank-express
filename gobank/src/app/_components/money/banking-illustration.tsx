@@ -6,15 +6,8 @@ export function BankingIllustration({ className }: { className?: string }) {
       role="img"
       aria-label="A businessman surrounded by floating peso coins"
     >
-      <path
-        d="M150 20c56 0 96 30 100 72 4 44-26 84-74 92-42 7-84-6-100-40-16-34-6-76 26-98 16-11 32-26 48-26z"
-        fill="var(--color-brand-soft)"
-      />
-      <path
-        d="M198 34c22 12 34 34 32 58-2 22-16 38-34 40-20 2-30-14-26-34 4-22 6-52 28-64z"
-        fill="var(--color-brand-line)"
-        opacity="0.45"
-      />
+      <circle cx="150" cy="118" r="86" fill="var(--color-brand-line)" />
+      <path d="M150 32a86 86 0 0166 141 86 86 0 00-66-141z" fill="#8fe8c4" />
 
       <ellipse cx="150" cy="214" rx="74" ry="9" fill="#047857" opacity="0.12" />
 
@@ -28,7 +21,11 @@ export function BankingIllustration({ className }: { className?: string }) {
       <g>
         <path
           d="M116 216v-23c0-21 15-36 34-36s34 15 34 36v23z"
-          fill="#22403a"
+          fill="#2b4f46"
+        />
+        <path
+          d="M116 216v-23c0-19 12-33 28-35-9 8-14 21-14 35v23z"
+          fill="#1d3831"
         />
         <path d="M137 159l13 40 13-40-13-6z" fill="#ffffff" />
         <path d="M133 163l17 36-8-40z" fill="#2d5148" />
@@ -66,6 +63,10 @@ export function BankingIllustration({ className }: { className?: string }) {
 
         <rect x="143" y="132" width="14" height="18" rx="6" fill="#e3b48d" />
         <circle cx="150" cy="112" r="27" fill="#f0c9a4" />
+        <path
+          d="M131 131a27 27 0 01-8-19c0-15 12-27 27-27-13 4-22 15-22 28 0 7 1 13 3 18z"
+          fill="#e0b189"
+        />
         <path
           d="M123 109c0-17 12-27 27-27s27 10 27 27c-3-11-13-16-27-16s-24 5-27 16z"
           fill="#2f3d34"
@@ -150,18 +151,10 @@ function Leaf({
     <g
       transform={`translate(${x} ${y}) scale(${flip ? -scale : scale} ${scale})`}
     >
+      <path d="M0 62C-4 40 2 16 16 0c10 18 10 44 2 62z" fill="#10b981" />
       <path
-        d="M0 62C-4 40 2 16 16 0c10 18 10 44 2 62z"
-        fill="var(--color-brand)"
-        opacity="0.75"
-      />
-      <path
-        d="M9 60C6 42 8 22 15 8"
-        stroke="#047857"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        fill="none"
-        opacity="0.5"
+        d="M9 61C5 40 7 17 16 0c4 8 6 18 7 27-5 10-10 21-14 34z"
+        fill="#047857"
       />
     </g>
   );

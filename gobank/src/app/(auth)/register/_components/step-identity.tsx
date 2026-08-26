@@ -29,7 +29,7 @@ export function StepIdentity({
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
-  const [shake, setShake] = useState(false);
+  const [invalid, setInvalid] = useState(false);
 
   useEffect(() => {
     const result = validateUsername(username);
@@ -47,10 +47,10 @@ export function StepIdentity({
     const problem = validatePin(pin);
     if (problem) {
       setPinError(problem);
-      setShake(true);
+      setInvalid(true);
       const timer = setTimeout(() => {
         setPin("");
-        setShake(false);
+        setInvalid(false);
       }, 420);
       return () => clearTimeout(timer);
     }
@@ -63,11 +63,11 @@ export function StepIdentity({
     if (phase !== "confirm" || confirm.length !== PIN_LENGTH) return;
     if (confirm !== pin) {
       setPinError("Those did not match. Start again.");
-      setShake(true);
+      setInvalid(true);
       const timer = setTimeout(() => {
         setPin("");
         setConfirm("");
-        setShake(false);
+        setInvalid(false);
         setPhase("pin");
       }, 600);
       return () => clearTimeout(timer);
@@ -93,7 +93,7 @@ export function StepIdentity({
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            placeholder="juandelacruz"
+            placeholder="yourusername"
             value={username}
             onChange={(event) =>
               onUsernameChange(
@@ -140,7 +140,7 @@ export function StepIdentity({
           value={confirming ? confirm : pin}
           onChange={confirming ? setConfirm : setPin}
           length={PIN_LENGTH}
-          invalid={shake}
+          invalid={invalid}
         />
         <p className="text-danger mt-7 h-5 text-[13px]">{pinError}</p>
       </div>

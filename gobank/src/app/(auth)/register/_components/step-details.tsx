@@ -51,7 +51,7 @@ export function StepDetails({
         <TextField
           label="Full name"
           optional
-          placeholder="Juan Dela Cruz"
+          placeholder="Your full name"
           autoComplete="name"
           value={fullName}
           onChange={(event) => onChange({ fullName: event.target.value })}

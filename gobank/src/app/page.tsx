@@ -12,7 +12,7 @@ export default function WelcomePage() {
     <Screen>
       <div className="flex flex-1 flex-col items-center text-center">
         <div className="flex flex-1 flex-col items-center justify-center">
-          <BankingIllustration className="w-full max-w-[290px]" />
+          <BankingIllustration className="w-full max-w-[280px]" />
 
           <h1 className="text-ink mt-8 text-[27px] leading-tight font-semibold tracking-tight">
             Let&rsquo;s get started
@@ -22,7 +22,7 @@ export default function WelcomePage() {
             Never a better time than now to start managing your money with ease.
           </p>
 
-          <div className="mt-8 flex items-center gap-2" aria-hidden>
+          <div className="mt-7 flex items-center gap-2" aria-hidden>
             <span className="bg-line-strong h-1.5 w-1.5 rounded-full" />
             <span className="bg-line-strong h-1.5 w-1.5 rounded-full" />
             <span className="bg-brand h-1.5 w-4 rounded-full" />

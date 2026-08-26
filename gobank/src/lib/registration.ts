@@ -17,7 +17,7 @@ export const RESERVED_USERNAMES = [
   "billing",
 ];
 
-const DEMO_TAKEN_USERNAMES = ["neil", "juan", "maria", "test", "gobank"];
+const DEMO_TAKEN_USERNAMES = ["user", "test", "demo", "sample", "example"];
 
 export type UsernameCheck =
   | { state: "idle" }

@@ -31,7 +31,7 @@
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateX(22px);
   }
   to {
     opacity: 1;
