@@ -9,10 +9,10 @@ type PinPadProps = {
   value: string;
   onChange: (next: string) => void;
   length: number;
-  shake?: boolean;
+  invalid?: boolean;
 };
 
-export function PinPad({ value, onChange, length, shake }: PinPadProps) {
+export function PinPad({ value, onChange, length, invalid }: PinPadProps) {
   const push = useCallback(
     (digit: string) => {
       if (value.length >= length) return;
@@ -42,7 +42,7 @@ export function PinPad({ value, onChange, length, shake }: PinPadProps) {
   return (
     <div className="flex w-full flex-col items-center gap-11">
       <div
-        className={cn("flex gap-4", shake && "animate-shake")}
+        className="flex gap-4"
         role="status"
         aria-label={`${value.length} of ${length} digits entered`}
       >
@@ -54,9 +54,9 @@ export function PinPad({ value, onChange, length, shake }: PinPadProps) {
               className={cn(
                 "h-3.5 w-3.5 rounded-full border-2 transition-all duration-150",
                 filled
-                  ? shake
+                  ? invalid
                     ? "border-danger bg-danger"
-                    : "border-brand bg-brand animate-pop"
+                    : "border-brand bg-brand"
                   : "border-line-strong bg-transparent",
               )}
             />
@@ -76,7 +76,7 @@ export function PinPad({ value, onChange, length, shake }: PinPadProps) {
                 onClick={pop}
                 disabled={value.length === 0}
                 aria-label="Delete last digit"
-                className="text-ink-soft hover:bg-surface-sunken grid h-17 w-17 place-items-center rounded-full transition-all duration-100 active:scale-90 disabled:opacity-25"
+                className="text-ink-soft hover:bg-surface-sunken grid h-17 w-17 place-items-center rounded-full transition-colors duration-100 disabled:opacity-25"
               >
                 <BackspaceIcon />
               </button>
@@ -89,7 +89,7 @@ export function PinPad({ value, onChange, length, shake }: PinPadProps) {
               type="button"
               onClick={() => push(key)}
               disabled={value.length >= length}
-              className="text-ink bg-surface-sunken hover:bg-surface-raised active:bg-line grid h-17 w-17 place-items-center rounded-full text-[24px] font-normal tabular-nums transition-all duration-100 active:scale-90 disabled:opacity-40"
+              className="text-ink bg-surface-sunken hover:bg-surface-raised active:bg-line grid h-17 w-17 place-items-center rounded-full text-[24px] font-normal tabular-nums transition-colors duration-100 disabled:opacity-40"
             >
               {key}
             </button>

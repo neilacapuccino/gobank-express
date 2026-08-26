@@ -7,10 +7,16 @@ import { CardBrandLogo } from "./card-brand-logo";
 type VirtualCardProps = {
   brandId: CardBrandId;
   holder: string;
+  last4?: string;
   compact?: boolean;
 };
 
-export function VirtualCard({ brandId, holder, compact }: VirtualCardProps) {
+export function VirtualCard({
+  brandId,
+  holder,
+  last4 = "8317",
+  compact,
+}: VirtualCardProps) {
   const brand = getBrand(brandId);
 
   return (
@@ -37,7 +43,9 @@ export function VirtualCard({ brandId, holder, compact }: VirtualCardProps) {
               compact ? "text-[13px]" : "text-[16px]",
             )}
           >
-            •••• •••• •••• ••••
+            <span aria-hidden>•••• •••• •••• </span>
+            <span className="sr-only">Card ending in </span>
+            {last4}
           </p>
           <div className="flex items-end justify-between gap-4">
             <div className="min-w-0">

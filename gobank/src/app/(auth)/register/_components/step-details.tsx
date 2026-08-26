@@ -37,7 +37,7 @@ export function StepDetails({
   const blocked = Boolean(mobileError ?? emailError);
 
   return (
-    <div className="animate-rise flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col">
       <div className="flex flex-col gap-2">
         <h1 className="text-ink text-[24px] leading-tight font-semibold tracking-tight">
           Anything else?
@@ -51,7 +51,7 @@ export function StepDetails({
         <TextField
           label="Full name"
           optional
-          placeholder="Juan Dela Cruz"
+          placeholder="Your full name"
           autoComplete="name"
           value={fullName}
           onChange={(event) => onChange({ fullName: event.target.value })}
