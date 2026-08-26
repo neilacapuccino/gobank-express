@@ -50,7 +50,7 @@ export function RegistrationFlow() {
         <StepBar current={step} total={TOTAL_STEPS} />
       </header>
 
-      <div className="mt-10 flex flex-1 flex-col">
+      <div key={step} className="animate-step-in mt-10 flex flex-1 flex-col">
         {step === 1 ? (
           <StepIdentity
             username={draft.username}
