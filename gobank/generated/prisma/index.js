@@ -126,7 +126,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\User\\OneDrive\\Documents\\GitHub\\gobank-express\\gobank\\generated\\prisma",
+      "value": "C:\\Users\\Zephaniah\\Documents\\Projects\\gobank-express\\gobank\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -140,7 +140,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\User\\OneDrive\\Documents\\GitHub\\gobank-express\\gobank\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\Zephaniah\\Documents\\Projects\\gobank-express\\gobank\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
