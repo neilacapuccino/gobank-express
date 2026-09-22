@@ -102,8 +102,8 @@ git clone https://github.com/neilacapuccino/gobank-express.git
 cd gobank-express/gobank
 ```
 
-This step is easy to miss. The repository root holds only `README.md`,
-`CONTRIBUTING.md` and `.github/` — the application itself lives one level down
+This step is easy to miss. The repository root holds only `README.md` and
+`.github/` — the application itself lives one level down
 in `gobank/`. If you already have the repository, `cd` into the `gobank` folder
 inside it. Stay in this directory for every remaining step.
 
@@ -185,9 +185,7 @@ Run from the `gobank/` directory.
 
 ```
 .
-├── .github/                    Workflows, issue and pull request templates
-├── CONTRIBUTING.md             Branching model, structure and conventions
-├── TASKS.md                    Milestone task board and build guide
+├── .github/                    CI workflow and code owners
 └── gobank/
     ├── prisma/                 Database schema and seed
     ├── generated/prisma/       Generated Prisma client
@@ -209,13 +207,3 @@ Run from the `gobank/` directory.
     │   └── env.js              Environment variable schema
     └── start-database.sh       Local PostgreSQL container helper
 ```
-
-Where new files belong, and how they are named, is documented in
-[CONTRIBUTING.md](CONTRIBUTING.md#project-structure).
-
-## Contributing
-
-This repository follows Git Flow with three permanent branches — `main`,
-`staging` and `develop`. Branch naming, commit conventions and the pull request
-process are documented in [CONTRIBUTING.md](CONTRIBUTING.md). Open pull requests
-against `develop`.
