@@ -201,29 +201,74 @@ Run from the `gobank/` directory.
 - A P2P transfer writes two rows that share one reference: a negative amount for
   the sender and a positive amount for the receiver.
 
+## Architecture
+
+The code is organised by feature. Each layer has one job, and
+dependencies only point downward.
+
+```
+app/                 Routes. A page loads data and renders a feature screen.
+  │
+features/<name>/     One folder per feature.
+  ├─ components/     The feature's UI.
+  ├─ <name>.router   API layer: validates input with Zod, calls the service.
+  ├─ <name>.service  Business logic and queries. Knows nothing about tRPC.
+  └─ <name>.rules    Pure functions: no database, no cookies, no clock.
+  │
+shared/              Used by several features: ui/, lib/, hooks/.
+server/              Infrastructure: db, tRPC setup, ledger, errors, session.
+```
+
+- **Routers stay thin.** A procedure parses its input and makes one service
+  call. The same services could sit behind a REST route or a script.
+- **Pure code is separate from effects.** Money maths, validation and
+  formatting live in `*.rules.ts` and `shared/lib`, and take no database or
+  request. Services handle the effects.
+- **Money moves only through the ledger.** `server/ledger.ts` is the single
+  writer of balances.
+- **Errors are domain errors.** Services throw `AppError` with a code and a
+  message from the `MESSAGES` table in `server/errors.ts`. The tRPC middleware
+  turns them, and known database errors, into HTTP responses.
+- **Imports are relative within a feature** and use `~/` across features and
+  into `shared/`.
+
 ## Project structure
 
 ```
 .
-├── .github/                    CI workflow and code owners
+├── .github/                      CI workflow and code owners
 └── gobank/
-    ├── prisma/                 Schema, migrations and seed
-    ├── generated/prisma/       Generated Prisma client
-    ├── public/                 Static assets
-    ├── src/
-    │   ├── app/                Routes and screens
-    │   │   ├── _components/    Shared components (ui, layout, money)
-    │   │   ├── (auth)/         Public sign-up and sign-in
-    │   │   ├── (app)/          Authenticated screens
-    │   │   └── api/trpc/       tRPC HTTP handler
-    │   ├── server/
-    │   │   ├── api/routers/    One tRPC router per domain
-    │   │   ├── services/       Business logic, including the ledger writer
-    │   │   ├── auth/           PIN hashing and cookie sessions
-    │   │   ├── codes.ts        Reference, account and card number generators
-    │   │   └── db.ts           Prisma client singleton
-    │   ├── lib/                Pure helpers, Zod schemas, money maths
-    │   ├── styles/             Global stylesheet and design tokens
-    │   └── env.js              Environment variable schema
-    └── .env.example            Neon connection string template
+    ├── prisma/                   Schema, migrations and seed
+    ├── prisma.config.ts          Prisma CLI config (loads .env, seed command)
+    ├── public/                   Static assets
+    └── src/
+        ├── app/                  Routes only
+        │   ├── (auth)/           Register and sign in, for signed-out users
+        │   ├── (app)/            Screens behind the session guard
+        │   └── api/trpc/         tRPC HTTP handler
+        ├── features/
+        │   ├── account/          Dashboard, profile, activity history
+        │   ├── auth/             Register, sign in and out, PIN hashing
+        │   ├── bills/            Biller catalogue and bill payment
+        │   ├── card/             Virtual card, lock and daily limit
+        │   ├── requests/         Requesting money from other users
+        │   ├── rewards/          Redeeming points
+        │   ├── stashes/          Savings goals
+        │   ├── transfers/        Sending money, recipient lookup
+        │   └── wallet/           Cash in and mobile load
+        ├── shared/
+        │   ├── ui/               Button, text field, PIN pad, screen shell
+        │   ├── lib/              Money, formatting, contact and Zod helpers
+        │   └── hooks/            Reusable React hooks
+        ├── server/
+        │   ├── db.ts             Prisma client singleton
+        │   ├── trpc.ts           Procedures and error mapping
+        │   ├── root.ts           Combines the feature routers
+        │   ├── ledger.ts         The only code that changes a balance
+        │   ├── errors.ts         AppError and the message table
+        │   ├── session.ts        Cookie sessions
+        │   └── codes.ts          Reference, account and card numbers
+        ├── trpc/                 Client and server-side API callers
+        ├── styles/               Global stylesheet and design tokens
+        └── env.js                Environment variable schema
 ```
