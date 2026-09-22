@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "~/app/_components/ui/button";
-import { TextField } from "~/app/_components/ui/text-field";
-import { validateEmail, validateMobile } from "~/lib/registration";
-import { cn } from "~/lib/utils";
+import { Button } from "~/shared/ui/button";
+import { TextField } from "~/shared/ui/text-field";
+import { validateEmail, validateMobile } from "~/shared/lib/contact";
+import { cn } from "~/shared/lib/cn";
 import { GoogleMark } from "./google-mark";
 
 type StepDetailsProps = {

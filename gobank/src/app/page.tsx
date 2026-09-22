@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BankingIllustration } from "~/app/_components/money/banking-illustration";
-import { Screen } from "~/app/_components/ui/screen";
+import { BankingIllustration } from "~/shared/ui/banking-illustration";
+import { Screen } from "~/shared/ui/screen";
 
 export const metadata: Metadata = {
   title: "GoBank Express",

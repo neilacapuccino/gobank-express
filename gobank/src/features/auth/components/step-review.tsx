@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "~/app/_components/ui/button";
-import { getBrand } from "~/lib/card-brands";
-import {
-  cardholderName,
-  formatMobile,
-  type RegistrationDraft,
-} from "~/lib/registration";
-import { cn } from "~/lib/utils";
-import { VirtualCard } from "~/app/_components/money/virtual-card";
+import { Button } from "~/shared/ui/button";
+import { getBrand } from "~/features/card/card-brands";
+import { cardholderName, type RegistrationDraft } from "../auth.rules";
+import { formatMobile } from "~/shared/lib/contact";
+import { cn } from "~/shared/lib/cn";
+import { VirtualCard } from "~/features/card/components/virtual-card";
 
 type StepReviewProps = {
   draft: RegistrationDraft;

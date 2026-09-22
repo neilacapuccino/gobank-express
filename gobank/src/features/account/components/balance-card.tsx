@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { maskAccount, peso } from "~/lib/format";
+import { maskAccount, peso } from "~/shared/lib/format";
 
 export function BalanceCard({
   balance,

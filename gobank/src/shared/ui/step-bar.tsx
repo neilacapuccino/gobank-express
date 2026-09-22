@@ -1,4 +1,4 @@
-import { cn } from "~/lib/utils";
+import { cn } from "~/shared/lib/cn";
 
 export function StepBar({
   current,

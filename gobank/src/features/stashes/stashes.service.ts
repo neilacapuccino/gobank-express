@@ -1,4 +1,4 @@
-import { MAX_STASHES } from "~/lib/money";
+import { MAX_STASHES } from "~/shared/lib/money";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { moveStash } from "~/server/ledger";

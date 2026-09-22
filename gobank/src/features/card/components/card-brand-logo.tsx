@@ -1,4 +1,4 @@
-import type { CardBrandId } from "~/lib/card-brands";
+import type { CardBrandId } from "../card-brands";
 
 type CardBrandLogoProps = {
   id: CardBrandId;

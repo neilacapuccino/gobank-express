@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { centavos, optionalText } from "~/lib/schemas";
+import { centavos, optionalText } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import {
   cancelRequest,

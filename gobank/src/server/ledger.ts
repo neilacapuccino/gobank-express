@@ -1,4 +1,4 @@
-import { pointsEarned } from "~/lib/money";
+import { pointsEarned } from "~/shared/lib/money";
 import { newReference } from "~/server/codes";
 import { fail, MESSAGES } from "~/server/errors";
 import { Prisma, type TransactionKind } from "../../generated/prisma";

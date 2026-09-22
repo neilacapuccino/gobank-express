@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { maskAccount } from "~/lib/format";
-import { cardholderName, type RegistrationDraft } from "~/lib/registration";
-import { VirtualCard } from "~/app/_components/money/virtual-card";
+import { maskAccount } from "~/shared/lib/format";
+import { cardholderName, type RegistrationDraft } from "../auth.rules";
+import { VirtualCard } from "~/features/card/components/virtual-card";
 
 type AccountReadyProps = {
   draft: RegistrationDraft;

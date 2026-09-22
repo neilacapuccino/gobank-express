@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "~/app/_components/layout/placeholder-page";
+import { PlaceholderPage } from "~/shared/ui/placeholder-page";
 
 export const metadata: Metadata = {
   title: "Receipt",

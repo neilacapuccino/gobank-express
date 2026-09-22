@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "~/lib/utils";
+import { cn } from "~/shared/lib/cn";
 
 const ACTIONS = [
   { href: "/transfer", label: "Send", icon: Send },

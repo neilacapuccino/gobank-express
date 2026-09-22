@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "~/app/_components/ui/button";
-import { CARD_BRANDS, type CardBrandId } from "~/lib/card-brands";
-import { cn } from "~/lib/utils";
-import { CardBrandLogo } from "~/app/_components/money/card-brand-logo";
-import { VirtualCard } from "~/app/_components/money/virtual-card";
+import { Button } from "~/shared/ui/button";
+import { CARD_BRANDS, type CardBrandId } from "~/features/card/card-brands";
+import { cn } from "~/shared/lib/cn";
+import { CardBrandLogo } from "~/features/card/components/card-brand-logo";
+import { VirtualCard } from "~/features/card/components/virtual-card";
 
 type StepCardProps = {
   brand: CardBrandId;

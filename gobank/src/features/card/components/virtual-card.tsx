@@ -1,7 +1,7 @@
 "use client";
 
-import { getBrand, type CardBrandId } from "~/lib/card-brands";
-import { cn } from "~/lib/utils";
+import { getBrand, type CardBrandId } from "../card-brands";
+import { cn } from "~/shared/lib/cn";
 import { CardBrandLogo } from "./card-brand-logo";
 
 type VirtualCardProps = {

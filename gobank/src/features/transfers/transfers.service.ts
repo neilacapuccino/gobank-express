@@ -1,4 +1,4 @@
-import { normaliseMobile } from "~/lib/registration";
+import { normaliseMobile } from "~/shared/lib/contact";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { transfer } from "~/server/ledger";

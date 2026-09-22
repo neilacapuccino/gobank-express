@@ -1,4 +1,4 @@
-import { pointsValue } from "~/lib/money";
+import { pointsValue } from "~/shared/lib/money";
 import { db } from "~/server/db";
 import { post } from "~/server/ledger";
 

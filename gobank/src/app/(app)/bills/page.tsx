@@ -14,8 +14,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { peso } from "~/lib/format";
-import { toCentavos } from "~/lib/money";
+import { peso } from "~/shared/lib/format";
+import { toCentavos } from "~/shared/lib/money";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 

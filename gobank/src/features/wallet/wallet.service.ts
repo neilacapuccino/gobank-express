@@ -1,4 +1,4 @@
-import { formatMobile } from "~/lib/registration";
+import { formatMobile } from "~/shared/lib/contact";
 import { db } from "~/server/db";
 import { post, spend } from "~/server/ledger";
 

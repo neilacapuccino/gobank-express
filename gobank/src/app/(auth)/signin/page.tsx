@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SignInFlow } from "./_components/sign-in-flow";
+import { SignInFlow } from "~/features/auth/components/sign-in-flow";
 
 export const metadata: Metadata = {
   title: "Sign in",

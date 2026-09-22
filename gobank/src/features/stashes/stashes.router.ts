@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { centavos } from "~/lib/schemas";
+import { centavos } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import {
   createStash,

@@ -2,7 +2,7 @@
 
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "~/app/_components/ui/button";
+import { Button } from "~/shared/ui/button";
 import { api } from "~/trpc/react";
 
 export function SignOutButton() {

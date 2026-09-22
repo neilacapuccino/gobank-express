@@ -4,10 +4,10 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { Button } from "~/app/_components/ui/button";
-import { PinPad } from "~/app/_components/ui/pin-pad";
-import { TextField } from "~/app/_components/ui/text-field";
-import { PIN_LENGTH, USERNAME_MIN } from "~/lib/registration";
+import { Button } from "~/shared/ui/button";
+import { PinPad } from "~/shared/ui/pin-pad";
+import { TextField } from "~/shared/ui/text-field";
+import { PIN_LENGTH, USERNAME_MIN } from "../auth.rules";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 

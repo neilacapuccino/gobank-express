@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { email, mobile, optionalText, pin, username } from "~/lib/schemas";
+import { email, mobile, optionalText } from "~/shared/lib/schemas";
+import { pin, username } from "./auth.schemas";
 import { endSession } from "~/server/session";
 import { createTRPCRouter, publicProcedure } from "~/server/trpc";
 import { CardBrand } from "../../../generated/prisma";

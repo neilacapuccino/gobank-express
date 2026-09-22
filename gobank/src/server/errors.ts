@@ -1,4 +1,4 @@
-import { MAX_STASHES } from "~/lib/money";
+import { MAX_STASHES } from "~/shared/lib/money";
 
 export type ErrorCode =
   "BAD_REQUEST" | "UNAUTHORIZED" | "NOT_FOUND" | "CONFLICT";

@@ -10,7 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
-import { peso, shortDate } from "~/lib/format";
+import { peso, shortDate } from "~/shared/lib/format";
 import type { RouterOutputs } from "~/trpc/react";
 import { SectionHeader } from "./section-header";
 

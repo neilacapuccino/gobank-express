@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useReducer, useState } from "react";
-import { StepBar } from "~/app/_components/ui/step-bar";
-import { EMPTY_DRAFT, type RegistrationDraft } from "~/lib/registration";
+import { StepBar } from "~/shared/ui/step-bar";
+import { EMPTY_DRAFT, type RegistrationDraft } from "../auth.rules";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { StepCard } from "./step-card";
