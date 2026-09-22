@@ -28,7 +28,7 @@ export function StepCard({
           Choose your card
         </h1>
         <p className="text-ink-soft text-[14.5px] leading-relaxed">
-          Your number, CVV and expiry are issued automatically.
+          Your card number and expiry date are issued when your account opens.
         </p>
       </div>
 

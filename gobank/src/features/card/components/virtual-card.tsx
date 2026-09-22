@@ -14,7 +14,7 @@ type VirtualCardProps = {
 export function VirtualCard({
   brandId,
   holder,
-  last4 = "8317",
+  last4 = "••••",
   compact,
 }: VirtualCardProps) {
   const brand = getBrand(brandId);
