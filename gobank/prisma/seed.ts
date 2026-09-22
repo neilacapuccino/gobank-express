@@ -1,5 +1,5 @@
 import { PrismaClient, type BillerCategory } from "../generated/prisma";
-import { hashPin } from "../src/server/auth/pin";
+import { hashPin } from "../src/features/auth/pin";
 import {
   cardExpiry,
   newAccountNumber,

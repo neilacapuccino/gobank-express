@@ -1,3 +1,5 @@
+import "server-only";
+
 import { env } from "~/env";
 import { PrismaClient } from "../../generated/prisma";
 

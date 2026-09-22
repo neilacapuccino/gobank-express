@@ -1,7 +1,7 @@
-import { TRPCError } from "@trpc/server";
 import { pointsEarned } from "~/lib/money";
 import { newReference } from "~/server/codes";
-import { Prisma, type TransactionKind } from "../../../generated/prisma";
+import { fail, MESSAGES } from "~/server/errors";
+import { Prisma, type TransactionKind } from "../../generated/prisma";
 
 export type Tx = Prisma.TransactionClient;
 
@@ -22,9 +22,10 @@ type Entry = {
 
 const SPENDING: TransactionKind[] = ["transfer", "bill", "load"];
 
-const fail = (message: string): never => {
-  throw new TRPCError({ code: "BAD_REQUEST", message });
-};
+const startOfManilaDay = (now: Date) =>
+  new Date(
+    `${now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" })}T00:00:00+08:00`,
+  );
 
 const guard = <T>(query: Promise<T>, message: string) =>
   query.catch((error: unknown) => {
@@ -32,15 +33,10 @@ const guard = <T>(query: Promise<T>, message: string) =>
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2025"
     ) {
-      return fail(message);
+      return fail("BAD_REQUEST", message);
     }
     throw error;
   });
-
-const manilaMidnight = () =>
-  new Date(
-    `${new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" })}T00:00:00+08:00`,
-  );
 
 export async function post(
   tx: Tx,
@@ -58,7 +54,7 @@ export async function post(
         points: { increment: points },
       },
     }),
-    amount < 0 ? "Insufficient balance" : "Not enough points",
+    amount < 0 ? MESSAGES.insufficientBalance : MESSAGES.notEnoughPoints,
   );
 
   return tx.transaction.create({
@@ -77,19 +73,19 @@ export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
   const card = await tx.card.findUniqueOrThrow({
     where: { userId: entry.userId },
   });
-  if (card.locked) fail("Unlock your card to spend");
+  if (card.locked) fail("BAD_REQUEST", MESSAGES.cardLocked);
 
   const today = await tx.transaction.aggregate({
     where: {
       userId: entry.userId,
       kind: { in: SPENDING },
       amount: { lt: 0 },
-      createdAt: { gte: manilaMidnight() },
+      createdAt: { gte: startOfManilaDay(new Date()) },
     },
     _sum: { amount: true },
   });
   if (entry.amount - (today._sum.amount ?? 0) > card.dailyLimit) {
-    fail("This goes over your daily limit");
+    fail("BAD_REQUEST", MESSAGES.overDailyLimit);
   }
 
   return post(tx, {
@@ -141,7 +137,7 @@ export async function moveStash(
       where: { id: stashId, userId, balance: { gte: -amount } },
       data: { balance: { increment: amount } },
     }),
-    "Not enough in this Stash",
+    MESSAGES.notEnoughInStash,
   );
 
   return post(tx, {

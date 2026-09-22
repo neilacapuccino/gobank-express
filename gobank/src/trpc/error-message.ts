@@ -1,5 +1,5 @@
 import type { TRPCClientErrorLike } from "@trpc/client";
-import type { AppRouter } from "~/server/api/root";
+import type { AppRouter } from "~/server/root";
 
 export function errorMessage(error: TRPCClientErrorLike<AppRouter> | null) {
   if (!error) return null;
