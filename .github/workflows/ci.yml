@@ -25,6 +25,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/gobank
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/gobank
       SKIP_ENV_VALIDATION: "1"
 
     steps:

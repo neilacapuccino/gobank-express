@@ -6,9 +6,8 @@ mobile-first model: a main spending account, high-interest goal-based savings
 called **Stashes**, instant peer-to-peer transfers, and cash-convertible reward
 points earned on everyday spending. All amounts are in Philippine Pesos (₱).
 
-> **Status:** early development. Registration and the welcome screen are built
-> as interface only; the remaining screens are scaffolded placeholders, and none
-> of the domain models below exist yet.
+> **Status:** early development. The database schema covers every feature
+> below; several screens are still scaffolded placeholders.
 
 ## Features
 
@@ -68,9 +67,8 @@ Built on the [T3 Stack](https://create.t3.gg/) (`create-t3-app` v7.40.0).
 
 ### Infrastructure
 
-- **PostgreSQL** — primary datastore, reached through Prisma.
-- **Docker** or **Podman** — runs the local development database via
-  `start-database.sh`.
+- **[Neon](https://neon.tech)** — serverless PostgreSQL, reached through
+  Prisma. Any PostgreSQL 14+ server works the same way.
 - **GitHub Actions** — CI running format, lint, typecheck and build on every
   push and pull request to `main`, `staging` and `develop`.
 
@@ -84,11 +82,7 @@ Built on the [T3 Stack](https://create.t3.gg/) (`create-t3-app` v7.40.0).
 
 - [Node.js](https://nodejs.org) 20 or later
 - npm 10 or later (the project pins `npm@10.9.2`)
-- [Docker](https://docs.docker.com/get-docker/) or
-  [Podman](https://podman.io/getting-started/installation) for the local
-  database, or any reachable PostgreSQL instance
-- On Windows, [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) is
-  required to run `start-database.sh`
+- A [Neon](https://neon.tech) project (the free tier is enough)
 
 ### 1. Clone the repository
 
@@ -124,32 +118,33 @@ Copy the example file, then fill in the values.
 cp .env.example .env
 ```
 
-`.env` is gitignored and must never be committed. It requires a single variable:
+`.env` is gitignored and must never be committed. Both values come from the
+**Connect** dialog in the Neon console.
 
-| Variable | Description | Example |
-| -------- | ----------- | ------- |
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:password@localhost:5432/gobank` |
+| Variable | Neon connection string |
+| -------- | ---------------------- |
+| `DATABASE_URL` | **Pooled** — host contains `-pooler`. Used by the app at runtime. |
+| `DIRECT_URL` | **Direct** — pooling switched off. Used by Prisma to run migrations. |
 
 Values are validated at build and dev time against the schema in `src/env.js`.
-An invalid or missing variable fails the build rather than surfacing at runtime.
 Setting `SKIP_ENV_VALIDATION=1` bypasses the check, which is what CI does.
 
-### 5. Start the database
-
-With Docker or Podman running:
+### 5. Create the tables
 
 ```bash
-./start-database.sh
+npm run db:migrate
 ```
 
-The script reads `DATABASE_URL` from `.env` and starts a container named after
-your database. Skip this step when pointing at an existing PostgreSQL server.
+Applies every migration in `prisma/migrations` to the Neon database.
 
-### 6. Apply the schema
+### 6. Seed reference data
 
 ```bash
-npm run db:push
+npm run db:seed
 ```
+
+Adds the biller catalogue and two demo accounts, `@maricel` and `@dante`, each
+holding ₱5,000.00 with PIN `135790`, so transfers have somewhere to go.
 
 ### 7. Run the development server
 
@@ -176,10 +171,31 @@ Run from the `gobank/` directory.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run format:check` | Verify formatting |
 | `npm run format:write` | Apply formatting |
-| `npm run db:push` | Push the schema without creating a migration |
-| `npm run db:generate` | Create and apply a development migration |
-| `npm run db:migrate` | Apply pending migrations, for deployment |
+| `npm run db:generate` | Create and apply a migration after editing the schema |
+| `npm run db:migrate` | Apply pending migrations |
+| `npm run db:seed` | Seed billers and demo accounts |
+| `npm run db:reset` | Drop everything, re-migrate and re-seed |
+| `npm run db:push` | Push the schema without a migration, for quick experiments |
 | `npm run db:studio` | Open Prisma Studio |
+
+## Database
+
+| Model | Holds |
+| ----- | ----- |
+| `User` | Credentials, profile, main account number, balance and points |
+| `Session` | Signed-in devices, stored as a hash of the cookie token |
+| `Card` | The virtual debit card: brand, number, lock state, daily limit |
+| `Stash` | Up to five goal savings pockets per user |
+| `Biller` | The pre-registered biller catalogue |
+| `Transaction` | The ledger. One row per money movement per user, with a reference, signed amount and balance snapshot |
+| `MoneyRequest` | Requests for money between users |
+
+- **Money is stored as whole centavos** in integer columns. `₱1,250.50` is
+  `125050`. Conversion happens only at the edges, in `src/lib/money.ts`.
+- **Check constraints** stop any balance, point total or daily limit from going
+  negative, even if application code has a bug.
+- A P2P transfer writes two rows that share one reference: a negative amount for
+  the sender and a positive amount for the receiver.
 
 ## Project structure
 
@@ -187,7 +203,7 @@ Run from the `gobank/` directory.
 .
 ├── .github/                    CI workflow and code owners
 └── gobank/
-    ├── prisma/                 Database schema and seed
+    ├── prisma/                 Schema, migrations and seed
     ├── generated/prisma/       Generated Prisma client
     ├── public/                 Static assets
     ├── src/
@@ -199,11 +215,11 @@ Run from the `gobank/` directory.
     │   ├── server/
     │   │   ├── api/routers/    One tRPC router per domain
     │   │   ├── services/       Business logic, including the ledger writer
-    │   │   ├── auth/           NextAuth configuration
+    │   │   ├── auth/           PIN hashing and cookie sessions
+    │   │   ├── codes.ts        Reference, account and card number generators
     │   │   └── db.ts           Prisma client singleton
     │   ├── lib/                Pure helpers, Zod schemas, money maths
-    │   ├── hooks/              Reusable React hooks
     │   ├── styles/             Global stylesheet and design tokens
     │   └── env.js              Environment variable schema
-    └── start-database.sh       Local PostgreSQL container helper
+    └── .env.example            Neon connection string template
 ```

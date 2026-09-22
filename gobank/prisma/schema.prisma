@@ -1,21 +1,160 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-    provider = "prisma-client-js"
-    output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+enum CardBrand {
+  visa
+  mastercard
+  jcb
+  gobank
+}
 
-    @@index([name])
+enum BillerCategory {
+  electric
+  water
+  internet
+  credit_card
+}
+
+enum TransactionKind {
+  deposit
+  transfer
+  bill
+  load
+  stash
+  reward
+  interest
+}
+
+enum RequestStatus {
+  pending
+  paid
+  declined
+  cancelled
+}
+
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  pinHash       String
+  fullName      String?
+  mobile        String?  @unique
+  email         String?  @unique
+  googleId      String?  @unique
+  accountNumber String   @unique
+  balance       Int      @default(0)
+  points        Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  card             Card?
+  sessions         Session[]
+  stashes          Stash[]
+  transactions     Transaction[]
+  counterpartyOf   Transaction[]  @relation("Counterparty")
+  requestsSent     MoneyRequest[] @relation("Requester")
+  requestsReceived MoneyRequest[] @relation("Payer")
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Card {
+  id         String    @id @default(cuid())
+  userId     String    @unique
+  brand      CardBrand @default(gobank)
+  number     String    @unique
+  expiresAt  DateTime
+  locked     Boolean   @default(false)
+  dailyLimit Int       @default(2000000)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Stash {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  goal         Int?
+  balance      Int      @default(0)
+  interestRate Float    @default(0.04)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([userId, name])
+}
+
+model Biller {
+  id          String         @id @default(cuid())
+  code        String         @unique
+  name        String
+  category    BillerCategory
+  description String
+  active      Boolean        @default(true)
+
+  transactions Transaction[]
+
+  @@index([category])
+}
+
+model Transaction {
+  id             String          @id @default(cuid())
+  reference      String
+  kind           TransactionKind
+  title          String
+  amount         Int
+  balanceAfter   Int
+  points         Int             @default(0)
+  details        Json?
+  userId         String
+  counterpartyId String?
+  stashId        String?
+  billerId       String?
+  createdAt      DateTime        @default(now())
+
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  counterparty User?   @relation("Counterparty", fields: [counterpartyId], references: [id], onDelete: SetNull)
+  stash        Stash?  @relation(fields: [stashId], references: [id], onDelete: SetNull)
+  biller       Biller? @relation(fields: [billerId], references: [id], onDelete: SetNull)
+
+  @@unique([reference, userId])
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model MoneyRequest {
+  id          String        @id @default(cuid())
+  requesterId String
+  payerId     String
+  amount      Int
+  note        String?
+  status      RequestStatus @default(pending)
+  reference   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  requester User @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  payer     User @relation("Payer", fields: [payerId], references: [id], onDelete: Cascade)
+
+  @@index([payerId, status])
+  @@index([requesterId])
 }
