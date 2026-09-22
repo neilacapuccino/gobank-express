@@ -1,7 +1,6 @@
 import { MAX_STASHES } from "~/shared/lib/money";
 
-export type ErrorCode =
-  "BAD_REQUEST" | "UNAUTHORIZED" | "NOT_FOUND" | "CONFLICT";
+type ErrorCode = "BAD_REQUEST" | "UNAUTHORIZED" | "NOT_FOUND" | "CONFLICT";
 
 export const MESSAGES = {
   signInRequired: "Sign in to continue",
@@ -31,3 +30,14 @@ export class AppError extends Error {
 export function fail(code: ErrorCode, message: string): never {
   throw new AppError(code, message);
 }
+
+type DatabaseError = { code: string; meta?: { target?: unknown } };
+
+export const asDatabaseError = (error: unknown) =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  typeof error.code === "string" &&
+  /^P\d{4}$/.test(error.code)
+    ? (error as DatabaseError)
+    : null;

@@ -2,9 +2,8 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { env } from "~/env";
-import { AppError, MESSAGES } from "~/server/errors";
+import { AppError, asDatabaseError, MESSAGES } from "~/server/errors";
 import { currentUserId } from "~/server/session";
-import { Prisma } from "../../generated/prisma";
 
 export const createTRPCContext = async (opts: { headers: Headers }) => opts;
 
@@ -29,16 +28,16 @@ const toTRPCError = (cause: unknown) => {
   if (cause instanceof AppError) {
     return new TRPCError({ code: cause.code, message: cause.message });
   }
-  if (!(cause instanceof Prisma.PrismaClientKnownRequestError)) return null;
-  if (cause.code === "P2002") {
-    const target = cause.meta?.target;
+  const database = asDatabaseError(cause);
+  if (database?.code === "P2002") {
+    const target = database.meta?.target;
     const field = Array.isArray(target) ? String(target.at(-1)) : "value";
     return new TRPCError({
       code: "CONFLICT",
       message: `That ${field} is already taken`,
     });
   }
-  if (cause.code === "P2025") {
+  if (database?.code === "P2025") {
     return new TRPCError({ code: "NOT_FOUND", message: MESSAGES.notFound });
   }
   return null;

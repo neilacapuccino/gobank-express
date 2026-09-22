@@ -1,9 +1,9 @@
 import { pointsEarned } from "~/shared/lib/money";
 import { newReference } from "~/server/codes";
-import { fail, MESSAGES } from "~/server/errors";
-import { Prisma, type TransactionKind } from "../../generated/prisma";
+import { asDatabaseError, fail, MESSAGES } from "~/server/errors";
+import type { Prisma, TransactionKind } from "../../generated/prisma";
 
-export type Tx = Prisma.TransactionClient;
+type Tx = Prisma.TransactionClient;
 
 type Party = { id: string; username: string };
 
@@ -29,10 +29,7 @@ const startOfManilaDay = (now: Date) =>
 
 const guard = <T>(query: Promise<T>, message: string) =>
   query.catch((error: unknown) => {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
+    if (asDatabaseError(error)?.code === "P2025") {
       return fail("BAD_REQUEST", message);
     }
     throw error;
