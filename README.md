@@ -192,6 +192,10 @@ Run from the `gobank/` directory.
 
 - **Money is stored as whole centavos** in integer columns. `₱1,250.50` is
   `125050`. Conversion happens only at the edges, in `src/lib/money.ts`.
+- **Balances only change through the ledger** (`src/server/services/ledger.ts`).
+  `post` moves money and writes the matching `Transaction` in one step; `spend`
+  adds the card lock, the daily limit and points; `transfer` and `moveStash`
+  build on those two.
 - **Check constraints** stop any balance, point total or daily limit from going
   negative, even if application code has a bug.
 - A P2P transfer writes two rows that share one reference: a negative amount for
