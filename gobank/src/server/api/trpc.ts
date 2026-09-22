@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
+import { env } from "~/env";
 import { currentUserId } from "~/server/auth/session";
 import { db } from "~/server/db";
 import { Prisma } from "../../../generated/prisma";
@@ -13,8 +14,13 @@ export const createTRPCContext = async (opts: { headers: Headers }) => ({
 const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
+    const hidden =
+      error.code === "INTERNAL_SERVER_ERROR" && env.NODE_ENV === "production";
     return {
       ...shape,
+      message: hidden
+        ? "Something went wrong. Please try again."
+        : shape.message,
       data: {
         ...shape.data,
         zodError:
