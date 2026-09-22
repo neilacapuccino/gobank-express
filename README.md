@@ -152,7 +152,7 @@ holding ₱5,000.00 with PIN `135790`, so transfers have somewhere to go.
 npm run dev
 ```
 
-The app is served at [http://localhost:3000](http://localhost:3000) with
+The app is served at [http://localhost:3001](http://localhost:3001) with
 Turbopack and hot reload.
 
 ## Available scripts

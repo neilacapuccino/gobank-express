@@ -12,14 +12,14 @@
     "db:reset": "prisma migrate reset",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "dev": "next dev --turbo",
+    "dev": "next dev --turbo -p 3001",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "postinstall": "prisma generate",
     "preview": "next build && next start",
-    "start": "next start",
+    "start": "next start -p 3001",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
