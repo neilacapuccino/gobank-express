@@ -7,21 +7,37 @@ const PESO = new Intl.NumberFormat("en-PH", {
   maximumFractionDigits: 2,
 });
 
-export function peso(centavos: number) {
-  return PESO.format(toPesos(centavos));
-}
+const SHORT_DATE = new Intl.DateTimeFormat("en-PH", {
+  day: "numeric",
+  month: "short",
+});
 
-export function formatAccount(accountNumber: string) {
-  return accountNumber.replace(/(\d{4})(?=\d)/g, "$1 ");
-}
+const DATE_TIME = new Intl.DateTimeFormat("en-PH", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
 
-export function maskAccount(accountNumber: string) {
-  return `•••• ${accountNumber.slice(-4)}`;
-}
+export const peso = (centavos: number) => PESO.format(toPesos(centavos));
 
-export function shortDate(date: Date | string) {
-  return new Intl.DateTimeFormat("en-PH", {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(date));
-}
+export const formatAccount = (accountNumber: string) =>
+  accountNumber.replace(/(\d{4})(?=\d)/g, "$1 ");
+
+export const maskAccount = (accountNumber: string) =>
+  `•••• ${accountNumber.slice(-4)}`;
+
+export const maskDigits = (value: string) =>
+  value.length <= 4
+    ? value
+    : `${"*".repeat(value.length - 4)}${value.slice(-4)}`;
+
+export const digitsOnly = (value: string, maxLength: number) =>
+  value.replace(/\D/g, "").slice(0, maxLength);
+
+export const shortDate = (date: Date | string) =>
+  SHORT_DATE.format(new Date(date));
+
+export const dateTime = (date: Date | string) =>
+  DATE_TIME.format(new Date(date));
