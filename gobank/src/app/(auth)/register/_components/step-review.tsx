@@ -13,11 +13,19 @@ import { VirtualCard } from "~/app/_components/money/virtual-card";
 
 type StepReviewProps = {
   draft: RegistrationDraft;
+  pending: boolean;
+  error: string | null;
   onSubmit: () => void;
   onBack: () => void;
 };
 
-export function StepReview({ draft, onSubmit, onBack }: StepReviewProps) {
+export function StepReview({
+  draft,
+  pending,
+  error,
+  onSubmit,
+  onBack,
+}: StepReviewProps) {
   const [accepted, setAccepted] = useState(false);
 
   const rows = [
@@ -107,14 +115,33 @@ export function StepReview({ draft, onSubmit, onBack }: StepReviewProps) {
 
       <div className="flex-1" />
 
+      {error ? (
+        <p
+          role="alert"
+          className="bg-danger-soft text-danger mt-6 rounded-xl px-4 py-3 text-[13px]"
+        >
+          {error}
+        </p>
+      ) : null}
+
       <div className="mt-8 flex flex-col gap-1.5">
-        <Button disabled={!accepted} onClick={onSubmit}>
-          Create my account
+        <Button disabled={!accepted || pending} onClick={onSubmit}>
+          {pending ? <Spinner /> : null}
+          {pending ? "Opening your account" : "Create my account"}
         </Button>
-        <Button variant="ghost" onClick={onBack}>
+        <Button variant="ghost" disabled={pending} onClick={onBack}>
           Back
         </Button>
       </div>
     </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden
+      className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+    />
   );
 }

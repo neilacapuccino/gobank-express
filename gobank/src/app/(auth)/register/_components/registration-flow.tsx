@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useReducer, useState } from "react";
 import { StepBar } from "~/app/_components/ui/step-bar";
 import { EMPTY_DRAFT, type RegistrationDraft } from "~/lib/registration";
+import { errorMessage } from "~/trpc/error-message";
+import { api } from "~/trpc/react";
 import { StepCard } from "./step-card";
 import { StepDetails } from "./step-details";
 import { StepIdentity } from "./step-identity";
@@ -24,13 +26,19 @@ function draftReducer(state: RegistrationDraft, action: Action) {
 export function RegistrationFlow() {
   const [draft, dispatch] = useReducer(draftReducer, EMPTY_DRAFT);
   const [step, setStep] = useState(1);
-  const [done, setDone] = useState(false);
+  const register = api.auth.register.useMutation();
 
   const patch = (next: Partial<RegistrationDraft>) =>
     dispatch({ type: "patch", patch: next });
 
-  if (done) {
-    return <AccountReady draft={draft} />;
+  if (register.data) {
+    return (
+      <AccountReady
+        draft={draft}
+        accountNumber={register.data.accountNumber}
+        card={register.data.card}
+      />
+    );
   }
 
   return (
@@ -91,7 +99,18 @@ export function RegistrationFlow() {
         {step === 4 ? (
           <StepReview
             draft={draft}
-            onSubmit={() => setDone(true)}
+            pending={register.isPending}
+            error={errorMessage(register.error)}
+            onSubmit={() =>
+              register.mutate({
+                username: draft.username,
+                pin: draft.pin,
+                brand: draft.brand,
+                fullName: draft.fullName,
+                mobile: draft.mobile,
+                email: draft.email,
+              })
+            }
             onBack={() => setStep(3)}
           />
         ) : null}

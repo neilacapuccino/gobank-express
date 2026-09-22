@@ -10,6 +10,7 @@ import {
   validateUsername,
   type UsernameCheck,
 } from "~/lib/registration";
+import { api } from "~/trpc/react";
 
 type Phase = "username" | "pin" | "confirm";
 
@@ -25,22 +26,30 @@ export function StepIdentity({
   onComplete,
 }: StepIdentityProps) {
   const [phase, setPhase] = useState<Phase>("username");
-  const [check, setCheck] = useState<UsernameCheck>({ state: "idle" });
+  const [debounced, setDebounced] = useState(username);
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
   const [invalid, setInvalid] = useState(false);
 
   useEffect(() => {
-    const result = validateUsername(username);
-    if (result.state !== "available") {
-      setCheck(result);
-      return;
-    }
-    setCheck({ state: "checking" });
-    const timer = setTimeout(() => setCheck({ state: "available" }), 380);
+    const timer = setTimeout(() => setDebounced(username), 380);
     return () => clearTimeout(timer);
   }, [username]);
+
+  const local = validateUsername(username);
+  const lookup = api.auth.usernameAvailable.useQuery(
+    { username: debounced },
+    { enabled: local.state === "available" && debounced === username },
+  );
+  const check: UsernameCheck =
+    local.state !== "available"
+      ? local
+      : debounced !== username || lookup.data === undefined
+        ? { state: "checking" }
+        : lookup.data
+          ? { state: "available" }
+          : { state: "taken", message: "Already taken" };
 
   useEffect(() => {
     if (phase !== "pin" || pin.length !== PIN_LENGTH) return;

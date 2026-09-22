@@ -9,6 +9,10 @@ export function peso(amount: number) {
   return PESO.format(amount);
 }
 
+export function formatAccount(accountNumber: string) {
+  return accountNumber.replace(/(\d{4})(?=\d)/g, "$1 ");
+}
+
 export function maskAccount(accountNumber: string) {
   return `•••• ${accountNumber.slice(-4)}`;
 }

@@ -42,7 +42,7 @@ export function PinPad({ value, onChange, length, invalid }: PinPadProps) {
   return (
     <div className="flex w-full flex-col items-center gap-11">
       <div
-        className="flex gap-4"
+        className={cn("flex gap-4", invalid && "animate-shake")}
         role="status"
         aria-label={`${value.length} of ${length} digits entered`}
       >

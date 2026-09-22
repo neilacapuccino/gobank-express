@@ -1,10 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { maskAccount } from "~/lib/format";
 import { cardholderName, type RegistrationDraft } from "~/lib/registration";
 import { VirtualCard } from "~/app/_components/money/virtual-card";
 
-export function AccountReady({ draft }: { draft: RegistrationDraft }) {
+type AccountReadyProps = {
+  draft: RegistrationDraft;
+  accountNumber: string;
+  card: { number: string; locked: boolean } | null;
+};
+
+export function AccountReady({
+  draft,
+  accountNumber,
+  card,
+}: AccountReadyProps) {
   return (
     <div className="flex flex-1 flex-col justify-center py-6">
       <div className="flex flex-col items-center text-center">
@@ -34,7 +45,11 @@ export function AccountReady({ draft }: { draft: RegistrationDraft }) {
       </div>
 
       <div className="mt-8">
-        <VirtualCard brandId={draft.brand} holder={cardholderName(draft)} />
+        <VirtualCard
+          brandId={draft.brand}
+          holder={cardholderName(draft)}
+          last4={card?.number.slice(-4)}
+        />
       </div>
 
       <dl className="divide-line border-line mt-6 flex divide-x rounded-xl border">
@@ -43,14 +58,16 @@ export function AccountReady({ draft }: { draft: RegistrationDraft }) {
             Account number
           </dt>
           <dd className="text-ink mt-1 text-[15px] font-medium tabular-nums">
-            •••• 4821
+            {maskAccount(accountNumber)}
           </dd>
         </div>
         <div className="flex-1 px-4 py-3.5">
           <dt className="text-ink-muted text-[11px] tracking-wide uppercase">
             Card status
           </dt>
-          <dd className="text-brand mt-1 text-[15px] font-medium">Unlocked</dd>
+          <dd className="text-brand mt-1 text-[15px] font-medium">
+            {card?.locked ? "Locked" : "Unlocked"}
+          </dd>
         </div>
       </dl>
 

@@ -17,8 +17,6 @@ export const RESERVED_USERNAMES = [
   "billing",
 ];
 
-const DEMO_TAKEN_USERNAMES = ["user", "test", "demo", "sample", "example"];
-
 export type UsernameCheck =
   | { state: "idle" }
   | { state: "checking" }
@@ -50,9 +48,6 @@ export function validateUsername(raw: string): UsernameCheck {
   }
   if (RESERVED_USERNAMES.includes(value)) {
     return { state: "taken", message: "This name is reserved" };
-  }
-  if (DEMO_TAKEN_USERNAMES.includes(value)) {
-    return { state: "taken", message: "Already taken" };
   }
   return { state: "available" };
 }
