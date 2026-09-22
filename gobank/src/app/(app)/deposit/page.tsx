@@ -1,5 +1,3 @@
-// Deposit - how money enters the account. Blocked on decision D1 in TASKS.md.
-
 import type { Metadata } from "next";
 import { PlaceholderPage } from "~/app/_components/layout/placeholder-page";
 

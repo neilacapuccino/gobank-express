@@ -1,6 +1,6 @@
 export const MAX_STASHES = 5;
-export const CENTAVOS_PER_POINT_EARNED = 5000;
-export const CENTAVOS_PER_POINT_REDEEMED = 1;
+const CENTAVOS_PER_POINT_EARNED = 5000;
+const CENTAVOS_PER_POINT_REDEEMED = 1;
 
 export const toCentavos = (pesos: number) => Math.round(pesos * 100);
 

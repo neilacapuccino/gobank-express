@@ -1,5 +1,3 @@
-// Screen S12 - searchable, filterable ledger history.
-
 import type { Metadata } from "next";
 import { PlaceholderPage } from "~/app/_components/layout/placeholder-page";
 

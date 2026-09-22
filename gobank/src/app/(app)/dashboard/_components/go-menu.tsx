@@ -38,8 +38,6 @@ export function GoMenu() {
 
   if (!mounted) return null;
 
-  // Portalled to the body: the page transition animates a transform on an
-  // ancestor, which would otherwise make these fixed layers scroll with the page.
   return createPortal(
     <>
       <div

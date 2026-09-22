@@ -1,5 +1,3 @@
-// Screen S11 - points balance and conversion back into the main balance.
-
 import type { Metadata } from "next";
 import { PlaceholderPage } from "~/app/_components/layout/placeholder-page";
 

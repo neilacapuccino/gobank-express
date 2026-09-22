@@ -5,7 +5,7 @@ import { Prisma, type TransactionKind } from "../../../generated/prisma";
 
 export type Tx = Prisma.TransactionClient;
 
-export type Party = { id: string; username: string };
+type Party = { id: string; username: string };
 
 type Entry = {
   userId: string;

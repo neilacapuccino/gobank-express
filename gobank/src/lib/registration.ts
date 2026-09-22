@@ -2,9 +2,9 @@ import type { CardBrandId } from "./card-brands";
 
 export const PIN_LENGTH = 6;
 export const USERNAME_MIN = 3;
-export const USERNAME_MAX = 20;
+const USERNAME_MAX = 20;
 
-export const RESERVED_USERNAMES = [
+const RESERVED_USERNAMES = [
   "admin",
   "administrator",
   "support",

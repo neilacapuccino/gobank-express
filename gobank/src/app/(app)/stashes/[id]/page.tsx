@@ -1,5 +1,3 @@
-// Screen S9 - one Stash, with funding, withdrawal, rename and delete.
-
 import type { Metadata } from "next";
 import { PlaceholderPage } from "~/app/_components/layout/placeholder-page";
 

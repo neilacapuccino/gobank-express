@@ -1,5 +1,3 @@
-// Beyond the brief, agreed as extra scope.
-
 import type { Metadata } from "next";
 import { PlaceholderPage } from "~/app/_components/layout/placeholder-page";
 

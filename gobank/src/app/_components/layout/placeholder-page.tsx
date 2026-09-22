@@ -1,5 +1,3 @@
-// Temporary body for routes that are scaffolded but not yet built.
-
 export function PlaceholderPage({
   screen,
   title,
