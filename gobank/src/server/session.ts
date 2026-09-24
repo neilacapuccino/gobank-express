@@ -12,11 +12,13 @@ const hash = (token: string) =>
 
 export async function startSession(userId: string) {
   const token = randomBytes(32).toString("base64url");
+  const now = new Date();
+  await db.session.deleteMany({ where: { expiresAt: { lt: now } } });
   await db.session.create({
     data: {
       id: hash(token),
       userId,
-      expiresAt: new Date(Date.now() + MAX_AGE * 1000),
+      expiresAt: new Date(now.getTime() + MAX_AGE * 1000),
     },
   });
   (await cookies()).set(COOKIE, token, {
