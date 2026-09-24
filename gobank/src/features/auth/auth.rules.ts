@@ -1,6 +1,8 @@
 import type { CardBrandId } from "~/features/card/card-brands";
 
 export const PIN_LENGTH = 6;
+export const MAX_PIN_ATTEMPTS = 5;
+export const PIN_LOCK_MINUTES = 15;
 export const USERNAME_MIN = 3;
 const USERNAME_MAX = 20;
 
@@ -72,6 +74,14 @@ export function validatePin(pin: string): string | null {
 
   return null;
 }
+
+export const lockExpiry = (now: Date) =>
+  new Date(now.getTime() + PIN_LOCK_MINUTES * 60_000);
+
+export const lockMinutesLeft = (lockedUntil: Date | null, now: Date) =>
+  lockedUntil
+    ? Math.max(0, Math.ceil((lockedUntil.getTime() - now.getTime()) / 60_000))
+    : 0;
 
 export type RegistrationDraft = {
   username: string;

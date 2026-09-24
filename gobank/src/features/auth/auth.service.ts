@@ -3,7 +3,15 @@ import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { startSession } from "~/server/session";
 import type { CardBrand } from "../../../generated/prisma";
+import {
+  lockExpiry,
+  lockMinutesLeft,
+  MAX_PIN_ATTEMPTS,
+  PIN_LOCK_MINUTES,
+} from "./auth.rules";
 import { hashPin, verifyPin } from "./pin";
+
+type PinOwner = { id: string; pinHash: string; lockedUntil: Date | null };
 
 type Registration = {
   username: string;
@@ -42,10 +50,34 @@ export async function register({ pin, brand, ...profile }: Registration) {
   return { accountNumber: user.accountNumber, card: user.card };
 }
 
+async function checkPin(user: PinOwner, pin: string, wrongMessage: string) {
+  const now = new Date();
+  const minutesLeft = lockMinutesLeft(user.lockedUntil, now);
+  if (minutesLeft > 0) {
+    fail("TOO_MANY_REQUESTS", MESSAGES.pinLocked(minutesLeft));
+  }
+
+  const correct = await verifyPin(pin, user.pinHash);
+  const { failedPinAttempts } = await db.user.update({
+    where: { id: user.id },
+    data: correct
+      ? { failedPinAttempts: 0, lockedUntil: null }
+      : { failedPinAttempts: { increment: 1 } },
+    select: { failedPinAttempts: true },
+  });
+  if (correct) return;
+  if (failedPinAttempts < MAX_PIN_ATTEMPTS) fail("UNAUTHORIZED", wrongMessage);
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { failedPinAttempts: 0, lockedUntil: lockExpiry(now) },
+  });
+  fail("TOO_MANY_REQUESTS", MESSAGES.pinLocked(PIN_LOCK_MINUTES));
+}
+
 export async function signIn(username: string, pin: string) {
   const user = await db.user.findUnique({ where: { username } });
-  if (!user || !(await verifyPin(pin, user.pinHash))) {
-    fail("UNAUTHORIZED", MESSAGES.wrongCredentials);
-  }
+  if (!user) return fail("UNAUTHORIZED", MESSAGES.wrongCredentials);
+  await checkPin(user, pin, MESSAGES.wrongCredentials);
   await startSession(user.id);
 }

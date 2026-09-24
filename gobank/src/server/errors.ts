@@ -1,10 +1,17 @@
 import { MAX_STASHES } from "~/shared/lib/money";
 
-type ErrorCode = "BAD_REQUEST" | "UNAUTHORIZED" | "NOT_FOUND" | "CONFLICT";
+type ErrorCode =
+  | "BAD_REQUEST"
+  | "UNAUTHORIZED"
+  | "NOT_FOUND"
+  | "CONFLICT"
+  | "TOO_MANY_REQUESTS";
 
 export const MESSAGES = {
   signInRequired: "Sign in to continue",
   wrongCredentials: "Wrong username or PIN",
+  pinLocked: (minutes: number) =>
+    `Too many wrong PINs. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
   insufficientBalance: "Insufficient balance",
   notEnoughPoints: "Not enough points",
   notEnoughInStash: "Not enough in this Stash",

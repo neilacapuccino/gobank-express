@@ -41,18 +41,20 @@ enum RequestStatus {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  username      String   @unique
-  pinHash       String
-  fullName      String?
-  mobile        String?  @unique
-  email         String?  @unique
-  googleId      String?  @unique
-  accountNumber String   @unique
-  balance       Int      @default(0)
-  points        Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String    @id @default(cuid())
+  username          String    @unique
+  pinHash           String
+  fullName          String?
+  mobile            String?   @unique
+  email             String?   @unique
+  googleId          String?   @unique
+  accountNumber     String    @unique
+  balance           Int       @default(0)
+  points            Int       @default(0)
+  failedPinAttempts Int       @default(0)
+  lockedUntil       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   card             Card?
   sessions         Session[]
