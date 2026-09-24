@@ -1,9 +1,11 @@
 "use client";
 
-import { Button } from "~/shared/ui/button";
-import { TextField } from "~/shared/ui/text-field";
-import { validateEmail, validateMobile } from "~/shared/lib/contact";
+import {
+  ProfileFields,
+  profileIsValid,
+} from "~/features/account/components/profile-fields";
 import { cn } from "~/shared/lib/cn";
+import { Button } from "~/shared/ui/button";
 import { GoogleMark } from "./google-mark";
 
 type StepDetailsProps = {
@@ -32,9 +34,7 @@ export function StepDetails({
   onSkip,
   onBack,
 }: StepDetailsProps) {
-  const mobileError = validateMobile(mobile);
-  const emailError = validateEmail(email);
-  const blocked = Boolean(mobileError ?? emailError);
+  const blocked = !profileIsValid({ fullName, mobile, email });
 
   return (
     <div className="flex flex-1 flex-col">
@@ -48,40 +48,9 @@ export function StepDetails({
       </div>
 
       <div className="mt-8 flex flex-col gap-5">
-        <TextField
-          label="Full name"
-          optional
-          placeholder="Your full name"
-          autoComplete="name"
-          value={fullName}
-          onChange={(event) => onChange({ fullName: event.target.value })}
-          hint="Printed on your card."
-        />
-
-        <TextField
-          label="Mobile number"
-          optional
-          type="tel"
-          inputMode="numeric"
-          placeholder="09XX XXX XXXX"
-          autoComplete="tel"
-          value={mobile}
-          onChange={(event) => onChange({ mobile: event.target.value })}
-          error={mobileError}
-          hint="Lets friends pay you by number."
-        />
-
-        <TextField
-          label="Email"
-          optional
-          type="email"
-          inputMode="email"
-          placeholder="you@example.com"
-          autoComplete="email"
-          autoCapitalize="none"
-          value={email}
-          onChange={(event) => onChange({ email: event.target.value })}
-          error={emailError}
+        <ProfileFields
+          value={{ fullName, mobile, email }}
+          onChange={onChange}
         />
 
         <button

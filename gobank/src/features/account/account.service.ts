@@ -51,3 +51,16 @@ export const getTransaction = (userId: string, reference: string) =>
       counterparty: { select: { username: true, fullName: true } },
     },
   });
+
+type ProfileUpdate = {
+  fullName: string | null;
+  mobile: string | null;
+  email: string | null;
+};
+
+export const updateProfile = (userId: string, profile: ProfileUpdate) =>
+  db.user.update({
+    where: { id: userId },
+    data: profile,
+    select: { id: true },
+  });

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { email, mobile, optionalText } from "~/shared/lib/schemas";
+import { profileFields } from "~/shared/lib/schemas";
 import { pin, pinChange, username } from "./auth.schemas";
 import { endSession } from "~/server/session";
 import {
@@ -24,9 +24,7 @@ export const authRouter = createTRPCRouter({
         username,
         pin,
         brand: z.nativeEnum(CardBrand),
-        fullName: optionalText(80),
-        mobile,
-        email,
+        ...profileFields,
       }),
     )
     .mutation(({ input }) => register(input)),

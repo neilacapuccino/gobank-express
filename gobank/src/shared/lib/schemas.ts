@@ -20,3 +20,9 @@ export const email = z
 
 export const optionalText = (max: number) =>
   z.string().trim().max(max).transform(blankToNull);
+
+export const profileFields = {
+  fullName: optionalText(80),
+  mobile,
+  email,
+};

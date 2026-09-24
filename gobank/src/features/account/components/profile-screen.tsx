@@ -3,6 +3,7 @@ import {
   CreditCard,
   KeyRound,
   Sparkles,
+  UserPen,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -70,6 +71,11 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
       </dl>
 
       <nav className="mt-4 flex flex-col gap-2.5">
+        <ShortcutRow
+          href="/settings/profile"
+          label="Edit profile"
+          icon={UserPen}
+        />
         <ShortcutRow href="/settings/pin" label="Change PIN" icon={KeyRound} />
         <ShortcutRow href="/card" label="Card controls" icon={CreditCard} />
         <ShortcutRow href="/rewards" label="Rewards" icon={Sparkles} />

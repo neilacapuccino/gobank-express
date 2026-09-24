@@ -1,16 +1,22 @@
 import { z } from "zod";
+import { profileFields } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import {
   getOverview,
   getProfile,
   getTransaction,
   listActivity,
+  updateProfile,
 } from "./account.service";
 
 export const accountRouter = createTRPCRouter({
   overview: protectedProcedure.query(({ ctx }) => getOverview(ctx.userId)),
 
   profile: protectedProcedure.query(({ ctx }) => getProfile(ctx.userId)),
+
+  updateProfile: protectedProcedure
+    .input(z.object(profileFields))
+    .mutation(({ ctx, input }) => updateProfile(ctx.userId, input)),
 
   activity: protectedProcedure
     .input(
