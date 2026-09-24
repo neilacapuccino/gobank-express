@@ -11,7 +11,7 @@ export const mobile = z
   .refine((value) => !validateMobile(value), "Use the format 09XXXXXXXXX")
   .transform((value) => blankToNull(normaliseMobile(value)));
 
-export const email = z
+const email = z
   .string()
   .trim()
   .toLowerCase()
