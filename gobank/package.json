@@ -18,6 +18,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "postinstall": "prisma generate",
+    "predev": "prisma generate",
     "preview": "next build && next start",
     "start": "next start -p 3001",
     "typecheck": "tsc --noEmit"
