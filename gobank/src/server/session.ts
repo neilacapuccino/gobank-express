@@ -38,6 +38,11 @@ export const currentUserId = cache(async () => {
   return session.userId;
 });
 
+export async function endOtherSessions(userId: string) {
+  const token = (await cookies()).get(COOKIE)?.value ?? "";
+  await db.session.deleteMany({ where: { userId, id: { not: hash(token) } } });
+}
+
 export async function endSession() {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;

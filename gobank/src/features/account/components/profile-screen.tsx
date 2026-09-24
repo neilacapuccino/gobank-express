@@ -1,8 +1,15 @@
-import { ArrowLeft, ChevronRight, CreditCard, Sparkles } from "lucide-react";
+import {
+  ChevronRight,
+  CreditCard,
+  KeyRound,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { SignOutButton } from "~/features/auth/components/sign-out-button";
 import { formatMobile } from "~/shared/lib/contact";
 import { formatAccount } from "~/shared/lib/format";
+import { PageHeader } from "~/shared/ui/page-header";
 import type { RouterOutputs } from "~/trpc/react";
 import { displayName, initial } from "../account.rules";
 
@@ -26,16 +33,7 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="relative flex h-10 items-center justify-center">
-        <Link
-          href="/dashboard"
-          aria-label="Back to home"
-          className="bg-surface-sunken text-ink-soft hover:bg-surface-raised absolute left-0 grid h-10 w-10 place-items-center rounded-full transition-colors"
-        >
-          <ArrowLeft size={18} strokeWidth={1.9} aria-hidden />
-        </Link>
-        <h1 className="text-ink text-[15px] font-semibold">Profile</h1>
-      </header>
+      <PageHeader title="Profile" back="/dashboard" />
 
       <section className="mt-9 flex flex-col items-center text-center">
         <span className="bg-brand-soft text-brand ring-brand-line grid h-20 w-20 place-items-center rounded-full text-[28px] font-semibold uppercase ring-1">
@@ -72,6 +70,7 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
       </dl>
 
       <nav className="mt-4 flex flex-col gap-2.5">
+        <ShortcutRow href="/settings/pin" label="Change PIN" icon={KeyRound} />
         <ShortcutRow href="/card" label="Card controls" icon={CreditCard} />
         <ShortcutRow href="/rewards" label="Rewards" icon={Sparkles} />
       </nav>
@@ -92,7 +91,7 @@ function ShortcutRow({
 }: {
   href: string;
   label: string;
-  icon: typeof CreditCard;
+  icon: LucideIcon;
 }) {
   return (
     <Link

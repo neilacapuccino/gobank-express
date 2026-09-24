@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { cn } from "~/shared/lib/cn";
+import { buttonClass } from "~/shared/ui/button";
 import { maskAccount } from "~/shared/lib/format";
 import { cardholderName, type RegistrationDraft } from "../auth.rules";
 import { VirtualCard } from "~/features/card/components/virtual-card";
@@ -71,10 +73,7 @@ export function AccountReady({
         </div>
       </dl>
 
-      <Link
-        href="/dashboard"
-        className="bg-brand hover:bg-brand-hover mt-8 inline-flex h-13 w-full items-center justify-center rounded-xl text-[15px] font-medium text-white transition-colors duration-150"
-      >
+      <Link href="/dashboard" className={cn(buttonClass(), "mt-8")}>
         Go to dashboard
       </Link>
     </div>

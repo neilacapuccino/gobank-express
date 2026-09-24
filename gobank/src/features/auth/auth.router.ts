@@ -1,10 +1,14 @@
 import { z } from "zod";
 import { email, mobile, optionalText } from "~/shared/lib/schemas";
-import { pin, username } from "./auth.schemas";
+import { pin, pinChange, username } from "./auth.schemas";
 import { endSession } from "~/server/session";
-import { createTRPCRouter, publicProcedure } from "~/server/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+} from "~/server/trpc";
 import { CardBrand } from "../../../generated/prisma";
-import { isUsernameFree, register, signIn } from "./auth.service";
+import { changePin, isUsernameFree, register, signIn } from "./auth.service";
 
 export const authRouter = createTRPCRouter({
   usernameAvailable: publicProcedure
@@ -41,4 +45,10 @@ export const authRouter = createTRPCRouter({
     .mutation(({ input }) => signIn(input.username, input.pin)),
 
   signOut: publicProcedure.mutation(() => endSession()),
+
+  changePin: protectedProcedure
+    .input(pinChange)
+    .mutation(({ ctx, input }) =>
+      changePin(ctx.userId, input.currentPin, input.newPin),
+    ),
 });

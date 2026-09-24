@@ -10,6 +10,7 @@ type ErrorCode =
 export const MESSAGES = {
   signInRequired: "Sign in to continue",
   wrongCredentials: "Wrong username or PIN",
+  wrongPin: "That PIN is not right",
   pinLocked: (minutes: number) =>
     `Too many wrong PINs. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
   insufficientBalance: "Insufficient balance",

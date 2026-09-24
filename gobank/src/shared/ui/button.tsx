@@ -1,5 +1,3 @@
-"use client";
-
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "~/shared/lib/cn";
 
@@ -17,6 +15,9 @@ const VARIANTS: Record<Variant, string> = {
     "h-11 text-[14px] text-ink-muted hover:text-ink hover:bg-surface-sunken disabled:opacity-45",
 };
 
+export const buttonClass = (variant: Variant = "primary") =>
+  cn(BASE, VARIANTS[variant]);
+
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
   children: ReactNode;
@@ -29,7 +30,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   return (
-    <button className={cn(BASE, VARIANTS[variant], className)} {...props}>
+    <button className={cn(buttonClass(variant), className)} {...props}>
       {children}
     </button>
   );

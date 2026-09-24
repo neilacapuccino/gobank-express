@@ -1,7 +1,7 @@
 import { cardExpiry, newAccountNumber, newCardNumber } from "~/server/codes";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
-import { startSession } from "~/server/session";
+import { endOtherSessions, startSession } from "~/server/session";
 import type { CardBrand } from "../../../generated/prisma";
 import {
   lockExpiry,
@@ -80,4 +80,18 @@ export async function signIn(username: string, pin: string) {
   if (!user) return fail("UNAUTHORIZED", MESSAGES.wrongCredentials);
   await checkPin(user, pin, MESSAGES.wrongCredentials);
   await startSession(user.id);
+}
+
+export async function changePin(
+  userId: string,
+  currentPin: string,
+  newPin: string,
+) {
+  const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
+  await checkPin(user, currentPin, MESSAGES.wrongPin);
+  await db.user.update({
+    where: { id: userId },
+    data: { pinHash: await hashPin(newPin) },
+  });
+  await endOtherSessions(userId);
 }
