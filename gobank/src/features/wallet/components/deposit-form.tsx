@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  ArrowLeft,
-  ArrowRight,
-  Building2,
-  CheckCircle2,
-  CreditCard,
-  Store,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,34 +12,10 @@ import { api } from "~/trpc/react";
 
 const MAX_AMOUNT = 50_000;
 
-type DepositMethod = "bank" | "card" | "cash";
-
-const METHODS = [
-  {
-    id: "bank" as const,
-    title: "Bank Transfer",
-    description: "Transfer from another bank account",
-    icon: Building2,
-  },
-  {
-    id: "card" as const,
-    title: "Debit / Credit Card",
-    description: "Add money using a card",
-    icon: CreditCard,
-  },
-  {
-    id: "cash" as const,
-    title: "Cash Deposit",
-    description: "Deposit cash at a partner location",
-    icon: Store,
-  },
-];
-
 export function DepositForm() {
   const router = useRouter();
 
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<DepositMethod | null>(null);
 
   const deposit = api.wallet.deposit.useMutation();
 
@@ -55,7 +24,6 @@ export function DepositForm() {
   const canContinue =
     amountInCentavos > 0 &&
     amountInCentavos <= MAX_AMOUNT * 100 &&
-    method !== null &&
     !deposit.isPending;
 
   const handleDeposit = () => {
@@ -95,7 +63,10 @@ export function DepositForm() {
 
           <section className="bg-surface-sunken mt-8 w-full rounded-2xl p-5 text-left">
             <div className="text-center">
-              <p className="text-ink-muted text-[12px]">Amount deposited</p>
+              <p className="text-ink-muted text-[12px]">
+                Amount deposited
+              </p>
+
               <p className="text-ink mt-1 text-[30px] font-semibold tracking-tight tabular-nums">
                 {peso(Math.abs(deposit.data.amount))}
               </p>
@@ -106,14 +77,17 @@ export function DepositForm() {
                 label="Transaction"
                 value="Cash in"
               />
+
               <Detail
                 label="Reference"
                 value={deposit.data.reference}
               />
+
               <Detail
                 label="Date"
                 value={dateTime(deposit.data.createdAt)}
               />
+
               <Detail
                 label="New balance"
                 value={peso(deposit.data.balanceAfter)}
@@ -141,13 +115,18 @@ export function DepositForm() {
           aria-label="Back to dashboard"
           className="bg-surface-sunken text-ink-soft hover:bg-surface-raised absolute left-0 grid h-10 w-10 place-items-center rounded-full transition-colors"
         >
-          <ArrowLeft size={18} strokeWidth={1.9} aria-hidden />
+          <ArrowLeft
+            size={18}
+            strokeWidth={1.9}
+            aria-hidden
+          />
         </Link>
 
         <div className="text-center">
           <h1 className="text-[16px] font-semibold tracking-tight">
             Deposit
           </h1>
+
           <p className="text-ink-soft mt-0.5 text-[11px]">
             Add money to your account
           </p>
@@ -156,14 +135,19 @@ export function DepositForm() {
 
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[13px] font-semibold">Amount</h2>
+          <h2 className="text-[13px] font-semibold">
+            Amount
+          </h2>
+
           <span className="text-ink-muted text-[11px]">
             Max ₱50,000
           </span>
         </div>
 
         <div className="border-line-strong focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-2xl border bg-white px-5 py-2 transition-colors focus-within:ring-2">
-          <span className="text-ink-muted text-[25px]">₱</span>
+          <span className="text-ink-muted text-[25px]">
+            ₱
+          </span>
 
           <input
             type="text"
@@ -185,70 +169,27 @@ export function DepositForm() {
 
       <section className="mt-8">
         <h2 className="mb-3 text-[13px] font-semibold">
-          How do you want to add money?
+          Deposit to
         </h2>
 
-        <div className="space-y-2.5">
-          {METHODS.map((item) => {
-            const Icon = item.icon;
-            const selected = method === item.id;
+        <div className="border-brand bg-brand-soft flex items-center gap-3 rounded-2xl border p-4">
+          <div className="bg-brand grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[16px] font-semibold text-white">
+            ₱
+          </div>
 
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setMethod(item.id)}
-                className={cn(
-                  "flex w-full items-center gap-3.5 rounded-2xl border p-4 text-left transition-colors",
-                  selected
-                    ? "border-brand bg-brand-soft"
-                    : "border-line bg-surface hover:bg-surface-sunken",
-                )}
-              >
-                <span
-                  className={cn(
-                    "grid h-11 w-11 shrink-0 place-items-center rounded-xl",
-                    selected
-                      ? "bg-brand-line text-brand"
-                      : "bg-surface-sunken text-ink-soft",
-                  )}
-                >
-                  <Icon size={20} strokeWidth={1.9} />
-                </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-ink text-[13px] font-semibold">
+              Main Spending Account
+            </p>
 
-                <span className="min-w-0 flex-1">
-                  <span className="text-ink block text-[13px] font-semibold">
-                    {item.title}
-                  </span>
-                  <span className="text-ink-muted mt-0.5 block text-[11px]">
-                    {item.description}
-                  </span>
-                </span>
+            <p className="text-ink-muted mt-0.5 text-[11px]">
+              Your GoBank spending balance
+            </p>
+          </div>
 
-                <span
-                  className={cn(
-                    "grid h-6 w-6 place-items-center rounded-full border",
-                    selected
-                      ? "border-brand bg-brand text-white"
-                      : "border-line-strong bg-white",
-                  )}
-                >
-                  {selected ? (
-                    <span className="h-2 w-2 rounded-full bg-white" />
-                  ) : null}
-                </span>
-
-                <ArrowRight
-                  size={16}
-                  className={cn(
-                    "shrink-0",
-                    selected ? "text-brand" : "text-ink-faint",
-                  )}
-                  aria-hidden
-                />
-              </button>
-            );
-          })}
+          <div className="bg-brand grid h-6 w-6 place-items-center rounded-full text-[12px] font-bold text-white">
+            ✓
+          </div>
         </div>
       </section>
 
@@ -277,7 +218,7 @@ export function DepositForm() {
             ? "Processing deposit..."
             : canContinue
               ? "Continue"
-              : "Enter amount and select a method"}
+              : "Enter a valid amount"}
         </button>
 
         <p className="text-ink-soft/60 mt-3 text-center text-[9.5px]">
@@ -297,7 +238,10 @@ function Detail({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-ink-muted text-[12px]">{label}</span>
+      <span className="text-ink-muted text-[12px]">
+        {label}
+      </span>
+
       <span className="text-ink text-right text-[12px] font-medium">
         {value}
       </span>

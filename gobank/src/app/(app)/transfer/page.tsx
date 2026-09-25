@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { TransferForm } from "../../../features/transfers/components/transform-form";
+import { TransferForm } from "../../../features/transfers/components/transfer-form";
 
 export const metadata: Metadata = {
   title: "Send money",
