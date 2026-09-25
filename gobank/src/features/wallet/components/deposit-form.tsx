@@ -4,13 +4,27 @@ import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { dateTime, digitsOnly, peso } from "~/shared/lib/format";
+import { dateTime, peso } from "~/shared/lib/format";
 import { toCentavos } from "~/shared/lib/money";
 import { cn } from "~/shared/lib/cn";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 
 const MAX_AMOUNT = 50_000;
+const MAX_AMOUNT_INTEGER_DIGITS = String(MAX_AMOUNT).length;
+
+const amountInput = (value: string) => {
+  const sanitized = value.replace(/[^\d.]/g, "");
+  const [wholePart = "", ...fractionParts] = sanitized.split(".");
+  const whole = wholePart
+    .replace(/^0+(?=\d)/, "")
+    .slice(0, MAX_AMOUNT_INTEGER_DIGITS);
+  const fraction = fractionParts.join("").slice(0, 2);
+
+  if (!sanitized.includes(".")) return whole;
+
+  return `${whole || "0"}.${fraction}`;
+};
 
 export function DepositForm() {
   const router = useRouter();
@@ -43,9 +57,7 @@ export function DepositForm() {
     return (
       <div className="flex flex-1 flex-col pb-10">
         <header className="relative flex h-16 items-center justify-center">
-          <h1 className="text-[16px] font-semibold tracking-tight">
-            Deposit
-          </h1>
+          <h1 className="text-[16px] font-semibold tracking-tight">Deposit</h1>
         </header>
 
         <div className="flex flex-1 flex-col items-center pt-10 text-center">
@@ -63,9 +75,7 @@ export function DepositForm() {
 
           <section className="bg-surface-sunken mt-8 w-full rounded-2xl p-5 text-left">
             <div className="text-center">
-              <p className="text-ink-muted text-[12px]">
-                Amount deposited
-              </p>
+              <p className="text-ink-muted text-[12px]">Amount deposited</p>
 
               <p className="text-ink mt-1 text-[30px] font-semibold tracking-tight tabular-nums">
                 {peso(Math.abs(deposit.data.amount))}
@@ -73,20 +83,11 @@ export function DepositForm() {
             </div>
 
             <div className="border-line mt-6 space-y-4 border-t pt-4">
-              <Detail
-                label="Transaction"
-                value="Cash in"
-              />
+              <Detail label="Transaction" value="Cash in" />
 
-              <Detail
-                label="Reference"
-                value={deposit.data.reference}
-              />
+              <Detail label="Reference" value={deposit.data.reference} />
 
-              <Detail
-                label="Date"
-                value={dateTime(deposit.data.createdAt)}
-              />
+              <Detail label="Date" value={dateTime(deposit.data.createdAt)} />
 
               <Detail
                 label="New balance"
@@ -115,17 +116,11 @@ export function DepositForm() {
           aria-label="Back to dashboard"
           className="bg-surface-sunken text-ink-soft hover:bg-surface-raised absolute left-0 grid h-10 w-10 place-items-center rounded-full transition-colors"
         >
-          <ArrowLeft
-            size={18}
-            strokeWidth={1.9}
-            aria-hidden
-          />
+          <ArrowLeft size={18} strokeWidth={1.9} aria-hidden />
         </Link>
 
         <div className="text-center">
-          <h1 className="text-[16px] font-semibold tracking-tight">
-            Deposit
-          </h1>
+          <h1 className="text-[16px] font-semibold tracking-tight">Deposit</h1>
 
           <p className="text-ink-soft mt-0.5 text-[11px]">
             Add money to your account
@@ -135,29 +130,22 @@ export function DepositForm() {
 
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-[13px] font-semibold">
-            Amount
-          </h2>
+          <h2 className="text-[13px] font-semibold">Amount</h2>
 
-          <span className="text-ink-muted text-[11px]">
-            Max ₱50,000
-          </span>
+          <span className="text-ink-muted text-[11px]">Max ₱50,000</span>
         </div>
 
         <div className="border-line-strong focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-2xl border bg-white px-5 py-2 transition-colors focus-within:ring-2">
-          <span className="text-ink-muted text-[25px]">
-            ₱
-          </span>
+          <span className="text-ink-muted text-[25px]">₱</span>
 
           <input
             type="text"
             inputMode="decimal"
             value={amount}
             placeholder="0.00"
+            maxLength={MAX_AMOUNT_INTEGER_DIGITS + 3}
             aria-label="Deposit amount"
-            onChange={(event) =>
-              setAmount(digitsOnly(event.target.value, 6))
-            }
+            onChange={(event) => setAmount(amountInput(event.target.value))}
             className="text-ink placeholder:text-ink-faint h-16 w-full bg-transparent px-3 text-[30px] font-semibold tracking-tight outline-none"
           />
         </div>
@@ -168,9 +156,7 @@ export function DepositForm() {
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-3 text-[13px] font-semibold">
-          Deposit to
-        </h2>
+        <h2 className="mb-3 text-[13px] font-semibold">Deposit to</h2>
 
         <div className="border-brand bg-brand-soft flex items-center gap-3 rounded-2xl border p-4">
           <div className="bg-brand grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[16px] font-semibold text-white">
@@ -229,18 +215,10 @@ export function DepositForm() {
   );
 }
 
-function Detail({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-ink-muted text-[12px]">
-        {label}
-      </span>
+      <span className="text-ink-muted text-[12px]">{label}</span>
 
       <span className="text-ink text-right text-[12px] font-medium">
         {value}
