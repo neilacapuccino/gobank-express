@@ -155,13 +155,32 @@ npm run dev
 The app is served at [http://localhost:3001](http://localhost:3001) with
 Turbopack and hot reload.
 
+### After pulling new changes
+
+The Prisma client in `generated/prisma` is built on each machine and is not
+in git, and new commits can add packages or migrations. After every
+`git pull`, from `gobank/`:
+
+```bash
+npm install
+```
+
+```bash
+npm run db:migrate
+```
+
+`npm install` also rebuilds the Prisma client, and `db:migrate` applies any
+new migrations (it does nothing if the database is already up to date).
+`npm run dev` regenerates the client too, so a missed `npm install` no longer
+shows "Can't resolve '../../generated/prisma'".
+
 ## Available scripts
 
 Run from the `gobank/` directory.
 
 | Script | Action |
 | ------ | ------ |
-| `npm run dev` | Development server with Turbopack |
+| `npm run dev` | Regenerate the Prisma client, then start the dev server on port 3001 |
 | `npm run build` | Production build |
 | `npm run start` | Serve an existing production build |
 | `npm run preview` | Build, then serve the result |
