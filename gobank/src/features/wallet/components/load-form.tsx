@@ -31,9 +31,7 @@ export function LoadForm() {
 
   const validMobile = /^9\d{9}$/.test(mobile);
 
-  const validAmount =
-    amountNumber >= MIN_AMOUNT &&
-    amountNumber <= MAX_AMOUNT;
+  const validAmount = amountNumber >= MIN_AMOUNT && amountNumber <= MAX_AMOUNT;
 
   const canContinue = validMobile && validAmount;
 
@@ -92,9 +90,7 @@ export function LoadForm() {
     return (
       <div className="flex flex-1 flex-col pb-10">
         <header className="flex h-16 items-center justify-center">
-          <h1 className="text-ink text-[16px] font-semibold">
-            Buy load
-          </h1>
+          <h1 className="text-ink text-[16px] font-semibold">Buy load</h1>
         </header>
 
         <div className="flex flex-1 flex-col items-center pt-10 text-center">
@@ -112,9 +108,7 @@ export function LoadForm() {
 
           <section className="bg-surface-sunken mt-8 w-full rounded-2xl p-5 text-left">
             <div className="text-center">
-              <p className="text-ink-muted text-[12px]">
-                Load amount
-              </p>
+              <p className="text-ink-muted text-[12px]">Load amount</p>
 
               <p className="text-ink mt-1 text-[30px] font-semibold tabular-nums">
                 {peso(Math.abs(load.data.amount))}
@@ -122,25 +116,13 @@ export function LoadForm() {
             </div>
 
             <div className="border-line mt-6 space-y-4 border-t pt-4">
-              <Detail
-                label="Mobile number"
-                value={`+63 ${mobile}`}
-              />
+              <Detail label="Mobile number" value={`+63 ${mobile}`} />
 
-              <Detail
-                label="Transaction"
-                value="Mobile load"
-              />
+              <Detail label="Transaction" value="Mobile load" />
 
-              <Detail
-                label="Reference"
-                value={load.data.reference}
-              />
+              <Detail label="Reference" value={load.data.reference} />
 
-              <Detail
-                label="Date"
-                value={dateTime(load.data.createdAt)}
-              />
+              <Detail label="Date" value={dateTime(load.data.createdAt)} />
 
               <Detail
                 label="New balance"
@@ -187,9 +169,7 @@ export function LoadForm() {
               </div>
 
               <div>
-                <p className="text-ink-muted text-[11px]">
-                  Mobile number
-                </p>
+                <p className="text-ink-muted text-[11px]">Mobile number</p>
 
                 <p className="text-ink mt-0.5 text-[15px] font-semibold">
                   +63 {mobile}
@@ -200,15 +180,11 @@ export function LoadForm() {
         </section>
 
         <section className="mt-6">
-          <p className="text-ink-muted text-[12px]">
-            Purchase details
-          </p>
+          <p className="text-ink-muted text-[12px]">Purchase details</p>
 
           <div className="border-line mt-2 overflow-hidden rounded-2xl border bg-white">
             <div className="flex items-center justify-between px-4 py-4">
-              <span className="text-ink-soft text-[13px]">
-                Load amount
-              </span>
+              <span className="text-ink-soft text-[13px]">Load amount</span>
 
               <span className="text-ink text-[14px] font-semibold">
                 {peso(amountInCentavos)}
@@ -217,9 +193,7 @@ export function LoadForm() {
 
             <div className="border-line border-t px-4 py-4">
               <div className="flex items-center justify-between">
-                <span className="text-ink-soft text-[13px]">
-                  Total
-                </span>
+                <span className="text-ink-soft text-[13px]">Total</span>
 
                 <span className="text-ink text-[18px] font-semibold">
                   {peso(amountInCentavos)}
@@ -273,7 +247,7 @@ export function LoadForm() {
         </Link>
 
         <div className="text-center">
-          <p className="text-brand text-[11px] font-medium uppercase tracking-[0.18em]">
+          <p className="text-brand text-[11px] font-medium tracking-[0.18em] uppercase">
             Buy load
           </p>
 
@@ -293,9 +267,7 @@ export function LoadForm() {
         </p>
 
         <div className="border-line-strong focus-within:border-brand mt-4 flex h-14 items-center rounded-xl border bg-white px-4">
-          <span className="text-ink-muted mr-2 text-[14px]">
-            +63
-          </span>
+          <span className="text-ink-muted mr-2 text-[14px]">+63</span>
 
           <input
             type="tel"
@@ -303,9 +275,7 @@ export function LoadForm() {
             value={mobile}
             placeholder="917 123 4567"
             maxLength={10}
-            onChange={(event) =>
-              handleMobileChange(event.target.value)
-            }
+            onChange={(event) => handleMobileChange(event.target.value)}
             className="text-ink placeholder:text-ink-faint h-full w-full bg-transparent text-[15px] outline-none"
           />
         </div>
@@ -313,13 +283,9 @@ export function LoadForm() {
 
       <section className="mt-8">
         <div className="flex items-center justify-between">
-          <p className="text-ink text-[14px] font-semibold">
-            Choose amount
-          </p>
+          <p className="text-ink text-[14px] font-semibold">Choose amount</p>
 
-          <span className="text-ink-muted text-[11px]">
-            ₱10 - ₱10,000
-          </span>
+          <span className="text-ink-muted text-[11px]">₱10 - ₱10,000</span>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
@@ -335,7 +301,7 @@ export function LoadForm() {
                   "h-14 rounded-xl border text-[15px] font-semibold transition-all",
                   selected
                     ? "border-brand bg-brand-soft text-brand"
-                    : "border-line-strong bg-white text-ink hover:bg-surface-sunken",
+                    : "border-line-strong text-ink hover:bg-surface-sunken bg-white",
                 )}
               >
                 ₱{value.toLocaleString("en-PH")}
@@ -346,14 +312,10 @@ export function LoadForm() {
       </section>
 
       <section className="mt-7">
-        <p className="text-ink text-[14px] font-semibold">
-          Or enter an amount
-        </p>
+        <p className="text-ink text-[14px] font-semibold">Or enter an amount</p>
 
         <div className="border-line-strong focus-within:border-brand mt-3 flex h-14 items-center rounded-xl border bg-white px-4">
-          <span className="text-ink-muted mr-2 text-[18px]">
-            ₱
-          </span>
+          <span className="text-ink-muted mr-2 text-[18px]">₱</span>
 
           <input
             type="text"
@@ -361,9 +323,7 @@ export function LoadForm() {
             value={amount}
             placeholder="0"
             maxLength={5}
-            onChange={(event) =>
-              handleAmountChange(event.target.value)
-            }
+            onChange={(event) => handleAmountChange(event.target.value)}
             className="text-ink placeholder:text-ink-faint h-full w-full bg-transparent text-[17px] font-semibold outline-none"
           />
         </div>
@@ -392,18 +352,10 @@ export function LoadForm() {
   );
 }
 
-function Detail({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-ink-muted text-[12px]">
-        {label}
-      </span>
+      <span className="text-ink-muted text-[12px]">{label}</span>
 
       <span className="text-ink max-w-[65%] text-right text-[12px] font-medium">
         {value}

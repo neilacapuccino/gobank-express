@@ -143,7 +143,7 @@ export function RequestForm() {
         )}
 
         <div className="text-center">
-          <p className="text-brand text-[11px] font-medium uppercase tracking-[0.18em]">
+          <p className="text-brand text-[11px] font-medium tracking-[0.18em] uppercase">
             Request
           </p>
 
@@ -352,7 +352,9 @@ function ReviewStep({
   return (
     <div className="flex flex-1 flex-col">
       <section className="mt-6">
-        <p className="text-ink-muted text-[11px]">You&apos;re requesting from</p>
+        <p className="text-ink-muted text-[11px]">
+          You&apos;re requesting from
+        </p>
 
         <div className="mt-2 flex items-center gap-3">
           <div className="bg-brand-soft text-brand grid h-12 w-12 place-items-center rounded-full">
