@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "~/shared/ui/placeholder-page";
+import { RequestForm } from "~/features/requests/components/request-form";
 
 export const metadata: Metadata = {
-  title: "Request",
+  title: "Request money",
 };
 
 export default function RequestPage() {
-  return <PlaceholderPage screen="Request" title="Request money" />;
+  return <RequestForm />;
 }
