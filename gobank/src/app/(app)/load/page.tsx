@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "~/shared/ui/placeholder-page";
+import { LoadForm } from "~/features/wallet/components/load-form";
 
 export const metadata: Metadata = {
   title: "Buy load",
 };
 
 export default function LoadPage() {
-  return <PlaceholderPage screen="Buy load" title="Buy load" />;
+  return <LoadForm />;
 }
