@@ -428,7 +428,7 @@ function ReviewStep({
   return (
     <div className="flex flex-1 flex-col">
       <section className="mt-6">
-        <p className="text-ink-muted text-[11px]">You're sending to</p>
+        <p className="text-ink-muted text-[11px]">Youre sending to</p>
 
         <div className="mt-2 flex items-center gap-3">
           <div className="bg-brand-soft text-brand grid h-12 w-12 place-items-center rounded-full">
