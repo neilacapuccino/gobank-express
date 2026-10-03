@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "~/shared/ui/placeholder-page";
+import { GoalSaveScreen } from "~/features/stashes/components/goalsave-screen";
 
 export const metadata: Metadata = {
-  title: "Stashes",
+  title: "GoalSave",
 };
 
 export default function StashesPage() {
-  return <PlaceholderPage screen="S8" title="Stashes" />;
+  return <GoalSaveScreen />;
 }

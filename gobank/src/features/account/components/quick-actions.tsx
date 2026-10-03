@@ -1,25 +1,23 @@
-import { ArrowDownToLine, HandCoins, Send } from "lucide-react";
 import Link from "next/link";
-
-const ACTIONS = [
-  { href: "/transfer", label: "Send", icon: Send },
-  { href: "/deposit", label: "Deposit", icon: ArrowDownToLine },
-  { href: "/request", label: "Request", icon: HandCoins },
+import { PocketIcon, type PocketIconName } from "~/shared/ui/pocket-art";
+const actions: { href: string; label: string; icon: PocketIconName }[] = [
+  { href: "/transfer", label: "Send money", icon: "send" },
+  { href: "/deposit", label: "Add money", icon: "deposit" },
+  { href: "/request", label: "Request", icon: "request" },
 ];
-
 export function QuickActions() {
   return (
-    <div className="flex items-start justify-around">
-      {ACTIONS.map(({ href, label, icon: Icon }) => (
+    <div className="grid grid-cols-3 gap-3">
+      {actions.map(({ href, label, icon }) => (
         <Link
           key={href}
           href={href}
-          className="group flex w-20 flex-col items-center gap-2.5"
+          className="group flex flex-col items-center gap-2.5 rounded-2xl py-2 text-[#282938] focus-visible:outline-2 focus-visible:outline-offset-2"
         >
-          <span className="bg-brand-soft text-brand group-hover:bg-brand-line grid h-14 w-14 place-items-center rounded-2xl transition-colors duration-150">
-            <Icon size={21} strokeWidth={1.9} aria-hidden />
+          <span className="grid h-14 w-14 place-items-center rounded-[20px] border border-white/80 bg-white shadow-[0_5px_12px_-6px_#0089a440] transition-transform group-hover:-translate-y-1">
+            <PocketIcon name={icon} />
           </span>
-          <span className="text-ink text-[12.5px] font-medium">{label}</span>
+          <span className="text-[11px] font-semibold">{label}</span>
         </Link>
       ))}
     </div>

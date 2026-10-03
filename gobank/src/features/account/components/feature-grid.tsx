@@ -1,22 +1,6 @@
-import type { LucideIcon } from "lucide-react";
-import {
-  ChevronRight,
-  PiggyBank,
-  Receipt,
-  Smartphone,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-
-type Row = {
-  href: string;
-  label: string;
-  description: string;
-  meta?: string;
-  icon: LucideIcon;
-};
-
+import { PocketIcon } from "~/shared/ui/pocket-art";
 export function FeatureGrid({
   points,
   stashCount,
@@ -26,94 +10,100 @@ export function FeatureGrid({
   stashCount: number;
   stashLimit: number;
 }) {
-  const rows: Row[] = [
-    {
-      href: "/rewards",
-      label: "GoRewards",
-      description: "Turn your points into cash",
-      meta: `${points.toLocaleString()} pts`,
-      icon: Sparkles,
-    },
+  const rows = [
     {
       href: "/stashes",
-      label: "GoalSave",
-      description: "Savings goals that earn on their own",
-      meta: `${stashCount} of ${stashLimit}`,
-      icon: PiggyBank,
+      icon: "goal" as const,
+      title: "GoalSave",
+      description: "A little saved. A lot to look forward to.",
+      meta: `${stashCount} of ${stashLimit} goals`,
     },
     {
       href: "/stocks",
-      label: "Stocks",
-      description: "Invest from as little as ₱50",
-      icon: TrendingUp,
+      icon: "chart" as const,
+      title: "Stocks",
+      description: "Explore your next investment",
+      meta: null,
     },
   ];
-
   return (
-    <section className="flex flex-col gap-2.5">
-      {rows.map((row) => {
-        const Icon = row.icon;
-        return (
-          <Link
-            key={row.href}
-            href={row.href}
-            className="group bg-surface-sunken hover:bg-surface-raised flex items-center gap-3.5 rounded-2xl px-4 py-3.5 transition-colors duration-150"
-          >
-            <span className="bg-brand-soft text-brand grid h-11 w-11 shrink-0 place-items-center rounded-xl">
-              <Icon size={19} strokeWidth={1.9} aria-hidden />
+    <section className="flex flex-col gap-3">
+      <Link
+        href="/rewards"
+        className="flex min-h-20 items-center justify-between gap-3 rounded-[26px] bg-white px-5 py-4 shadow-[0_5px_18px_-10px_#256d8035]"
+      >
+        <div className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#fff0c9] text-[#713cad]">
+            <PocketIcon name="spark" width={27} height={27} />
+          </span>
+          <span>
+            <span className="block text-[16px] font-bold text-[#252638]">
+              GoRewards
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="text-ink block text-[14px] font-medium">
-                {row.label}
-              </span>
-              <span className="text-ink-muted block truncate text-[12px]">
-                {row.description}
-              </span>
+            <span className="text-[12px] text-[#555c6c]">
+              {points.toLocaleString()} points to enjoy
             </span>
-            {row.meta ? (
-              <span className="text-ink-soft shrink-0 text-[12.5px] font-medium tabular-nums">
+          </span>
+        </div>
+        <ArrowRight size={18} className="text-[#282938]" aria-hidden />
+      </Link>
+      {rows.map((row) => (
+        <Link
+          key={row.href}
+          href={row.href}
+          className="flex min-h-24 items-center gap-4 rounded-[26px] bg-white p-5 shadow-[0_5px_18px_-10px_#256d8035] transition-transform hover:-translate-y-0.5"
+        >
+          <PocketIcon
+            name={row.icon}
+            className="shrink-0 text-[#282938]"
+            width={28}
+            height={28}
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[19px] font-bold tracking-tight text-[#282938]">
+              {row.title}
+            </span>
+            <span className="mt-1 block text-[12px] leading-relaxed text-[#555c6c]">
+              {row.description}
+            </span>
+            {row.meta && (
+              <span className="mt-2 block text-[10px] font-semibold text-[#5631bb]">
                 {row.meta}
               </span>
-            ) : null}
-            <ChevronRight
-              size={16}
-              strokeWidth={2}
-              aria-hidden
-              className="text-ink-faint group-hover:text-ink-muted shrink-0 transition-colors"
-            />
+            )}
+          </span>
+          <ArrowRight
+            size={18}
+            className="shrink-0 text-[#282938]"
+            aria-hidden
+          />
+        </Link>
+      ))}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { href: "/load", label: "Buy load", icon: "phone" as const },
+          { href: "/bills", label: "Pay bills", icon: "bill" as const },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex min-h-20 items-center justify-center gap-3 rounded-[24px] bg-white px-3 py-4 text-[14px] font-bold text-[#282938] shadow-[0_5px_18px_-10px_#256d8035]"
+          >
+            <PocketIcon name={item.icon} width={25} height={25} />
+            {item.label}
           </Link>
-        );
-      })}
-
-      <div className="mt-0.5 grid grid-cols-2 gap-2.5">
-        <Compact href="/bills" label="Pay bills" icon={Receipt} />
-        <Compact href="/load" label="Buy load" icon={Smartphone} />
+        ))}
       </div>
+      <Link
+        href="/card"
+        className="mt-1 flex items-center justify-between rounded-2xl px-2 py-3 text-[16px] font-semibold text-[#282938]"
+      >
+        <span className="flex items-center gap-3">
+          <PocketIcon name="card" />
+          My card
+        </span>
+        <ArrowRight size={18} aria-hidden />
+      </Link>
     </section>
-  );
-}
-
-function Compact({
-  href,
-  label,
-  icon: Icon,
-}: {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-}) {
-  return (
-    <Link
-      href={href}
-      className="bg-brand-soft hover:bg-brand-line flex h-14 items-center justify-center gap-2.5 rounded-2xl transition-colors duration-150"
-    >
-      <Icon
-        size={18}
-        strokeWidth={1.9}
-        aria-hidden
-        className="text-brand shrink-0"
-      />
-      <span className="text-ink text-[13px] font-medium">{label}</span>
-    </Link>
   );
 }

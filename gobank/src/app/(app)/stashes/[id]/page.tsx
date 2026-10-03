@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "~/shared/ui/placeholder-page";
+import { GoalDetail } from "~/features/stashes/components/goal-detail";
 
 export const metadata: Metadata = {
-  title: "Stash",
+  title: "GoalSave",
 };
 
-export default function StashDetailPage() {
-  return <PlaceholderPage screen="S9" title="Stash" />;
+export default async function StashDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <GoalDetail id={id} />;
 }
