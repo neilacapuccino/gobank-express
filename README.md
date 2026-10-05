@@ -4,7 +4,8 @@ A student-friendly digital banking application inspired by modern neobanks such
 as GoTyme. GoBank Express reduces core financial operations to an approachable,
 mobile-first model: a main spending account, high-interest goal-based savings
 called **Stashes**, instant peer-to-peer transfers, and cash-convertible reward
-points earned on everyday spending. All amounts are in Philippine Pesos (₱).
+points earned on everyday spending. Banking amounts are in Philippine Pesos (₱).
+The Bitcoin practice portfolio uses separate simulated USDT balances.
 
 > **Status:** early development. The database schema covers every feature
 > below; several screens are still scaffolded placeholders.
@@ -34,6 +35,31 @@ points earned on everyday spending. All amounts are in Philippine Pesos (₱).
 - Earn **1 point per ₱50.00** on eligible outward transfers and bill payments.
 - Convert points to cash back credited to the main balance at
   **100 points = ₱1.00**.
+
+### Bitcoin practice portfolio
+
+- Bitcoin only, at `/stocks`, with a black market screen, live BTC/USDT ticker,
+  line and candlestick charts, and 1-hour through 90-day history.
+- Public Binance market data requires no API key. A WebSocket supplies live
+  updates, with a 15-second REST refresh as fallback. Historical candles refresh
+  once per minute. The screen shows feed status and the price timestamp.
+- Each signed-in user starts with **10,000 practice USDT**. Fractional buys and
+  sells persist in PostgreSQL with holdings, average cost, realized/unrealized
+  profit or loss, and the latest 20 trades.
+- These are **simulated trades**. No exchange orders, real Bitcoin custody,
+  deposits, or withdrawals are provided. The peso wallet is independent.
+- Fill prices come from the server's market feed. Stale quotes block trades.
+  Cents/satoshis use integer arithmetic, and database transactions, version
+  checks, and per-user request IDs protect concurrent and repeated submissions.
+
+Run `npm run test:bitcoin` for the calculation tests. With a migrated database and
+network access, `npm run test:bitcoin:integration` verifies feeds, persistence,
+duplicate submissions, concurrency, and account isolation using temporary test
+users that are deleted afterward.
+
+Apply the new migration with `npm run db:migrate`, then regenerate Prisma with
+`npm install` (or `npx prisma generate`) before starting the app. On Windows,
+stop the dev server before generating if it holds the Prisma engine DLL open.
 
 ## Tech stack
 

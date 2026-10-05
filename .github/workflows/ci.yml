@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, staging, develop]
+    branches: [main, staging, develop, codex/bitcoin]
   pull_request:
     branches: [main, staging, develop]
 
@@ -53,6 +53,9 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Bitcoin calculation tests
+        run: npm run test:bitcoin
 
       - name: Build
         run: npm run build

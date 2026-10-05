@@ -21,8 +21,8 @@ export function FeatureGrid({
     {
       href: "/stocks",
       icon: "chart" as const,
-      title: "Stocks",
-      description: "Explore your next investment",
+      title: "Bitcoin",
+      description: "Live market. Your Bitcoin portfolio.",
       meta: null,
     },
   ];

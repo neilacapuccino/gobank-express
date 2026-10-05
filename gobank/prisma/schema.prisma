@@ -60,9 +60,45 @@ model User {
   sessions         Session[]
   stashes          Stash[]
   transactions     Transaction[]
-  counterpartyOf   Transaction[]  @relation("Counterparty")
-  requestsSent     MoneyRequest[] @relation("Requester")
-  requestsReceived MoneyRequest[] @relation("Payer")
+  counterpartyOf   Transaction[]   @relation("Counterparty")
+  requestsSent     MoneyRequest[]  @relation("Requester")
+  requestsReceived MoneyRequest[]  @relation("Payer")
+  bitcoinAccount   BitcoinAccount?
+}
+
+// Practice trading is separate from the peso wallet and its ledger.
+model BitcoinAccount {
+  userId         String   @id
+  cashCents      Int      @default(1000000)
+  satoshis       BigInt   @default(0)
+  costBasisCents Int      @default(0)
+  realizedCents  Int      @default(0)
+  version        Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders BitcoinOrder[]
+}
+
+model BitcoinOrder {
+  id            String   @id @default(cuid())
+  accountId     String
+  requestId     String
+  side          String
+  satoshis      BigInt
+  cashCents     Int
+  priceCents    Int
+  realizedCents Int      @default(0)
+  cashAfter     Int
+  satoshisAfter BigInt
+  quotedAt      DateTime
+  createdAt     DateTime @default(now())
+
+  account BitcoinAccount @relation(fields: [accountId], references: [userId], onDelete: Cascade)
+
+  @@unique([accountId, requestId])
+  @@index([accountId, createdAt(sort: Desc)])
 }
 
 model Session {

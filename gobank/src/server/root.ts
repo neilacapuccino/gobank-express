@@ -1,6 +1,7 @@
 import { accountRouter } from "~/features/account/account.router";
 import { authRouter } from "~/features/auth/auth.router";
 import { billsRouter } from "~/features/bills/bills.router";
+import { bitcoinRouter } from "~/features/bitcoin/bitcoin.router";
 import { cardRouter } from "~/features/card/card.router";
 import { requestsRouter } from "~/features/requests/requests.router";
 import { rewardsRouter } from "~/features/rewards/rewards.router";
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   stashes: stashesRouter,
   card: cardRouter,
   rewards: rewardsRouter,
+  bitcoin: bitcoinRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "~/shared/ui/placeholder-page";
+import { BitcoinScreen } from "~/features/bitcoin/components/bitcoin-screen";
 
 export const metadata: Metadata = {
-  title: "Stocks",
+  title: "Bitcoin",
 };
 
 export default function StocksPage() {
-  return <PlaceholderPage screen="Stocks" title="Invest" />;
+  return <BitcoinScreen />;
 }
