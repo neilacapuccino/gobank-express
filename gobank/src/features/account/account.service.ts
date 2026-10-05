@@ -1,4 +1,5 @@
 import { db } from "~/server/db";
+import { normalizeProfilePhoto } from "./profile-photo.server";
 
 export const getOverview = (userId: string) =>
   db.user.findUniqueOrThrow({
@@ -6,6 +7,7 @@ export const getOverview = (userId: string) =>
     select: {
       username: true,
       fullName: true,
+      profilePhoto: true,
       accountNumber: true,
       balance: true,
       points: true,
@@ -20,6 +22,7 @@ export const getProfile = (userId: string) =>
     select: {
       username: true,
       fullName: true,
+      profilePhoto: true,
       mobile: true,
       email: true,
       accountNumber: true,
@@ -56,11 +59,19 @@ type ProfileUpdate = {
   fullName: string | null;
   mobile: string | null;
   email: string | null;
+  profilePhoto?: string | null;
 };
 
-export const updateProfile = (userId: string, profile: ProfileUpdate) =>
-  db.user.update({
+export const updateProfile = async (userId: string, profile: ProfileUpdate) => {
+  const { profilePhoto, ...fields } = profile;
+  return db.user.update({
     where: { id: userId },
-    data: profile,
+    data: {
+      ...fields,
+      ...(profilePhoto !== undefined
+        ? { profilePhoto: await normalizeProfilePhoto(profilePhoto) }
+        : {}),
+    },
     select: { id: true },
   });
+};

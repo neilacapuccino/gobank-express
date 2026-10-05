@@ -1,4 +1,5 @@
 import { Bell } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { MAX_STASHES } from "~/shared/lib/money";
 import { PocketIcon } from "~/shared/ui/pocket-art";
@@ -19,13 +20,24 @@ export function DashboardScreen({ account }: { account: Overview }) {
           aria-label="Profile and settings"
           className="text-ink grid h-11 w-11 place-items-center transition-opacity hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-4"
         >
-          <PocketIcon
-            name="profile"
-            width={24}
-            height={24}
-            fill="currentColor"
-            stroke="none"
-          />
+          {account.profilePhoto ? (
+            <Image
+              src={account.profilePhoto}
+              alt="Your profile photo"
+              width={36}
+              height={36}
+              unoptimized
+              className="h-9 w-9 rounded-full object-cover"
+            />
+          ) : (
+            <PocketIcon
+              name="profile"
+              width={24}
+              height={24}
+              fill="currentColor"
+              stroke="none"
+            />
+          )}
         </Link>
         <h1 className="text-ink min-w-0">
           <GoBankLogo className="mx-auto h-[46px] w-[126px] max-w-full" />

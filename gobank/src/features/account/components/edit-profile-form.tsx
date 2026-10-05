@@ -6,6 +6,8 @@ import { Button } from "~/shared/ui/button";
 import { PageHeader } from "~/shared/ui/page-header";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { prepareProfilePhoto } from "../profile-photo.client";
+import { ProfilePhotoPicker } from "./profile-photo-picker";
 import {
   ProfileFields,
   profileIsValid,
@@ -16,6 +18,9 @@ type Profile = RouterOutputs["account"]["profile"];
 
 export function EditProfileForm({ profile }: { profile: Profile }) {
   const router = useRouter();
+  const [photo, setPhoto] = useState(profile.profilePhoto);
+  const [preparingPhoto, setPreparingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [value, setValue] = useState<ProfileValues>({
     fullName: profile.fullName ?? "",
     mobile: profile.mobile ?? "",
@@ -29,17 +34,42 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
     },
   });
 
+  const selectPhoto = async (file: File) => {
+    setPreparingPhoto(true);
+    setPhotoError(null);
+    try {
+      setPhoto(await prepareProfilePhoto(file));
+    } catch (error) {
+      setPhotoError(
+        error instanceof Error ? error.message : "Couldn’t read that photo.",
+      );
+    } finally {
+      setPreparingPhoto(false);
+    }
+  };
+
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault();
-        save.mutate(value);
+        if (!preparingPhoto && !save.isPending)
+          save.mutate({ ...value, profilePhoto: photo });
       }}
       className="flex flex-1 flex-col"
     >
       <PageHeader title="Edit profile" back="/settings" />
 
       <div className="mt-8 flex flex-col gap-5">
+        <ProfilePhotoPicker
+          photo={photo}
+          busy={preparingPhoto || save.isPending || save.isSuccess}
+          error={photoError}
+          onSelect={(file) => void selectPhoto(file)}
+          onRemove={() => {
+            setPhoto(null);
+            setPhotoError(null);
+          }}
+        />
         <ProfileFields
           value={value}
           onChange={(patch) =>
@@ -62,7 +92,12 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
       <Button
         type="submit"
         className="mt-8"
-        disabled={!profileIsValid(value) || save.isPending || save.isSuccess}
+        disabled={
+          !profileIsValid(value) ||
+          preparingPhoto ||
+          save.isPending ||
+          save.isSuccess
+        }
       >
         {save.isPending || save.isSuccess ? "Saving" : "Save changes"}
       </Button>

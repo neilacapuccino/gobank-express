@@ -46,6 +46,7 @@ model User {
   username          String    @unique
   pinHash           String
   fullName          String?
+  profilePhoto      String?
   mobile            String?   @unique
   email             String?   @unique
   googleId          String?   @unique

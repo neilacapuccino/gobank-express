@@ -1,4 +1,5 @@
 import {
+  Camera,
   ChevronRight,
   CreditCard,
   KeyRound,
@@ -12,7 +13,8 @@ import { formatMobile } from "~/shared/lib/contact";
 import { formatAccount } from "~/shared/lib/format";
 import { PageHeader } from "~/shared/ui/page-header";
 import type { RouterOutputs } from "~/trpc/react";
-import { displayName, initial } from "../account.rules";
+import { displayName } from "../account.rules";
+import { ProfileAvatar } from "./profile-avatar";
 
 type Profile = RouterOutputs["account"]["profile"];
 
@@ -37,9 +39,16 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
       <PageHeader title="Profile" back="/dashboard" />
 
       <section className="mt-9 flex flex-col items-center text-center">
-        <span className="bg-brand-soft text-brand ring-brand-line grid h-20 w-20 place-items-center rounded-full text-[28px] font-semibold uppercase ring-1">
-          {initial(profile)}
-        </span>
+        <Link
+          href="/settings/profile"
+          aria-label="Change profile photo"
+          className="relative rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d5f3]"
+        >
+          <ProfileAvatar photo={profile.profilePhoto} />
+          <span className="border-surface absolute right-0 bottom-0 grid h-6 w-6 place-items-center rounded-full border-2 bg-[#2b373d] text-[#71d5f3]">
+            <Camera size={12} aria-hidden />
+          </span>
+        </Link>
         <p className="text-ink mt-4 text-[19px] font-semibold tracking-tight">
           {displayName(profile)}
         </p>

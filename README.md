@@ -36,6 +36,17 @@ Bitcoin purchases use the main PHP account balance directly.
 - Convert points to cash back credited to the main balance at
   **100 points = ₱1.00**.
 
+### Profile and GO shortcuts
+
+- Profile uses a default person icon. In Edit profile, add, replace or remove a
+  PNG, JPG or WebP photo up to 5 MB. Uploaded photos are cropped and saved as
+  256-pixel WebP avatars, with server validation and source metadata removed.
+- The dark GO menu links to Send money, Add money, Request, GoalSave, Pay bills,
+  Buy load, Bitcoin and Profile. Its orb transitions to two rotating petal
+  layers with a clear close button; reduced-motion preferences are respected.
+- Run `npm run test:profile` for upload validation tests and
+  `npm run test:profile:integration` for persistence and account isolation checks.
+
 ### Bitcoin portfolio
 
 - Bitcoin only, at `/stocks`, with a black screen and prices, holdings and

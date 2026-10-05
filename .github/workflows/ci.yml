@@ -57,5 +57,8 @@ jobs:
       - name: Bitcoin calculation tests
         run: npm run test:bitcoin
 
+      - name: Profile photo tests
+        run: npm run test:profile
+
       - name: Build
         run: npm run build
