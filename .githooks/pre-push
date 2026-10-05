@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+cd "$(git rev-parse --show-toplevel)/gobank"
+NEXT_DIST_DIR=.next-build npm run check:ci

@@ -60,5 +60,8 @@ jobs:
       - name: Profile photo tests
         run: npm run test:profile
 
+      - name: Savings compound interest tests
+        run: npm run test:savings
+
       - name: Build
         run: npm run build

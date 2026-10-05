@@ -20,7 +20,8 @@ void test("raster uploads become square WebP avatars without source metadata", a
     const photo = await normalizeProfilePhoto(
       `data:image/${format};base64,${bytes.toString("base64")}`,
     );
-    assert.ok(photo?.startsWith("data:image/webp;base64,"));
+    assert.ok(photo);
+    assert.ok(photo.startsWith("data:image/webp;base64,"));
     const metadata = await sharp(
       Buffer.from(photo.split(",")[1]!, "base64"),
     ).metadata();
