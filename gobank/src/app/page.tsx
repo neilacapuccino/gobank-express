@@ -16,7 +16,7 @@ export default function WelcomePage() {
         </header>
 
         <div className="flex flex-1 flex-col justify-center">
-          <section className="flex flex-col items-center pt-2 pb-6 text-center">
+          <section className="flex flex-col items-center pt-2 pb-8 text-center">
             <div className="relative isolate h-[300px] w-full max-w-[380px] shrink-0">
               <div
                 aria-hidden
