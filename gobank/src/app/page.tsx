@@ -12,7 +12,7 @@ export default function WelcomePage() {
     <div className="min-h-dvh bg-[#020b16] text-[#f4f7fc]">
       <main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col border-[#172333] px-6 py-6 sm:border-x">
         <header className="flex shrink-0 justify-center">
-          <GoBankLogo className="h-9 w-[110px]" />
+          <GoBankLogo className="h-14 w-[142px]" />
         </header>
 
         <div className="flex flex-1 flex-col justify-center">
