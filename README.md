@@ -5,7 +5,7 @@ as GoTyme. GoBank Express reduces core financial operations to an approachable,
 mobile-first model: a main spending account, high-interest goal-based savings
 called **Stashes**, instant peer-to-peer transfers, and cash-convertible reward
 points earned on everyday spending. Banking amounts are in Philippine Pesos (₱).
-The Bitcoin practice portfolio uses separate simulated USDT balances.
+Bitcoin purchases use the main PHP account balance directly.
 
 > **Status:** early development. The database schema covers every feature
 > below; several screens are still scaffolded placeholders.
@@ -36,30 +36,36 @@ The Bitcoin practice portfolio uses separate simulated USDT balances.
 - Convert points to cash back credited to the main balance at
   **100 points = ₱1.00**.
 
-### Bitcoin practice portfolio
+### Bitcoin portfolio
 
-- Bitcoin only, at `/stocks`, with a black market screen, live BTC/USDT ticker,
-  line and candlestick charts, and 1-hour through 90-day history.
-- Public Binance market data requires no API key. A WebSocket supplies live
-  updates, with a 15-second REST refresh as fallback. Historical candles refresh
-  once per minute. The screen shows feed status and the price timestamp.
-- Each signed-in user starts with **10,000 practice USDT**. Fractional buys and
-  sells persist in PostgreSQL with holdings, average cost, realized/unrealized
-  profit or loss, and the latest 20 trades.
-- These are **simulated trades**. No exchange orders, real Bitcoin custody,
-  deposits, or withdrawals are provided. The peso wallet is independent.
-- Fill prices come from the server's market feed. Stale quotes block trades.
-  Cents/satoshis use integer arithmetic, and database transactions, version
-  checks, and per-user request IDs protect concurrent and repeated submissions.
+- Bitcoin only, at `/stocks`, with a black screen and prices, holdings and
+  trade amounts in PHP. Buy directly from the main PHP account; sell Bitcoin to
+  credit PHP back. There is no USD wallet or manual currency conversion.
+- Live Binance.US BTC/USD market data is priced in pesos using Frankfurter's
+  daily USD/PHP reference rate. The reference date is shown; PHP prices follow
+  Bitcoin updates. Historical candles use the current reference rate.
+- Line and candlestick charts show 1 minute, 1 hour, 1 week, 1 month or 1 year.
+  Short views use one-minute candles. The stream updates current OHLC candles
+  about every two seconds, with a five-second REST fallback and pause/resume.
+  Longer ranges use hourly, four-hour and daily candles.
+- Fractional buys and sells persist with average cost, realized/unrealized
+  profit or loss and the latest 20 trades. The PHP debit/credit, bank activity
+  reference and Bitcoin holding commit together. Self-trades earn no rewards.
+- Server prices and stale-quote checks protect trades. Integer centavos and
+  satoshis prevent balance drift. Serializable transactions, version checks and
+  per-user request IDs guard concurrent and repeated submissions.
+- External exchange execution, Bitcoin custody and withdrawals are not connected.
+  Legacy preview and conversion records are retained separately from active
+  PHP holdings. New holdings start at zero with no free account money.
 
-Run `npm run test:bitcoin` for the calculation tests. With a migrated database and
-network access, `npm run test:bitcoin:integration` verifies feeds, persistence,
-duplicate submissions, concurrency, and account isolation using temporary test
-users that are deleted afterward.
+Run `npm run test:bitcoin` for calculation and candle tests. With a migrated
+database and network access, `npm run test:bitcoin:integration` verifies feeds,
+PHP ledger settlement, persistence, duplicates, concurrency and user isolation
+using temporary users that are deleted afterward.
 
-Apply the new migration with `npm run db:migrate`, then regenerate Prisma with
-`npm install` (or `npx prisma generate`) before starting the app. On Windows,
-stop the dev server before generating if it holds the Prisma engine DLL open.
+Apply migrations with `npm run db:migrate`, then regenerate Prisma with
+`npm install` (or `npx prisma generate`). On Windows, stop the dev server first
+if it holds the Prisma engine DLL open.
 
 ## Tech stack
 

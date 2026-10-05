@@ -22,7 +22,7 @@
     "preview": "next build && next start",
     "start": "next start -p 3001",
     "typecheck": "tsc --noEmit",
-    "test:bitcoin": "node --import tsx --test src/features/bitcoin/bitcoin.rules.test.ts",
+    "test:bitcoin": "node --import tsx --test src/features/bitcoin/bitcoin.rules.test.ts src/features/bitcoin/bitcoin.candles.test.ts",
     "test:bitcoin:integration": "node --conditions=react-server --import tsx scripts/verify-bitcoin.ts"
   },
   "dependencies": {

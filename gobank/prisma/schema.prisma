@@ -31,6 +31,7 @@ enum TransactionKind {
   stash
   reward
   interest
+  exchange
 }
 
 enum RequestStatus {
@@ -60,16 +61,17 @@ model User {
   sessions         Session[]
   stashes          Stash[]
   transactions     Transaction[]
-  counterpartyOf   Transaction[]   @relation("Counterparty")
-  requestsSent     MoneyRequest[]  @relation("Requester")
-  requestsReceived MoneyRequest[]  @relation("Payer")
+  counterpartyOf   Transaction[]     @relation("Counterparty")
+  requestsSent     MoneyRequest[]    @relation("Requester")
+  requestsReceived MoneyRequest[]    @relation("Payer")
   bitcoinAccount   BitcoinAccount?
+  investmentWallet InvestmentWallet?
 }
 
-// Practice trading is separate from the peso wallet and its ledger.
+// Legacy preview records are retained separately from funded investments.
 model BitcoinAccount {
   userId         String   @id
-  cashCents      Int      @default(1000000)
+  cashCents      Int      @default(0)
   satoshis       BigInt   @default(0)
   costBasisCents Int      @default(0)
   realizedCents  Int      @default(0)
@@ -96,6 +98,61 @@ model BitcoinOrder {
   createdAt     DateTime @default(now())
 
   account BitcoinAccount @relation(fields: [accountId], references: [userId], onDelete: Cascade)
+
+  @@unique([accountId, requestId])
+  @@index([accountId, createdAt(sort: Desc)])
+}
+
+model InvestmentWallet {
+  // Archived USD field retained to preserve existing database records.
+  legacyUsdCents      Int                  @default(0) @map("cashCents")
+  userId              String               @id
+  satoshis            BigInt               @default(0)
+  costBasisCents      Int                  @default(0)
+  realizedCents       Int                  @default(0)
+  version             Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders              InvestmentOrder[]
+  archivedConversions CurrencyConversion[]
+}
+
+model InvestmentOrder {
+  id            String           @id @default(cuid())
+  accountId     String
+  requestId     String
+  reference     String?          @unique
+  side          String
+  satoshis      BigInt
+  cashCents     Int
+  priceCents    Int
+  realizedCents Int              @default(0)
+  phpAfter      Int              @map("cashAfter")
+  satoshisAfter BigInt
+  quotedAt      DateTime
+  createdAt     DateTime         @default(now())
+  account       InvestmentWallet @relation(fields: [accountId], references: [userId], onDelete: Cascade)
+
+  @@unique([accountId, requestId])
+  @@index([accountId, createdAt(sort: Desc)])
+}
+
+// Archived conversion records; the active feature has no USD wallet or conversion endpoints.
+model CurrencyConversion {
+  id          String           @id @default(cuid())
+  accountId   String
+  requestId   String
+  reference   String           @unique
+  direction   String
+  phpCentavos Int
+  usdCents    Int
+  rateScaled  BigInt
+  rateDate    String
+  phpAfter    Int
+  usdAfter    Int
+  createdAt   DateTime         @default(now())
+  account     InvestmentWallet @relation(fields: [accountId], references: [userId], onDelete: Cascade)
 
   @@unique([accountId, requestId])
   @@index([accountId, createdAt(sort: Desc)])

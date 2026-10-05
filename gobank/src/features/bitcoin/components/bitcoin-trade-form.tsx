@@ -3,12 +3,13 @@
 import { useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Check, X } from "lucide-react";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { useRouter } from "next/navigation";
 import { calculateTrade } from "../bitcoin.rules";
 import {
   btc,
   MAX_CENTS,
   parseUnits,
-  usdt,
+  money,
   type BitcoinQuote,
 } from "../bitcoin.types";
 
@@ -25,6 +26,7 @@ export function BitcoinTradeForm({
   fresh: boolean;
 }) {
   const utils = api.useUtils();
+  const router = useRouter();
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [amount, setAmount] = useState("100");
   const [review, setReview] = useState(false);
@@ -37,6 +39,8 @@ export function BitcoinTradeForm({
       request.current = null;
       setAmount(side === "buy" ? "100" : "");
       void utils.bitcoin.portfolio.invalidate();
+      void utils.account.invalidate();
+      router.refresh();
     },
   });
   const parsed = parseUnits(amount, side === "buy" ? 2 : 8);
@@ -62,8 +66,8 @@ export function BitcoinTradeForm({
         ? `Use up to ${side === "buy" ? 2 : 8} decimal places.`
         : side === "buy"
           ? parsed === 0n
-            ? "Enter at least 1.00 USDT."
-            : "This amount exceeds the practice account limit."
+            ? "Enter at least ₱1.00."
+            : "This amount exceeds the account limit."
           : "Enter a Bitcoin amount greater than zero.";
   }
   if (side === "sell" && portfolio?.satoshis === 0n) {
@@ -93,7 +97,7 @@ export function BitcoinTradeForm({
   return (
     <section
       className="rounded-[24px] border border-white/[.07] bg-[#171719] p-5"
-      aria-label="Practice Bitcoin trading"
+      aria-label="Bitcoin trading"
     >
       <div className="mb-5 flex rounded-xl bg-[#101012] p-1">
         {(["buy", "sell"] as const).map((value) => (
@@ -128,11 +132,11 @@ export function BitcoinTradeForm({
       >
         <div className="mb-2 flex items-center justify-between gap-2 text-[11px]">
           <label htmlFor="bitcoin-amount" className="text-ink-soft">
-            {side === "buy" ? "Spend practice cash" : "Bitcoin to sell"}
+            {side === "buy" ? "Spend from PHP account" : "Bitcoin to sell"}
           </label>
           <span className="text-ink-muted">
             {portfolio
-              ? `${side === "buy" ? usdt(portfolio.cashCents) + " USDT" : btc(portfolio.satoshis) + " BTC"} available`
+              ? `${side === "buy" ? money(portfolio.cashCents) + " PHP" : btc(portfolio.satoshis) + " BTC"} available`
               : "Loading balance…"}
           </span>
         </div>
@@ -150,7 +154,7 @@ export function BitcoinTradeForm({
             className="min-w-0 flex-1 bg-transparent py-4 text-[25px] font-medium text-white tabular-nums outline-none placeholder:text-white/20"
           />
           <span className="text-ink-muted text-[12px] font-semibold">
-            {side === "buy" ? "USDT" : "BTC"}
+            {side === "buy" ? "PHP" : "BTC"}
           </span>
         </div>
         <div className="mt-3 grid grid-cols-4 gap-2">
@@ -183,13 +187,13 @@ export function BitcoinTradeForm({
             <span className="text-ink-muted">
               {side === "buy"
                 ? "You receive ≈ " + btc(preview.satoshis) + " BTC"
-                : "You receive ≈ " + usdt(preview.cashCents) + " USDT"}
+                : "You receive ≈ " + money(preview.cashCents) + " PHP"}
             </span>
           ) : (
             <span className="text-ink-muted">
               {side === "sell"
                 ? "You can sell any fraction of your Bitcoin."
-                : "Start with as little as 1.00 USDT."}
+                : "Buy directly with PHP from your account."}
             </span>
           )}
         </div>
@@ -202,7 +206,7 @@ export function BitcoinTradeForm({
         </button>
       </form>
       <p className="text-ink-faint mt-3 text-center text-[10px] leading-relaxed">
-        Practice trades only · No real funds or exchange orders
+        Paid directly from your PHP account
       </p>
       {success && (
         <div
@@ -215,7 +219,7 @@ export function BitcoinTradeForm({
               {success.side === "buy" ? "Bitcoin bought" : "Bitcoin sold"}
             </p>
             <p className="mt-1 text-[11px]">
-              {btc(success.satoshis)} BTC · {usdt(success.cashCents)} USDT
+              {btc(success.satoshis)} BTC · {money(success.cashCents)} PHP
             </p>
           </div>
         </div>
@@ -256,7 +260,7 @@ export function BitcoinTradeForm({
           >
             <div className="flex items-center justify-between">
               <h2 id="bitcoin-review-title" className="text-lg font-semibold">
-                Review practice {side}
+                Review {side}
               </h2>
               <button
                 autoFocus
@@ -281,17 +285,18 @@ export function BitcoinTradeForm({
                   {side === "buy" ? "Estimated cost" : "Estimated proceeds"}
                 </dt>
                 <dd className="font-semibold tabular-nums">
-                  {preview ? usdt(preview.cashCents) : "—"} USDT
+                  {preview ? money(preview.cashCents) : "—"} PHP
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-ink-muted">Practice fee</dt>
-                <dd>0.00 USDT</dd>
+                <dt className="text-ink-muted">Trading fee</dt>
+                <dd>0.00 PHP</dd>
               </div>
             </dl>
             <p className="text-ink-muted mt-5 rounded-xl bg-white/5 p-3 text-[11px] leading-relaxed">
-              Your final fill uses the latest Binance price when confirmed. This
-              is a simulated trade with practice USDT.
+              Your final fill uses the latest Binance.US price when confirmed.
+              Buying debits your PHP account. Selling credits PHP back to your
+              account.
             </p>
             {mutation.error && (
               <p role="alert" className="mt-4 text-[12px] text-rose-300">

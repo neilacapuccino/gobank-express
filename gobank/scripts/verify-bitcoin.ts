@@ -1,9 +1,9 @@
-// Run with: node --conditions=react-server --import tsx scripts/verify-bitcoin.ts
-// Uses only temporary test users; their accounts and trades are deleted afterward.
+// Temporary users exercise settlement without moving anyone else's money.
 import "dotenv/config";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { db } from "../src/server/db";
+import { post } from "../src/server/ledger";
 import {
   getBitcoinPortfolio,
   tradeBitcoin,
@@ -12,20 +12,34 @@ import {
   getBitcoinChart,
   getBitcoinQuote,
 } from "../src/features/bitcoin/bitcoin.market";
-
+import {
+  BITCOIN_RANGES,
+  quoteIsFresh,
+} from "../src/features/bitcoin/bitcoin.types";
 const suffix = randomUUID().replaceAll("-", "");
 const ids: string[] = [];
 try {
   const quote = await getBitcoinQuote();
-  assert.ok(quote.priceCents > 0);
-  for (const range of ["1H", "1D", "1W", "1M", "3M"] as const) {
+  assert.ok(quote.priceCents > 0 && quote.phpPerUsd > 1);
+  assert.ok(quoteIsFresh(quote.asOf, Date.now()));
+  const response = await fetch(
+    "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSD",
+    { signal: AbortSignal.timeout(8_000) },
+  );
+  const source = (await response.json()) as { lastPrice: string };
+  const phpExpected = Number(source.lastPrice) * quote.phpPerUsd * 100;
+  assert.ok(
+    Math.abs(quote.priceCents - phpExpected) / phpExpected < 0.01,
+    "PHP quote must convert USD feed values",
+  );
+  for (const range of BITCOIN_RANGES) {
     const chart = await getBitcoinChart(range);
     assert.ok(chart.length >= 2);
     assert.ok(
       chart.every((point, i) => i === 0 || point.time > chart[i - 1]!.time),
     );
   }
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     const user = await db.user.create({
       data: {
         username: `btc_test_${suffix}_${i}`,
@@ -34,7 +48,30 @@ try {
       },
     });
     ids.push(user.id);
-    await getBitcoinPortfolio(user.id);
+    // Old preview balances and holdings must never become funded PHP assets.
+    await db.bitcoinAccount.create({
+      data: {
+        userId: user.id,
+        cashCents: 1_000_000,
+        satoshis: 100_000n,
+        costBasisCents: 100,
+      },
+    });
+    const empty = await getBitcoinPortfolio(user.id);
+    assert.equal(empty.cashCents, 0);
+    assert.equal(empty.satoshis, 0n);
+    assert.equal(empty.orders.length, 0);
+    await assert.rejects(
+      tradeBitcoin(user.id, randomUUID(), { side: "buy", cashCents: 100 }),
+    );
+    await db.$transaction((tx) =>
+      post(tx, {
+        userId: user.id,
+        kind: "deposit",
+        title: "Integration test funding",
+        amount: 1_000_000,
+      }),
+    );
   }
   const userId = ids[0]!;
   const requestId = randomUUID();
@@ -44,13 +81,18 @@ try {
   ]);
   assert.equal(first.id, repeated.id);
   assert.equal(
-    await db.bitcoinOrder.count({ where: { accountId: userId } }),
+    await db.investmentOrder.count({ where: { accountId: userId } }),
     1,
   );
-  assert.equal(
-    (await getBitcoinPortfolio(userId)).cashCents,
-    1_000_000 - first.cashCents,
-  );
+  const bought = await getBitcoinPortfolio(userId);
+  assert.equal(bought.cashCents, 1_000_000 - first.cashCents);
+  assert.ok(first.reference);
+  const debit = await db.transaction.findUniqueOrThrow({
+    where: { reference_userId: { reference: first.reference, userId } },
+  });
+  assert.equal(debit.amount, -first.cashCents);
+  assert.equal(debit.balanceAfter, bought.cashCents);
+  assert.equal(debit.points, 0);
   await assert.rejects(
     tradeBitcoin(userId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),
   );
@@ -60,17 +102,37 @@ try {
       satoshis: first.satoshis,
     }),
   );
-  await tradeBitcoin(userId, randomUUID(), {
+  const sale = await tradeBitcoin(userId, randomUUID(), {
     side: "sell",
     satoshis: first.satoshis,
   });
   const sold = await getBitcoinPortfolio(userId);
+  assert.equal(sold.cashCents, bought.cashCents + sale.cashCents);
   assert.equal(sold.satoshis, 0n);
   assert.equal(sold.costBasisCents, 0);
   assert.equal(sold.orders.length, 2);
+  assert.ok(sale.reference);
   assert.equal(
-    (await db.user.findUniqueOrThrow({ where: { id: userId } })).balance,
-    0,
+    (
+      await db.transaction.findUniqueOrThrow({
+        where: { reference_userId: { reference: sale.reference, userId } },
+      })
+    ).amount,
+    sale.cashCents,
+  );
+  const entryCount = await db.transaction.count({ where: { userId } });
+  await assert.rejects(
+    tradeBitcoin(userId, randomUUID(), {
+      side: "buy",
+      cashCents: sold.cashCents + 100,
+    }),
+  );
+  assert.equal((await getBitcoinPortfolio(userId)).cashCents, sold.cashCents);
+  assert.equal(await db.transaction.count({ where: { userId } }), entryCount);
+  assert.equal(
+    (await db.bitcoinAccount.findUniqueOrThrow({ where: { userId } }))
+      .cashCents,
+    1_000_000,
   );
   const raceId = ids[1]!;
   const race = await Promise.allSettled([
@@ -82,8 +144,29 @@ try {
     1,
   );
   assert.ok((await getBitcoinPortfolio(raceId)).cashCents >= 0);
+  assert.equal(
+    await db.investmentOrder.count({ where: { accountId: raceId } }),
+    1,
+  );
+  const mixedId = ids[2]!;
+  const mixed = await Promise.allSettled([
+    tradeBitcoin(mixedId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),
+    db.$transaction((tx) =>
+      post(tx, {
+        userId: mixedId,
+        kind: "transfer",
+        title: "Competing test account spending",
+        amount: -1_000_000,
+      }),
+    ),
+  ]);
+  assert.equal(
+    mixed.filter((result) => result.status === "fulfilled").length,
+    1,
+  );
+  assert.ok((await getBitcoinPortfolio(mixedId)).cashCents >= 0);
   console.log(
-    "Bitcoin integration passed: live quotes, all chart ranges, persisted buy/sell, idempotency, concurrent balance protection, user isolation, unchanged peso wallet.",
+    "Integration passed: converted PHP quotes, all five ranges, direct bank debit/credit, trade persistence, matching activity references, idempotency, concurrent trades/account spending, rollback, user isolation, no rewards and legacy data preservation.",
   );
 } finally {
   if (ids.length) await db.user.deleteMany({ where: { id: { in: ids } } });

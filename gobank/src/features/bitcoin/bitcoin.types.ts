@@ -1,5 +1,15 @@
-export const BITCOIN_RANGES = ["1H", "1D", "1W", "1M", "3M"] as const;
+export const BITCOIN_RANGES = ["1MIN", "1H", "1W", "1M", "1Y"] as const;
 export type BitcoinRange = (typeof BITCOIN_RANGES)[number];
+export const BITCOIN_CANDLES: Record<
+  BitcoinRange,
+  { interval: string; limit: number; label: string }
+> = {
+  "1MIN": { interval: "1m", limit: 2, label: "1-minute candles" },
+  "1H": { interval: "1m", limit: 60, label: "1-minute candles" },
+  "1W": { interval: "1h", limit: 168, label: "1-hour candles" },
+  "1M": { interval: "4h", limit: 180, label: "4-hour candles" },
+  "1Y": { interval: "1d", limit: 365, label: "1-day candles" },
+};
 export type BitcoinQuote = {
   priceCents: number;
   openCents: number;
@@ -7,6 +17,8 @@ export type BitcoinQuote = {
   lowCents: number;
   volume: number;
   asOf: number;
+  phpPerUsd: number;
+  rateDate: string;
 };
 export type BitcoinCandle = {
   time: number;
@@ -17,13 +29,13 @@ export type BitcoinCandle = {
   volume: number;
 };
 export const SATOSHIS = 100_000_000n;
-export const STARTING_CASH = 1_000_000;
+
 export const MAX_CENTS = 2_000_000_000;
 
 export const quoteIsFresh = (asOf: number, now: number) =>
   Number.isFinite(asOf) && now - asOf < 60_000 && asOf - now < 10_000;
 
-export const usdt = (cents: number) =>
+export const money = (cents: number) =>
   new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

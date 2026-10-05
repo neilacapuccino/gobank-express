@@ -1,8 +1,10 @@
 import "server-only";
 import { z } from "zod";
 import { fail } from "~/server/errors";
+import { getPhpRate } from "./bitcoin.fx";
 import {
   MAX_CENTS,
+  BITCOIN_CANDLES,
   quoteIsFresh,
   type BitcoinCandle,
   type BitcoinQuote,
@@ -11,7 +13,7 @@ import {
 
 const numeric = z.coerce.number().finite().positive();
 const ticker = z.object({
-  symbol: z.literal("BTCUSDT"),
+  symbol: z.literal("BTCUSD"),
   lastPrice: numeric,
   openPrice: numeric,
   highPrice: numeric,
@@ -29,13 +31,6 @@ const candle = z
     z.coerce.number().finite().nonnegative(),
   ])
   .rest(z.unknown());
-const RANGE: Record<BitcoinRange, { interval: string; limit: number }> = {
-  "1H": { interval: "1m", limit: 60 },
-  "1D": { interval: "15m", limit: 96 },
-  "1W": { interval: "1h", limit: 168 },
-  "1M": { interval: "4h", limit: 180 },
-  "3M": { interval: "1d", limit: 90 },
-};
 const FEED_ERROR =
   "Bitcoin market data is unavailable. Please try again shortly.";
 type Cache<T> = { expires: number; promise: Promise<T> };
@@ -44,14 +39,11 @@ const charts = new Map<BitcoinRange, Cache<BitcoinCandle[]>>();
 
 async function read<T>(path: string, schema: z.ZodType<T>): Promise<T> {
   try {
-    const response = await fetch(
-      `https://data-api.binance.vision/api/v3/${path}`,
-      {
-        cache: "no-store",
-        signal: AbortSignal.timeout(8_000),
-        headers: { Accept: "application/json" },
-      },
-    );
+    const response = await fetch(`https://api.binance.us/api/v3/${path}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(8_000),
+      headers: { Accept: "application/json" },
+    });
     if (!response.ok) throw new Error("Market feed request failed");
     return schema.parse(await response.json());
   } catch {
@@ -63,14 +55,19 @@ export async function getBitcoinQuote(): Promise<BitcoinQuote> {
   if (!quoteCache || quoteCache.expires <= Date.now()) {
     const entry = {
       expires: Date.now() + 5_000,
-      promise: read("ticker/24hr?symbol=BTCUSDT", ticker).then((value) => {
+      promise: Promise.all([
+        read("ticker/24hr?symbol=BTCUSD", ticker),
+        getPhpRate(),
+      ]).then(([value, fx]) => {
         const result = {
-          priceCents: Math.round(value.lastPrice * 100),
-          openCents: Math.round(value.openPrice * 100),
-          highCents: Math.round(value.highPrice * 100),
-          lowCents: Math.round(value.lowPrice * 100),
+          priceCents: Math.round(value.lastPrice * fx.rate * 100),
+          openCents: Math.round(value.openPrice * fx.rate * 100),
+          highCents: Math.round(value.highPrice * fx.rate * 100),
+          lowCents: Math.round(value.lowPrice * fx.rate * 100),
           volume: value.volume,
           asOf: value.closeTime,
+          phpPerUsd: fx.rate,
+          rateDate: fx.date,
         };
         if (
           result.priceCents <= 0 ||
@@ -92,11 +89,11 @@ export async function getBitcoinQuote(): Promise<BitcoinQuote> {
 export function getBitcoinChart(range: BitcoinRange) {
   const existing = charts.get(range);
   if (existing && existing.expires > Date.now()) return existing.promise;
-  const { interval, limit } = RANGE[range];
+  const { interval, limit } = BITCOIN_CANDLES[range];
   const entry = {
-    expires: Date.now() + 60_000,
+    expires: Date.now() + 5_000,
     promise: read(
-      `klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`,
+      `klines?symbol=BTCUSD&interval=${interval}&limit=${limit}`,
       z.array(candle).min(2),
     ).then((rows) =>
       rows

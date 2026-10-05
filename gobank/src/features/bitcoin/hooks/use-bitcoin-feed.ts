@@ -8,7 +8,7 @@ import { MAX_CENTS, quoteIsFresh, type BitcoinQuote } from "../bitcoin.types";
 const positive = z.coerce.number().finite().positive();
 const tick = z.object({
   e: z.literal("24hrTicker"),
-  s: z.literal("BTCUSDT"),
+  s: z.literal("BTCUSD"),
   E: z.number().int().positive(),
   c: positive,
   o: positive,
@@ -26,8 +26,11 @@ export function useBitcoinFeed() {
   const [stream, setStream] = useState<BitcoinQuote | null>(null);
   const [connected, setConnected] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const phpPerUsd = snapshot.data?.phpPerUsd;
+  const rateDate = snapshot.data?.rateDate;
 
   useEffect(() => {
+    if (!phpPerUsd || !rateDate) return;
     let disposed = false;
     let socket: WebSocket | undefined;
     let reconnect: ReturnType<typeof setTimeout> | undefined;
@@ -35,9 +38,7 @@ export function useBitcoinFeed() {
     let received = Date.now();
     const connect = () => {
       if (disposed) return;
-      socket = new WebSocket(
-        "wss://data-stream.binance.vision/ws/btcusdt@ticker",
-      );
+      socket = new WebSocket("wss://stream.binance.us:9443/ws/btcusd@ticker");
       socket.onmessage = (event) => {
         try {
           const result = tick.safeParse(
@@ -46,7 +47,7 @@ export function useBitcoinFeed() {
           if (!result.success || !quoteIsFresh(result.data.E, Date.now()))
             return;
           const value = result.data;
-          const priceCents = Math.round(value.c * 100);
+          const priceCents = Math.round(value.c * phpPerUsd * 100);
           if (priceCents <= 0 || priceCents > MAX_CENTS) return;
           received = Date.now();
           delay = 1_000;
@@ -56,11 +57,13 @@ export function useBitcoinFeed() {
               ? previous
               : {
                   priceCents,
-                  openCents: Math.round(value.o * 100),
-                  highCents: Math.round(value.h * 100),
-                  lowCents: Math.round(value.l * 100),
+                  openCents: Math.round(value.o * phpPerUsd * 100),
+                  highCents: Math.round(value.h * phpPerUsd * 100),
+                  lowCents: Math.round(value.l * phpPerUsd * 100),
                   volume: value.v,
                   asOf: value.E,
+                  phpPerUsd,
+                  rateDate,
                 },
           );
         } catch {
@@ -91,11 +94,12 @@ export function useBitcoinFeed() {
       clearTimeout(reconnect);
       socket?.close();
     };
-  }, []);
+  }, [phpPerUsd, rateDate]);
 
   const quote =
-    stream && (!snapshot.data || stream.asOf > snapshot.data.asOf)
-      ? stream
+    stream?.phpPerUsd === snapshot.data?.phpPerUsd &&
+    (stream?.asOf ?? 0) > (snapshot.data?.asOf ?? 0)
+      ? (stream ?? snapshot.data)
       : snapshot.data;
   const fresh = !!quote && quoteIsFresh(quote.asOf, now);
   return {

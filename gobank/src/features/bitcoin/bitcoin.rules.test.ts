@@ -1,16 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculateTrade, type PracticeAccount } from "./bitcoin.rules";
-import {
-  btc,
-  parseUnits,
-  quoteIsFresh,
-  SATOSHIS,
-  STARTING_CASH,
-} from "./bitcoin.types";
+import { calculateTrade, type TradingBalances } from "./bitcoin.rules";
+import { btc, parseUnits, quoteIsFresh, SATOSHIS } from "./bitcoin.types";
 
-const empty = (): PracticeAccount => ({
-  cashCents: STARTING_CASH,
+const FUNDED_CASH = 1_000_000;
+const empty = (): TradingBalances => ({
+  cashCents: FUNDED_CASH,
   satoshis: 0n,
   costBasisCents: 0,
   realizedCents: 0,
@@ -61,10 +56,10 @@ void test("insufficient funds, overselling, invalid amounts and tiny sales are r
     () =>
       calculateTrade(
         empty(),
-        { side: "buy", cashCents: STARTING_CASH + 1 },
+        { side: "buy", cashCents: FUNDED_CASH + 1 },
         10_000_000,
       ),
-    /cash/,
+    /PHP/,
   );
   assert.throws(
     () => calculateTrade(empty(), { side: "sell", satoshis: 1n }, 10_000_000),
@@ -104,8 +99,8 @@ void test("round trips at the same price never manufacture cash through rounding
       { side: "sell", satoshis: buy.satoshis },
       price,
     );
-    assert.ok(sell.next.cashCents <= STARTING_CASH);
-    assert.ok(sell.next.cashCents >= STARTING_CASH - 1);
+    assert.ok(sell.next.cashCents <= FUNDED_CASH);
+    assert.ok(sell.next.cashCents >= FUNDED_CASH - 1);
     assert.equal(sell.next.costBasisCents, 0);
     assert.equal(sell.next.satoshis, 0n);
   }

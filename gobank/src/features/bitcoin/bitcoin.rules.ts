@@ -1,6 +1,6 @@
 import { MAX_CENTS, SATOSHIS } from "./bitcoin.types";
 
-export type PracticeAccount = {
+export type TradingBalances = {
   cashCents: number;
   satoshis: bigint;
   costBasisCents: number;
@@ -11,7 +11,7 @@ export type BitcoinTrade =
 
 // Integer cents and satoshis avoid floating-point balance drift.
 export function calculateTrade(
-  account: PracticeAccount,
+  account: TradingBalances,
   trade: BitcoinTrade,
   priceCents: number,
 ) {
@@ -31,9 +31,9 @@ export function calculateTrade(
       trade.cashCents < 100 ||
       trade.cashCents > MAX_CENTS
     )
-      throw new Error("Enter at least 1.00 USDT.");
+      throw new Error("Enter at least ₱1.00.");
     if (trade.cashCents > account.cashCents)
-      throw new Error("Not enough practice cash.");
+      throw new Error("Not enough PHP in your account.");
     satoshis = (BigInt(trade.cashCents) * SATOSHIS) / price;
     if (satoshis === 0n)
       throw new Error("This amount is too small to buy Bitcoin.");
@@ -48,7 +48,7 @@ export function calculateTrade(
       throw new Error("Not enough Bitcoin to sell.");
     cashCents = Number((satoshis * price) / SATOSHIS);
     if (cashCents === 0)
-      throw new Error("This amount is worth less than 0.01 USDT.");
+      throw new Error("This amount is worth less than ₱0.01.");
     basis = Number(
       (BigInt(account.costBasisCents) * satoshis) / account.satoshis,
     );
@@ -66,6 +66,6 @@ export function calculateTrade(
       (value) => !Number.isSafeInteger(value) || Math.abs(value) > MAX_CENTS,
     )
   )
-    throw new Error("This trade exceeds the practice account limit.");
+    throw new Error("This trade exceeds the account limit.");
   return { next, satoshis, cashCents, realizedCents };
 }

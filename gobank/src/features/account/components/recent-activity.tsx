@@ -3,6 +3,7 @@ import {
   ArrowDownLeft,
   ArrowDownToLine,
   ArrowUpRight,
+  ArrowLeftRight,
   PiggyBank,
   Receipt,
   Smartphone,
@@ -24,6 +25,7 @@ const ICONS: Record<Entry["kind"], LucideIcon> = {
   stash: PiggyBank,
   reward: Sparkles,
   interest: TrendingUp,
+  exchange: ArrowLeftRight,
 };
 
 export function RecentActivity({ entries }: { entries: Entry[] }) {

@@ -2,31 +2,42 @@
 
 import { useId, useState } from "react";
 import { CandlestickChart, ChartNoAxesCombined, RefreshCw } from "lucide-react";
-import { api } from "~/trpc/react";
+import { useBitcoinCandles } from "../hooks/use-bitcoin-candles";
 import {
   BITCOIN_RANGES,
-  usdt,
+  BITCOIN_CANDLES,
+  money,
   type BitcoinCandle,
   type BitcoinRange,
+  type BitcoinQuote,
 } from "../bitcoin.types";
 
 const W = 360,
   H = 216,
-  LEFT = 4,
+  LEFT = 12,
   RIGHT = 54,
   TOP = 16,
   BOTTOM = 26;
 
-export function BitcoinChart() {
-  const [range, setRange] = useState<BitcoinRange>("1D");
-  const [mode, setMode] = useState<"line" | "candles">("line");
+export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
+  const [range, setRange] = useState<BitcoinRange>("1H");
+  const [mode, setMode] = useState<"line" | "candles">("candles");
+  const [live, setLive] = useState(true);
   const [cursor, setCursor] = useState<number | null>(null);
   const id = useId().replaceAll(":", "");
-  const chart = api.bitcoin.chart.useQuery(
-    { range },
-    { staleTime: 60_000, refetchInterval: 60_000, retry: 1 },
+  const { chart, status, streaming, updatedAt } = useBitcoinCandles(
+    range,
+    live,
   );
-  const points = chart.data ?? [];
+  const points = quote
+    ? (chart.data ?? []).map((point) => ({
+        ...point,
+        open: point.open * quote.phpPerUsd,
+        high: point.high * quote.phpPerUsd,
+        low: point.low * quote.phpPerUsd,
+        close: point.close * quote.phpPerUsd,
+      }))
+    : [];
   const first = points[0];
   const last = points.at(-1);
   const low = Math.min(
@@ -60,13 +71,13 @@ export function BitcoinChart() {
   const labelTime = (time: number) =>
     new Date(time).toLocaleString(
       "en-US",
-      range === "1H" || range === "1D"
+      range === "1MIN" || range === "1H"
         ? { hour: "numeric", minute: "2-digit" }
         : { month: "short", day: "numeric" },
     );
-  const width = Math.max(
-    1,
-    ((W - LEFT - RIGHT) / Math.max(points.length, 1)) * 0.55,
+  const width = Math.min(
+    10,
+    Math.max(1, ((W - LEFT - RIGHT) / Math.max(points.length, 1)) * 0.55),
   );
 
   return (
@@ -86,15 +97,15 @@ export function BitcoinChart() {
               </span>{" "}
               <span className="ml-1">
                 past{" "}
-                {range === "1D"
-                  ? "24 hours"
+                {range === "1MIN"
+                  ? "minute"
                   : range === "1H"
                     ? "hour"
                     : range === "1W"
                       ? "week"
                       : range === "1M"
                         ? "30 days"
-                        : "90 days"}
+                        : "year"}
               </span>
             </>
           )}
@@ -121,10 +132,25 @@ export function BitcoinChart() {
           ))}
         </div>
       </div>
+      <div className="mb-3 flex items-center justify-between gap-2 text-[9px]">
+        <span className="text-ink-faint">{BITCOIN_CANDLES[range].label}</span>
+        <button
+          type="button"
+          aria-label={live ? "Pause live candles" : "Resume live candles"}
+          aria-pressed={live}
+          onClick={() => setLive(!live)}
+          className={`flex min-h-7 items-center gap-1.5 rounded-lg px-2 ${streaming ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "text-ink-muted bg-white/5"}`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${streaming ? "animate-pulse bg-[#56e3b1]" : "bg-current"}`}
+          />
+          {status}
+        </button>
+      </div>
       <div className="relative min-h-[216px]">
-        {chart.isPending ? (
+        {chart.isPending || (!quote && !chart.isError) ? (
           <div className="text-ink-muted grid h-[216px] animate-pulse place-items-center text-[12px]">
-            Loading market history…
+            Loading PHP market history…
           </div>
         ) : !first || !last ? (
           <div className="text-ink-muted grid h-[216px] place-items-center text-center text-[12px]">
@@ -145,7 +171,7 @@ export function BitcoinChart() {
               viewBox={`0 0 ${W} ${H}`}
               className="w-full touch-pan-y"
               role="img"
-              aria-label={`Bitcoin ${range} ${mode} chart. First close ${usdt(Math.round(first.close * 100))}, latest close ${usdt(Math.round(last.close * 100))} USDT.`}
+              aria-label={`Bitcoin ${range} ${mode} chart. First close ${money(Math.round(first.close * 100))}, latest close ${money(Math.round(last.close * 100))} PHP.`}
               onPointerLeave={() => setCursor(null)}
               onPointerMove={(event) => {
                 const bounds = event.currentTarget.getBoundingClientRect();
@@ -194,9 +220,10 @@ export function BitcoinChart() {
                       fill="#878792"
                       fontSize="9"
                     >
+                      ₱
                       {new Intl.NumberFormat("en-US", {
                         notation: "compact",
-                        maximumFractionDigits: 1,
+                        maximumFractionDigits: 3,
                       }).format(value)}
                     </text>
                   </g>
@@ -281,9 +308,20 @@ export function BitcoinChart() {
             {selected && (
               <div className="pointer-events-none absolute top-0 left-2 rounded-lg border border-white/10 bg-[#242427] px-2.5 py-1.5 text-[10px] shadow-lg">
                 <p className="font-semibold text-white">
-                  {usdt(Math.round(selected.close * 100))} USDT
+                  {money(Math.round(selected.close * 100))} PHP
                 </p>
                 <p className="text-ink-muted">{labelTime(selected.time)}</p>
+                <p className="text-ink-muted mt-1 text-[9px]">
+                  O {money(Math.round(selected.open * 100))} · H{" "}
+                  {money(Math.round(selected.high * 100))}
+                  <br />L {money(Math.round(selected.low * 100))} · C{" "}
+                  {money(Math.round(selected.close * 100))}
+                </p>
+                {selected.volume === 0 && (
+                  <p className="text-ink-faint mt-1 text-[9px]">
+                    No trades in this candle
+                  </p>
+                )}
               </div>
             )}
           </>
@@ -304,13 +342,37 @@ export function BitcoinChart() {
             aria-pressed={range === value}
             className={`min-h-10 flex-1 rounded-xl text-[11px] font-semibold transition-colors ${range === value ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "text-ink-muted hover:bg-white/5"}`}
           >
-            {value}
+            {value === "1MIN"
+              ? "1 min"
+              : value === "1H"
+                ? "1 hr"
+                : value === "1W"
+                  ? "1 week"
+                  : value === "1M"
+                    ? "1 month"
+                    : "1 year"}
           </button>
         ))}
       </div>
+      {updatedAt > 0 && (
+        <p className="text-ink-faint mt-2 text-[9px]">
+          Updated{" "}
+          {new Date(updatedAt).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })}
+          {live && !streaming ? " · Waiting for live stream" : ""}
+        </p>
+      )}
       {chart.isError && chart.data && (
         <p className="mt-2 text-[10px] text-amber-300">
           Chart refresh failed. Showing the last loaded history.
+        </p>
+      )}
+      {mode === "candles" && points.some((point) => point.volume === 0) && (
+        <p className="text-ink-faint mt-2 text-[9px]">
+          Flat candles mark periods without trades.
         </p>
       )}
     </section>
