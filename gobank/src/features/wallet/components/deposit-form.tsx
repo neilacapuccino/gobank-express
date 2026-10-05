@@ -135,7 +135,7 @@ export function DepositForm() {
           <span className="text-ink-muted text-[11px]">Max ₱50,000</span>
         </div>
 
-        <div className="border-line-strong focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-2xl border bg-white px-5 py-2 transition-colors focus-within:ring-2">
+        <div className="border-line-strong bg-surface focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-2xl border px-5 py-2 transition-colors focus-within:ring-2">
           <span className="text-ink-muted text-[25px]">₱</span>
 
           <input

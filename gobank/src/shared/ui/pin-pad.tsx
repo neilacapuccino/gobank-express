@@ -89,7 +89,7 @@ export function PinPad({ value, onChange, length, invalid }: PinPadProps) {
               type="button"
               onClick={() => push(key)}
               disabled={value.length >= length}
-              className="text-ink bg-surface-sunken hover:bg-surface-raised active:bg-line grid h-17 w-17 place-items-center rounded-full text-[24px] font-normal tabular-nums transition-colors duration-100 disabled:opacity-40"
+              className="theme-control text-ink bg-surface-sunken hover:bg-surface-raised active:bg-line grid h-17 w-17 place-items-center rounded-full text-[24px] font-normal tabular-nums transition-colors duration-100 disabled:opacity-40"
             >
               {key}
             </button>

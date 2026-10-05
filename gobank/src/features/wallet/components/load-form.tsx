@@ -182,7 +182,7 @@ export function LoadForm() {
         <section className="mt-6">
           <p className="text-ink-muted text-[12px]">Purchase details</p>
 
-          <div className="border-line mt-2 overflow-hidden rounded-2xl border bg-white">
+          <div className="border-line bg-surface mt-2 overflow-hidden rounded-2xl border">
             <div className="flex items-center justify-between px-4 py-4">
               <span className="text-ink-soft text-[13px]">Load amount</span>
 
@@ -266,7 +266,7 @@ export function LoadForm() {
           Enter the number you want to buy load for.
         </p>
 
-        <div className="border-line-strong focus-within:border-brand mt-4 flex h-14 items-center rounded-xl border bg-white px-4">
+        <div className="border-line-strong bg-surface focus-within:border-brand mt-4 flex h-14 items-center rounded-xl border px-4">
           <span className="text-ink-muted mr-2 text-[14px]">+63</span>
 
           <input
@@ -298,7 +298,7 @@ export function LoadForm() {
                 type="button"
                 onClick={() => selectAmount(value)}
                 className={cn(
-                  "h-14 rounded-xl border text-[15px] font-semibold transition-all",
+                  "theme-control h-14 rounded-xl border text-[15px] font-semibold transition-all",
                   selected
                     ? "border-brand bg-brand-soft text-brand"
                     : "border-line-strong text-ink hover:bg-surface-sunken bg-white",
@@ -314,7 +314,7 @@ export function LoadForm() {
       <section className="mt-7">
         <p className="text-ink text-[14px] font-semibold">Or enter an amount</p>
 
-        <div className="border-line-strong focus-within:border-brand mt-3 flex h-14 items-center rounded-xl border bg-white px-4">
+        <div className="border-line-strong bg-surface focus-within:border-brand mt-3 flex h-14 items-center rounded-xl border px-4">
           <span className="text-ink-muted mr-2 text-[18px]">₱</span>
 
           <input

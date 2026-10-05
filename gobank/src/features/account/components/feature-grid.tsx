@@ -30,51 +30,51 @@ export function FeatureGrid({
     <section className="flex flex-col gap-3">
       <Link
         href="/rewards"
-        className="flex min-h-20 items-center justify-between gap-3 rounded-[26px] bg-white px-5 py-4 shadow-[0_5px_18px_-10px_#256d8035]"
+        className="bg-surface flex min-h-20 items-center justify-between gap-3 rounded-[26px] px-5 py-4 shadow-[0_5px_18px_-10px_#00000080]"
       >
         <div className="flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#fff0c9] text-[#713cad]">
             <PocketIcon name="spark" width={27} height={27} />
           </span>
           <span>
-            <span className="block text-[16px] font-bold text-[#252638]">
+            <span className="text-ink block text-[16px] font-bold">
               GoRewards
             </span>
-            <span className="text-[12px] text-[#555c6c]">
+            <span className="text-ink-muted text-[12px]">
               {points.toLocaleString()} points to enjoy
             </span>
           </span>
         </div>
-        <ArrowRight size={18} className="text-[#282938]" aria-hidden />
+        <ArrowRight size={18} className="text-ink-soft" aria-hidden />
       </Link>
       {rows.map((row) => (
         <Link
           key={row.href}
           href={row.href}
-          className="flex min-h-24 items-center gap-4 rounded-[26px] bg-white p-5 shadow-[0_5px_18px_-10px_#256d8035] transition-transform hover:-translate-y-0.5"
+          className="bg-surface flex min-h-24 items-center gap-4 rounded-[26px] p-5 shadow-[0_5px_18px_-10px_#00000080] transition-transform hover:-translate-y-0.5"
         >
           <PocketIcon
             name={row.icon}
-            className="shrink-0 text-[#282938]"
+            className="text-ink-soft shrink-0"
             width={28}
             height={28}
           />
           <span className="min-w-0 flex-1">
-            <span className="block text-[19px] font-bold tracking-tight text-[#282938]">
+            <span className="text-ink block text-[19px] font-bold tracking-tight">
               {row.title}
             </span>
-            <span className="mt-1 block text-[12px] leading-relaxed text-[#555c6c]">
+            <span className="text-ink-muted mt-1 block text-[12px] leading-relaxed">
               {row.description}
             </span>
             {row.meta && (
-              <span className="mt-2 block text-[10px] font-semibold text-[#5631bb]">
+              <span className="text-ink-soft mt-2 block text-[10px] font-semibold">
                 {row.meta}
               </span>
             )}
           </span>
           <ArrowRight
             size={18}
-            className="shrink-0 text-[#282938]"
+            className="text-ink-soft shrink-0"
             aria-hidden
           />
         </Link>
@@ -96,7 +96,7 @@ export function FeatureGrid({
       </div>
       <Link
         href="/card"
-        className="mt-1 flex items-center justify-between rounded-2xl px-2 py-3 text-[16px] font-semibold text-[#282938]"
+        className="text-ink mt-1 flex items-center justify-between rounded-2xl px-2 py-3 text-[16px] font-semibold"
       >
         <span className="flex items-center gap-3">
           <PocketIcon name="card" />

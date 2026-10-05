@@ -34,7 +34,7 @@ export function CreateGoalForm({
   const validName = name.trim().length > 0 && name.trim().length <= 40;
   return (
     <form
-      className="-mx-6 -mt-8 -mb-10 flex min-h-[calc(100dvh-1px)] flex-1 flex-col bg-white px-5 pt-7 pb-8 text-[#282938]"
+      className="bg-surface-sunken text-ink -mx-6 -mt-8 -mb-10 flex min-h-[calc(100dvh-1px)] flex-1 flex-col px-5 pt-7 pb-8"
       onSubmit={(event) => {
         event.preventDefault();
         if (!validName || create.isPending) return;
@@ -53,7 +53,7 @@ export function CreateGoalForm({
             step === "name" ? "Back to GoalSave" : "Back to goal name"
           }
           onClick={() => (step === "name" ? onCancel() : setStep("name"))}
-          className="absolute left-0 grid h-11 w-11 place-items-center rounded-full hover:bg-[#edf5f6]"
+          className="absolute left-0 grid h-11 w-11 place-items-center rounded-full hover:bg-[#edf5f6] hover:text-[#282938]"
         >
           <ArrowLeft size={23} />
         </button>
@@ -82,12 +82,12 @@ export function CreateGoalForm({
             maxLength={40}
             autoFocus
             placeholder="Give your goal a name"
-            className="mt-4 h-14 w-full border-b-2 border-[#a4b9c2] bg-transparent px-2 text-center text-[19px] outline-none placeholder:text-[#61717e] focus:border-[#6437dd]"
+            className="border-line-strong placeholder:text-ink-faint mt-4 h-14 w-full border-b-2 bg-transparent px-2 text-center text-[19px] outline-none focus:border-[#6437dd]"
           />
-          <p className="mt-2 text-center text-xs text-[#53616f]">
+          <p className="text-ink-muted mt-2 text-center text-xs">
             {name.length}/40
           </p>
-          <p className="mx-auto mt-6 max-w-64 text-center text-[13px] leading-relaxed text-[#53616f]">
+          <p className="text-ink-muted mx-auto mt-6 max-w-64 text-center text-[13px] leading-relaxed">
             A big adventure or a little peace of mind. Every goal starts
             somewhere.
           </p>
@@ -97,7 +97,7 @@ export function CreateGoalForm({
           <h2 className="text-center text-[22px] font-bold tracking-tight">
             Set your sights on a target
           </h2>
-          <p className="mt-2 mb-7 text-center text-sm text-[#53616f]">{name}</p>
+          <p className="text-ink-muted mt-2 mb-7 text-center text-sm">{name}</p>
           <TextField
             label="Target amount"
             optional
@@ -116,7 +116,7 @@ export function CreateGoalForm({
                 : null
             }
           />
-          <p className="mt-3 text-xs leading-relaxed text-[#53616f]">
+          <p className="text-ink-muted mt-3 text-xs leading-relaxed">
             Leave blank to save at your own pace. Your goal starts at ₱0.00;
             creating it does not move money.
           </p>

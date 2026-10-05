@@ -5,25 +5,25 @@
     var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 
-  --color-surface: #ffffff;
-  --color-surface-sunken: #f7f8fa;
-  --color-surface-raised: #f2f4f7;
+  --color-surface: #1b1b1d;
+  --color-surface-sunken: #101012;
+  --color-surface-raised: #29292c;
 
-  --color-line: #e7e9ee;
-  --color-line-strong: #d3d7e0;
+  --color-line: #353539;
+  --color-line-strong: #515158;
 
-  --color-ink: #0d1220;
-  --color-ink-soft: #475069;
-  --color-ink-muted: #7b8499;
-  --color-ink-faint: #a6adbd;
+  --color-ink: #f4f4f5;
+  --color-ink-soft: #c4c4cc;
+  --color-ink-muted: #a1a1ad;
+  --color-ink-faint: #878792;
 
   --color-brand: #059669;
   --color-brand-hover: #047857;
-  --color-brand-soft: #ecfdf5;
-  --color-brand-line: #a7f3d0;
+  --color-brand-soft: #142b23;
+  --color-brand-line: #285d49;
 
-  --color-danger: #dc2626;
-  --color-danger-soft: #fef2f2;
+  --color-danger: #f87171;
+  --color-danger-soft: #351d21;
 
   --animate-page-in: page-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-step-in: step-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -64,7 +64,26 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
+}
+
+@layer components {
+  /* Keep the existing control palette independent of the page theme. */
+  .theme-control {
+    --color-surface: #ffffff;
+    --color-surface-sunken: #f7f8fa;
+    --color-surface-raised: #f2f4f7;
+    --color-line: #e7e9ee;
+    --color-line-strong: #d3d7e0;
+    --color-ink: #0d1220;
+    --color-ink-soft: #475069;
+    --color-ink-muted: #7b8499;
+    --color-ink-faint: #a6adbd;
+    --color-brand-soft: #ecfdf5;
+    --color-brand-line: #a7f3d0;
+    --color-danger: #dc2626;
+    --color-danger-soft: #fef2f2;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

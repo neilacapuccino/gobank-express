@@ -4,7 +4,7 @@ import { cn } from "~/shared/lib/cn";
 type Variant = "primary" | "outline" | "ghost";
 
 const BASE =
-  "inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed";
+  "theme-control inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed";
 
 const VARIANTS: Record<Variant, string> = {
   primary:

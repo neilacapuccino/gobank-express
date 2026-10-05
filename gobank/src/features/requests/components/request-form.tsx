@@ -219,7 +219,7 @@ function RecipientStep({
           Person
         </label>
 
-        <div className="border-line-strong focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-xl border bg-white transition-colors focus-within:ring-2">
+        <div className="border-line-strong bg-surface focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-xl border transition-colors focus-within:ring-2">
           <input
             type="text"
             value={value}
@@ -275,7 +275,7 @@ function AmountStep({
           Amount
         </label>
 
-        <div className="border-line-strong focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-2xl border bg-white px-5 py-2 transition-colors focus-within:ring-2">
+        <div className="border-line-strong bg-surface focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-2xl border px-5 py-2 transition-colors focus-within:ring-2">
           <span className="text-ink-muted text-[25px]">₱</span>
 
           <input
@@ -307,7 +307,7 @@ function AmountStep({
           placeholder="What's this for?"
           onChange={(event) => onNoteChange(event.target.value)}
           rows={3}
-          className="border-line-strong focus:border-brand focus:ring-brand/15 text-ink placeholder:text-ink-faint w-full resize-none rounded-xl border bg-white px-3.5 py-3 text-[13px] outline-none focus:ring-2"
+          className="border-line-strong bg-surface focus:border-brand focus:ring-brand/15 text-ink placeholder:text-ink-faint w-full resize-none rounded-xl border px-3.5 py-3 text-[13px] outline-none focus:ring-2"
         />
 
         <p className="text-ink-faint mt-1 text-right text-[10px]">

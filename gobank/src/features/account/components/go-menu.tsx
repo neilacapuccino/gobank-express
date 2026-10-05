@@ -59,15 +59,11 @@ export function GoMenu() {
           setOpen(false);
           trigger.current?.focus();
         }}
-        className={`${styles.panel} fixed inset-0 m-auto h-dvh max-h-dvh w-full max-w-[440px] overflow-y-auto border-0 bg-[#eefafb] p-0 text-[#282938] outline-none`}
+        className={`${styles.panel} bg-surface-sunken text-ink fixed inset-0 m-auto h-dvh max-h-dvh w-full max-w-[440px] overflow-y-auto border-0 p-0 outline-none`}
       >
         <div className="relative isolate flex min-h-full flex-col justify-center px-6 pt-8 pb-28">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-24 right-0 -z-10 h-72 w-72 overflow-hidden rounded-full border-[32px] border-[#00d9df]/10"
-          />
           <header className="mb-7 text-center">
-            <p className="text-[10px] font-semibold tracking-[.22em] text-[#5630bc] uppercase">
+            <p className="text-ink-soft text-[10px] font-semibold tracking-[.22em] uppercase">
               Ready. Set. Go.
             </p>
             <h2 className="mt-3 text-[28px] leading-tight font-semibold tracking-tight">
@@ -75,7 +71,7 @@ export function GoMenu() {
               <br />
               one tap away.
             </h2>
-            <p className="mt-3 text-[12px] text-[#53616f]">
+            <p className="text-ink-muted mt-3 text-[12px]">
               What would you like to do?
             </p>
           </header>
@@ -100,7 +96,7 @@ export function GoMenu() {
               </Link>
             ))}
           </div>
-          <div className="mt-5 text-center text-[10px] text-[#53616f]">
+          <div className="text-ink-muted mt-5 text-center text-[10px]">
             GoBank Express · Made for your everyday
           </div>
           <button

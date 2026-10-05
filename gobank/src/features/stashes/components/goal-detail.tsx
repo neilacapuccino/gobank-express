@@ -23,7 +23,7 @@ export function GoalDetail({ id }: { id: string }) {
         </p>
         <button
           onClick={() => void query.refetch()}
-          className="mt-5 rounded-full bg-[#e0f3f4] px-5 py-3"
+          className="mt-5 rounded-full bg-[#e0f3f4] px-5 py-3 text-[#282938]"
         >
           Try again
         </button>
@@ -67,7 +67,7 @@ function GoalContent({ goal }: { goal: Goal }) {
     (action !== "out" || cents <= goal.balance);
   const pending = move.isPending || update.isPending;
   return (
-    <div className="-mx-6 -mt-8 -mb-10 flex flex-1 flex-col bg-linear-to-b from-[#c8f1f4] to-[#effafb] pt-7 text-[#282938]">
+    <div className="bg-surface-sunken text-ink -mx-6 -mt-8 -mb-10 flex flex-1 flex-col pt-7">
       <div className="px-5">
         <PageHeader title={goal.name} back="/stashes" />
       </div>
@@ -82,7 +82,7 @@ function GoalContent({ goal }: { goal: Goal }) {
         <h1 className="mt-4 text-[36px] font-bold tracking-tight break-all tabular-nums">
           {peso(goal.balance)}
         </h1>
-        <p className="mt-1 text-sm text-[#475663]">
+        <p className="text-ink-soft mt-1 text-sm">
           {goal.goal ? `Target: ${peso(goal.goal)}` : "Saving at your own pace"}
         </p>
       </section>
@@ -115,18 +115,18 @@ function GoalContent({ goal }: { goal: Goal }) {
           </button>
         ))}
       </div>
-      <div className="flex-1 rounded-t-[30px] bg-white px-5 pt-5 pb-10 shadow-[0_-8px_24px_-20px_#287d9d50]">
+      <div className="bg-surface flex-1 rounded-t-[30px] px-5 pt-5 pb-10 shadow-[0_-8px_24px_-20px_#00000080]">
         {message && (
           <p
             role="status"
-            className="mb-4 rounded-2xl bg-[#edf9f8] p-3 text-sm text-[#245264]"
+            className="bg-brand-soft text-ink-soft mb-4 rounded-2xl p-3 text-sm"
           >
             {message}
           </p>
         )}
         {action && (
           <form
-            className="mb-5 space-y-4 rounded-[22px] bg-[#edf5f7] p-4"
+            className="bg-surface-raised mb-5 space-y-4 rounded-[22px] p-4"
             onSubmit={(event) => {
               event.preventDefault();
               if (pending) return;
@@ -235,7 +235,7 @@ function GoalContent({ goal }: { goal: Goal }) {
         </div>
         <div id="goal-panel" role="tabpanel" aria-labelledby={`goal-${tab}`}>
           {tab === "overview" ? (
-            <dl className="divide-y divide-[#dcebee]">
+            <dl className="divide-line divide-y">
               <div className="flex items-center justify-between gap-3 py-5 text-sm">
                 <dt>Saving target</dt>
                 <dd className="font-semibold">
@@ -252,7 +252,7 @@ function GoalContent({ goal }: { goal: Goal }) {
               </div>
             </dl>
           ) : goal.transactions.length ? (
-            <ul className="divide-y divide-[#dcebee]">
+            <ul className="divide-line divide-y">
               {goal.transactions.map((entry) => (
                 <li
                   key={entry.id}
@@ -260,7 +260,7 @@ function GoalContent({ goal }: { goal: Goal }) {
                 >
                   <div>
                     <p className="text-[13px] font-medium">{entry.title}</p>
-                    <p className="mt-1 text-[11px] text-[#53616f]">
+                    <p className="text-ink-muted mt-1 text-[11px]">
                       {shortDate(entry.createdAt)}
                     </p>
                   </div>
@@ -271,7 +271,7 @@ function GoalContent({ goal }: { goal: Goal }) {
               ))}
             </ul>
           ) : (
-            <p className="py-7 text-center text-sm text-[#53616f]">
+            <p className="text-ink-muted py-7 text-center text-sm">
               Your savings journey starts with your first transfer.
             </p>
           )}

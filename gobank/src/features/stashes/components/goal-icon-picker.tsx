@@ -30,9 +30,9 @@ export function GoalIconPicker({
       <dialog
         ref={dialog}
         aria-label="Choose a savings icon"
-        className="fixed inset-x-0 top-auto bottom-0 mx-auto mb-0 w-full max-w-[440px] rounded-t-[32px] border-0 bg-white p-6 text-[#282938] shadow-2xl backdrop:bg-[#202136]/50"
+        className="bg-surface text-ink fixed inset-x-0 top-auto bottom-0 mx-auto mb-0 w-full max-w-[440px] rounded-t-[32px] border-0 p-6 shadow-2xl backdrop:bg-black/60"
       >
-        <div className="mx-auto mb-5 h-1 w-10 rounded-full bg-[#d6e3e6]" />
+        <div className="bg-line-strong mx-auto mb-5 h-1 w-10 rounded-full" />
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[20px] font-bold tracking-tight">
             Make this goal yours
@@ -41,12 +41,12 @@ export function GoalIconPicker({
             type="button"
             aria-label="Close icon picker"
             onClick={() => dialog.current?.close()}
-            className="grid h-11 w-11 place-items-center rounded-full bg-[#eef5f6]"
+            className="grid h-11 w-11 place-items-center rounded-full bg-[#eef5f6] text-[#282938]"
           >
             <X size={20} />
           </button>
         </div>
-        <p className="mt-2 text-xs text-[#53616f]">
+        <p className="text-ink-muted mt-2 text-xs">
           Choose an icon. Your choice is saved on this device.
         </p>
         <div className="my-6 grid grid-cols-3 gap-4">

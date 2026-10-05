@@ -7,7 +7,7 @@ export function PageHeader({ title, back }: { title: string; back: string }) {
       <Link
         href={back}
         aria-label="Back"
-        className="bg-surface-sunken text-ink-soft hover:bg-surface-raised absolute left-0 grid h-10 w-10 place-items-center rounded-full transition-colors"
+        className="theme-control bg-surface-sunken text-ink-soft hover:bg-surface-raised absolute left-0 grid h-10 w-10 place-items-center rounded-full transition-colors"
       >
         <ArrowLeft size={18} strokeWidth={1.9} aria-hidden />
       </Link>

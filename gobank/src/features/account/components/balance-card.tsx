@@ -1,8 +1,8 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
-import { maskAccount, peso } from "~/shared/lib/format";
+import { Check, Copy, Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { formatAccount, peso } from "~/shared/lib/format";
 
 export function BalanceCard({
   balance,
@@ -14,18 +14,28 @@ export function BalanceCard({
   points: number;
 }) {
   const [visible, setVisible] = useState(true);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
+    "idle",
+  );
+
+  useEffect(() => {
+    if (copyStatus !== "copied") return;
+    const timer = setTimeout(() => setCopyStatus("idle"), 2000);
+    return () => clearTimeout(timer);
+  }, [copyStatus]);
+
+  const copyAccountNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(accountNumber);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("error");
+    }
+  };
 
   return (
-    <section className="relative isolate overflow-hidden rounded-[28px] bg-white px-6 py-6 text-[#282938] shadow-[0_10px_26px_-12px_#256d8045]">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-16 -right-20 -z-10 h-64 w-64 rounded-full border-[30px] border-[#00d9df]/10"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-5 bottom-0 -z-10 h-36 w-36 rounded-full border border-[#00d9df]/20"
-      />
-      <p className="text-[13px] text-[#53616f]">Available balance</p>
+    <section className="bg-surface-raised text-ink relative isolate overflow-hidden rounded-[28px] px-6 py-6 shadow-[0_10px_26px_-12px_#00000080]">
+      <p className="text-ink-muted text-[13px]">Available balance</p>
 
       <div className="mt-2 flex items-center gap-3">
         <p className="min-w-0 text-[clamp(1.6rem,8vw,2.35rem)] leading-tight font-semibold tracking-tight break-all tabular-nums">
@@ -36,7 +46,7 @@ export function BalanceCard({
           onClick={() => setVisible((value) => !value)}
           aria-label={visible ? "Hide balance" : "Show balance"}
           aria-pressed={!visible}
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[#4d5266] transition-colors hover:bg-[#e4f6f7] hover:text-[#242638]"
+          className="text-ink-muted grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-[#e4f6f7] hover:text-[#242638]"
         >
           {visible ? (
             <Eye size={17} strokeWidth={2} aria-hidden />
@@ -46,10 +56,41 @@ export function BalanceCard({
         </button>
       </div>
 
-      <div className="mt-6 flex items-center justify-between border-t border-[#deedf0] pt-4 text-[11px] text-[#53616f]">
-        <span className="tabular-nums">{maskAccount(accountNumber)}</span>
-        <span className="tabular-nums">{points.toLocaleString()} points</span>
+      <div className="border-line text-ink-muted mt-6 flex items-center justify-between border-t pt-4 text-[11px]">
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="tabular-nums select-text">
+            {formatAccount(accountNumber)}
+          </span>
+          <button
+            type="button"
+            onClick={copyAccountNumber}
+            aria-label="Copy account number"
+            title={copyStatus === "copied" ? "Copied" : "Copy account number"}
+            className="text-ink-muted hover:bg-line hover:text-ink grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            {copyStatus === "copied" ? (
+              <Check size={15} aria-hidden />
+            ) : (
+              <Copy size={15} aria-hidden />
+            )}
+          </button>
+        </div>
+        <span className="shrink-0 tabular-nums">
+          {points.toLocaleString()} points
+        </span>
       </div>
+      <p
+        role="status"
+        className={
+          copyStatus === "error" ? "text-danger mt-2 text-[11px]" : "sr-only"
+        }
+      >
+        {copyStatus === "copied"
+          ? "Account number copied."
+          : copyStatus === "error"
+            ? "Couldn't copy. Select the account number to copy it."
+            : ""}
+      </p>
     </section>
   );
 }
