@@ -38,12 +38,12 @@ export function ProfilePhotoPicker({
           if (file) onSelect(file);
         }}
       />
-      <div className="flex items-center gap-3">
+      <div className="flex w-36 flex-col gap-1">
         <button
           type="button"
           disabled={busy}
           onClick={() => input.current?.click()}
-          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-[12px] font-medium text-[#71d5f3] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-[12px] font-medium text-[#71d5f3] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
         >
           <Camera size={15} aria-hidden />
           {busy ? "Preparing photo…" : photo ? "Change photo" : "Add photo"}
