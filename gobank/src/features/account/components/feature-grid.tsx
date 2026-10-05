@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Gem } from "lucide-react";
 import Link from "next/link";
 import { PocketIcon } from "~/shared/ui/pocket-art";
 export function FeatureGrid({
@@ -30,11 +30,17 @@ export function FeatureGrid({
     <section className="flex flex-col gap-3">
       <Link
         href="/rewards"
-        className="bg-surface flex min-h-20 items-center justify-between gap-3 rounded-[26px] px-5 py-4 shadow-[0_5px_18px_-10px_#00000080]"
+        className="group flex min-h-[88px] items-center justify-between gap-3 rounded-[26px] border border-[#e6c17a]/10 bg-linear-to-r from-[#211f1b] via-[#1c1c1f] to-[#18181b] px-5 py-4 shadow-[0_5px_18px_-10px_#00000080] transition-colors hover:border-[#e6c17a]/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e6c17a]"
       >
         <div className="flex items-center gap-3">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#fff0c9] text-[#713cad]">
-            <PocketIcon name="spark" width={27} height={27} />
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-[#e6c17a]/20 bg-linear-to-br from-[#373025] to-[#211d17] text-[#e6c17a] shadow-[inset_0_1px_0_#ffffff08] transition-transform duration-200 group-hover:-rotate-6">
+            <Gem
+              size={26}
+              strokeWidth={1.7}
+              fill="currentColor"
+              fillOpacity={0.08}
+              aria-hidden
+            />
           </span>
           <span>
             <span className="text-ink block text-[16px] font-bold">
@@ -45,7 +51,11 @@ export function FeatureGrid({
             </span>
           </span>
         </div>
-        <ArrowRight size={18} className="text-ink-soft" aria-hidden />
+        <ArrowRight
+          size={18}
+          className="shrink-0 text-[#aa9b80] transition-transform duration-200 group-hover:translate-x-0.5"
+          aria-hidden
+        />
       </Link>
       {rows.map((row) => (
         <Link
