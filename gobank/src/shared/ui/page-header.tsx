@@ -1,16 +1,9 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { BackButton } from "./back-button";
 
 export function PageHeader({ title, back }: { title: string; back: string }) {
   return (
     <header className="relative flex h-10 items-center justify-center">
-      <Link
-        href={back}
-        aria-label="Back"
-        className="theme-control bg-surface-sunken text-ink-soft hover:bg-surface-raised absolute left-0 grid h-10 w-10 place-items-center rounded-full transition-colors"
-      >
-        <ArrowLeft size={18} strokeWidth={1.9} aria-hidden />
-      </Link>
+      <BackButton href={back} className="absolute left-0" />
       <h1 className="text-ink text-[15px] font-semibold">{title}</h1>
     </header>
   );

@@ -1,6 +1,6 @@
 "use client";
-import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import { BackButton } from "~/shared/ui/back-button";
 import { TextField } from "~/shared/ui/text-field";
 import { toCentavos } from "~/shared/lib/money";
 import { errorMessage } from "~/trpc/error-message";
@@ -46,17 +46,12 @@ export function CreateGoalForm({
       }}
     >
       <header className="relative flex min-h-11 items-center justify-center">
-        <button
-          type="button"
+        <BackButton
           disabled={create.isPending}
-          aria-label={
-            step === "name" ? "Back to GoalSave" : "Back to goal name"
-          }
+          label={step === "name" ? "Back to GoalSave" : "Back to goal name"}
           onClick={() => (step === "name" ? onCancel() : setStep("name"))}
-          className="absolute left-0 grid h-11 w-11 place-items-center rounded-full hover:bg-[#edf5f6] hover:text-[#282938]"
-        >
-          <ArrowLeft size={23} />
-        </button>
+          className="absolute left-0"
+        />
         <h1 className="text-[17px] font-semibold">New GoalSave</h1>
       </header>
       <div className="mt-9">

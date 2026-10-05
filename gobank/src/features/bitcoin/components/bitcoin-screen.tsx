@@ -1,14 +1,13 @@
 "use client";
 
 import {
-  ArrowLeft,
   ArrowDownLeft,
   ArrowUpRight,
   Bitcoin,
   RefreshCw,
   Wallet,
 } from "lucide-react";
-import Link from "next/link";
+import { BackButton } from "~/shared/ui/back-button";
 import { api } from "~/trpc/react";
 import { btc, holdingValue, money } from "../bitcoin.types";
 import { useBitcoinFeed } from "../hooks/use-bitcoin-feed";
@@ -44,13 +43,7 @@ export function BitcoinScreen() {
     <div className="-mx-6 -mt-8 -mb-10 flex flex-1 flex-col gap-5 bg-[#101012] px-5 pt-7 pb-10">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            aria-label="Back to dashboard"
-            className="grid h-10 w-10 place-items-center rounded-xl bg-white/5 text-white hover:bg-white/10"
-          >
-            <ArrowLeft size={19} />
-          </Link>
+          <BackButton href="/dashboard" label="Back to dashboard" />
           <div>
             <p className="text-ink-muted text-[9px] font-semibold tracking-[.2em] uppercase">
               GoBank Invest

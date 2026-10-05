@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, Zap } from "lucide-react";
-import Link from "next/link";
+import { Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { dateTime, digitsOnly, maskDigits, peso } from "~/shared/lib/format";
 import { toCentavos } from "~/shared/lib/money";
 import { cn } from "~/shared/lib/cn";
+import { BackButton } from "~/shared/ui/back-button";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { CATEGORIES, findCategory, type Category } from "../bill-categories";
@@ -59,13 +59,11 @@ export function BillPayment() {
   return (
     <div className="flex flex-1 flex-col pb-10">
       <header className="relative flex h-16 items-center justify-center">
-        <Link
+        <BackButton
           href="/dashboard"
-          aria-label="Back to dashboard"
-          className="bg-surface-sunken text-ink-soft hover:bg-surface-raised absolute left-0 grid h-10 w-10 place-items-center rounded-full transition-colors"
-        >
-          <ArrowLeft size={18} strokeWidth={1.9} aria-hidden />
-        </Link>
+          label="Back to dashboard"
+          className="absolute left-0"
+        />
         <div className="text-center">
           <h1 className="text-[16px] font-semibold tracking-tight">
             Pay Bills
