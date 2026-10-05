@@ -1,5 +1,5 @@
 "use client";
-import { ArrowDownLeft, ArrowUpRight, Star } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Settings2 } from "lucide-react";
 import { useState } from "react";
 import { peso, shortDate } from "~/shared/lib/format";
 import { toCentavos } from "~/shared/lib/money";
@@ -23,7 +23,7 @@ export function GoalDetail({ id }: { id: string }) {
         </p>
         <button
           onClick={() => void query.refetch()}
-          className="mt-5 rounded-full bg-[#e0f3f4] px-5 py-3 text-[#282938]"
+          className="mt-5 rounded-xl border border-white/10 bg-[#242426] px-5 py-3 text-[#e4e4e7] focus-visible:outline-2 focus-visible:outline-offset-4"
         >
           Try again
         </button>
@@ -49,14 +49,14 @@ function GoalContent({ goal }: { goal: Goal }) {
       refresh();
       setAction(null);
       setAmount("");
-      setMessage("Transfer complete. Your savings are up to date.");
+      setMessage("Transfer complete.");
     },
   });
   const update = api.stashes.update.useMutation({
     onSuccess: () => {
       refresh();
       setAction(null);
-      setMessage("Savings target updated.");
+      setMessage("Target updated.");
     },
   });
   const cents = toCentavos(Number(amount));
@@ -82,15 +82,12 @@ function GoalContent({ goal }: { goal: Goal }) {
         <h1 className="mt-4 text-[36px] font-bold tracking-tight break-all tabular-nums">
           {peso(goal.balance)}
         </h1>
-        <p className="text-ink-soft mt-1 text-sm">
-          {goal.goal ? `Target: ${peso(goal.goal)}` : "Saving at your own pace"}
-        </p>
       </section>
       <div className="grid grid-cols-3 gap-2 px-4 py-5">
         {[
           { value: "in" as const, label: "Transfer in", Icon: ArrowDownLeft },
           { value: "out" as const, label: "Transfer out", Icon: ArrowUpRight },
-          { value: "tools" as const, label: "Saving tools", Icon: Star },
+          { value: "tools" as const, label: "Settings", Icon: Settings2 },
         ].map(({ value, label, Icon }) => (
           <button
             key={value}
@@ -104,10 +101,10 @@ function GoalContent({ goal }: { goal: Goal }) {
               );
               setAction(value);
             }}
-            className="flex min-h-20 flex-col items-center gap-2 rounded-2xl py-2 focus-visible:outline-2 focus-visible:outline-[#5831cc]"
+            className="group flex min-h-20 flex-col items-center gap-2 rounded-2xl py-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d5f3] disabled:opacity-45"
           >
             <span
-              className={`grid h-14 w-14 place-items-center rounded-full shadow-[0_5px_14px_-9px_#16496660] ${value === "in" ? "bg-[#282938] text-[#00e0e5]" : "bg-[#c7e7eb] text-[#282938]"}`}
+              className={`grid h-14 w-14 place-items-center rounded-full border border-white/[.08] bg-[#242426] transition-colors group-hover:bg-[#303034] ${value === "in" ? "text-[#71d5f3]" : "text-[#e4e4e7]"}`}
             >
               <Icon size={25} aria-hidden />
             </span>
@@ -142,10 +139,10 @@ function GoalContent({ goal }: { goal: Goal }) {
           >
             <h2 className="text-lg font-bold">
               {action === "tools"
-                ? "Your saving tools"
+                ? "Goal settings"
                 : action === "in"
-                  ? "Transfer into GoalSave"
-                  : "Transfer to spending account"}
+                  ? "Transfer in"
+                  : "Transfer out"}
             </h2>
             {action === "tools" && (
               <GoalIconPicker
@@ -187,7 +184,7 @@ function GoalContent({ goal }: { goal: Goal }) {
                 pending ||
                 !(valid || (action === "tools" && amount.trim() === ""))
               }
-              className="h-12 w-full rounded-full bg-[#02dce2] font-semibold text-[#20233a] disabled:bg-[#d7e4e7] disabled:text-[#586976]"
+              className="h-12 w-full rounded-2xl bg-[#71d5f3] font-semibold text-[#121214] transition-colors hover:bg-[#9ae1f7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d5f3] disabled:bg-[#353539] disabled:text-[#878792]"
             >
               {pending
                 ? "Saving…"
@@ -199,7 +196,7 @@ function GoalContent({ goal }: { goal: Goal }) {
               type="button"
               disabled={pending}
               onClick={() => setAction(null)}
-              className="h-11 w-full rounded-full text-sm font-medium"
+              className="text-ink-muted hover:text-ink h-11 w-full rounded-xl text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-4"
             >
               Cancel
             </button>
@@ -208,7 +205,7 @@ function GoalContent({ goal }: { goal: Goal }) {
         <div
           role="tablist"
           aria-label="Goal details"
-          className="mb-5 flex rounded-full border border-[#d1e5e9] bg-[#edf5f6] p-1"
+          className="mb-5 flex rounded-2xl border border-white/[.07] bg-[#121214] p-1"
         >
           {(["overview", "transactions"] as const).map((value) => (
             <button
@@ -227,7 +224,7 @@ function GoalContent({ goal }: { goal: Goal }) {
                 }
               }}
               onClick={() => setTab(value)}
-              className={`h-11 flex-1 rounded-full text-[13px] font-semibold ${tab === value ? "bg-[#5530d1] text-white shadow-sm" : "text-[#465263]"}`}
+              className={`h-11 flex-1 rounded-xl text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#71d5f3] ${tab === value ? "bg-[#303034] text-white" : "text-[#a1a1ad] hover:text-white"}`}
             >
               {value === "overview" ? "Overview" : "Transactions"}
             </button>
@@ -237,17 +234,17 @@ function GoalContent({ goal }: { goal: Goal }) {
           {tab === "overview" ? (
             <dl className="divide-line divide-y">
               <div className="flex items-center justify-between gap-3 py-5 text-sm">
-                <dt>Saving target</dt>
+                <dt>Target</dt>
                 <dd className="font-semibold">
                   {goal.goal ? peso(goal.goal) : "Not set"}
                 </dd>
               </div>
               <div className="flex items-center justify-between gap-3 py-5 text-sm">
-                <dt>Goal progress</dt>
+                <dt>Progress</dt>
                 <dd className="font-semibold">
                   {goal.goal
                     ? `${Math.min(100, Math.floor((goal.balance / goal.goal) * 100))}%`
-                    : "Your own pace"}
+                    : "—"}
                 </dd>
               </div>
             </dl>
@@ -272,7 +269,7 @@ function GoalContent({ goal }: { goal: Goal }) {
             </ul>
           ) : (
             <p className="text-ink-muted py-7 text-center text-sm">
-              Your savings journey starts with your first transfer.
+              No transfers yet
             </p>
           )}
         </div>

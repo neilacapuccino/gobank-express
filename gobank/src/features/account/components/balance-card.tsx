@@ -39,14 +39,32 @@ export function BalanceCard({
 
       <div className="mt-2 flex items-center gap-3">
         <p className="min-w-0 text-[clamp(1.6rem,8vw,2.35rem)] leading-tight font-semibold tracking-tight break-all tabular-nums">
-          {visible ? peso(balance) : "₱ ••••••"}
+          {visible ? (
+            peso(balance)
+          ) : (
+            <span
+              role="img"
+              aria-label="Balance hidden"
+              className="inline-flex items-center gap-3 align-middle"
+            >
+              <span aria-hidden>₱</span>
+              <span className="flex gap-[5px]" aria-hidden>
+                {Array.from({ length: 6 }, (_, index) => (
+                  <span
+                    key={index}
+                    className="h-1 w-1 rounded-full bg-current"
+                  />
+                ))}
+              </span>
+            </span>
+          )}
         </p>
         <button
           type="button"
           onClick={() => setVisible((value) => !value)}
           aria-label={visible ? "Hide balance" : "Show balance"}
           aria-pressed={!visible}
-          className="text-ink-muted grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-[#e4f6f7] hover:text-[#242638]"
+          className="text-ink-muted hover:text-ink grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           {visible ? (
             <Eye size={17} strokeWidth={2} aria-hidden />

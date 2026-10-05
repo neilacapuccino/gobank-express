@@ -52,7 +52,7 @@ export function CreateGoalForm({
           onClick={() => (step === "name" ? onCancel() : setStep("name"))}
           className="absolute left-0"
         />
-        <h1 className="text-[17px] font-semibold">New GoalSave</h1>
+        <h1 className="text-[17px] font-semibold">New goal</h1>
       </header>
       <div className="mt-9">
         <GoalIconPicker
@@ -62,38 +62,27 @@ export function CreateGoalForm({
         />
       </div>
       {step === "name" ? (
-        <div className="mt-9">
-          <label
-            htmlFor="goal-name"
-            className="block text-center text-[21px] font-semibold tracking-tight"
-          >
-            What are you saving for?
-          </label>
-          <input
-            id="goal-name"
+        <div className="animate-step-in mt-8 rounded-[24px] border border-white/[.07] bg-[#1b1b1d] p-5">
+          <TextField
+            key="name"
+            label="Goal name"
             value={name}
             onChange={(event) => setName(event.target.value)}
             required
             maxLength={40}
+            disabled={create.isPending}
             autoFocus
-            placeholder="Give your goal a name"
-            className="border-line-strong placeholder:text-ink-faint mt-4 h-14 w-full border-b-2 bg-transparent px-2 text-center text-[19px] outline-none focus:border-[#6437dd]"
+            placeholder="e.g. Emergency fund"
+            hint={`${name.length}/40`}
           />
-          <p className="text-ink-muted mt-2 text-center text-xs">
-            {name.length}/40
-          </p>
-          <p className="text-ink-muted mx-auto mt-6 max-w-64 text-center text-[13px] leading-relaxed">
-            A big adventure or a little peace of mind. Every goal starts
-            somewhere.
-          </p>
         </div>
       ) : (
-        <div className="mt-8">
-          <h2 className="text-center text-[22px] font-bold tracking-tight">
-            Set your sights on a target
+        <div className="animate-step-in mt-8 rounded-[24px] border border-white/[.07] bg-[#1b1b1d] p-5">
+          <h2 className="mb-5 text-[18px] font-semibold tracking-tight break-words">
+            {name}
           </h2>
-          <p className="text-ink-muted mt-2 mb-7 text-center text-sm">{name}</p>
           <TextField
+            key="target"
             label="Target amount"
             optional
             prefix="₱"
@@ -110,11 +99,8 @@ export function CreateGoalForm({
                 ? "Enter ₱0.01 to ₱1,000,000, with up to two decimal places."
                 : null
             }
+            hint="Leave blank for no target."
           />
-          <p className="text-ink-muted mt-3 text-xs leading-relaxed">
-            Leave blank to save at your own pace. Your goal starts at ₱0.00;
-            creating it does not move money.
-          </p>
         </div>
       )}
       {create.error && (
@@ -133,13 +119,13 @@ export function CreateGoalForm({
             (step === "target" && !validTarget) ||
             create.isPending
           }
-          className="h-14 w-full rounded-full bg-[#02dce2] text-[16px] font-bold text-[#20233a] shadow-[0_7px_20px_-10px_#009fb680] transition-colors hover:bg-[#00cbd5] disabled:bg-[#e0eaec] disabled:text-[#586976]"
+          className="h-13 w-full rounded-2xl bg-[#71d5f3] text-[15px] font-semibold text-[#121214] transition-colors hover:bg-[#9ae1f7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d5f3] disabled:bg-[#29292d] disabled:text-[#878792]"
         >
           {create.isPending
             ? "Creating…"
             : step === "name"
-              ? "Next"
-              : "Create GoalSave"}
+              ? "Continue"
+              : "Create goal"}
         </button>
       </div>
     </form>
