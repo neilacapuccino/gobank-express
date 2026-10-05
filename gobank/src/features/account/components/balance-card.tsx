@@ -37,22 +37,24 @@ export function BalanceCard({
     <section className="bg-surface-raised text-ink relative isolate overflow-hidden rounded-[28px] px-6 py-6 shadow-[0_10px_26px_-12px_#00000080]">
       <p className="text-ink-muted text-[13px]">Available balance</p>
 
-      <div className="mt-2 flex items-center gap-3">
-        <p className="min-w-0 text-[clamp(1.6rem,8vw,2.35rem)] leading-tight font-semibold tracking-tight break-all tabular-nums">
+      <div className="mt-2 flex min-h-12 items-center gap-2">
+        <p className="flex min-w-0 items-center text-[clamp(1.6rem,8vw,2.35rem)] leading-tight font-semibold tracking-tight break-all tabular-nums">
           {visible ? (
             peso(balance)
           ) : (
             <span
               role="img"
               aria-label="Balance hidden"
-              className="inline-flex items-center gap-3 align-middle"
+              className="inline-flex items-center gap-2 leading-none"
             >
-              <span aria-hidden>₱</span>
-              <span className="flex gap-[5px]" aria-hidden>
+              <span className="block" aria-hidden>
+                ₱
+              </span>
+              <span className="flex items-center gap-2" aria-hidden>
                 {Array.from({ length: 6 }, (_, index) => (
                   <span
                     key={index}
-                    className="h-1 w-1 rounded-full bg-current"
+                    className="h-[7px] w-[7px] shrink-0 rounded-full bg-current"
                   />
                 ))}
               </span>
