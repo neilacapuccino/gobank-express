@@ -32,12 +32,6 @@ export function BitcoinScreen() {
     ? ((quote.priceCents - quote.openCents) / quote.openCents) * 100
     : null;
   const gain = change !== null && change >= 0;
-  const average =
-    account && account.satoshis > 0n
-      ? Number(
-          (BigInt(account.costBasisCents) * 100_000_000n) / account.satoshis,
-        )
-      : null;
 
   return (
     <div className="-mx-6 -mt-8 -mb-10 flex flex-1 flex-col gap-5 bg-[#101012] px-5 pt-7 pb-10">
@@ -196,9 +190,9 @@ export function BitcoinScreen() {
             </dd>
           </div>
           <div>
-            <dt className="text-[#8da99b]">Average buy price</dt>
+            <dt className="text-[#8da99b]">Fee</dt>
             <dd className="mt-1 text-[13px] font-semibold">
-              {average !== null ? money(average) : "—"}
+              {money(0)}
               <span className="ml-1 text-[9px] font-normal text-[#8da99b]">
                 PHP
               </span>
@@ -244,9 +238,9 @@ export function BitcoinScreen() {
           <h2 className="text-[14px] font-semibold">Trade history</h2>
           <span className="text-ink-faint text-[10px]">Latest 20 trades</span>
         </div>
-        {account?.orders.length ? (
+        {account?.trades.length ? (
           <div className="divide-y divide-white/[.06] rounded-[20px] border border-white/[.06] bg-[#171719] px-4">
-            {account.orders.map((order) => (
+            {account.trades.map((order) => (
               <div key={order.id} className="flex items-center gap-3 py-4">
                 <span
                   className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${order.side === "buy" ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "bg-rose-300/10 text-rose-300"}`}
@@ -276,7 +270,7 @@ export function BitcoinScreen() {
                     {btc(order.satoshis)} BTC
                   </p>
                   <p className="text-ink-muted mt-1 text-[10px] tabular-nums">
-                    {money(order.cashCents)} PHP
+                    {money(order.phpCentavos)} PHP
                   </p>
                 </div>
               </div>

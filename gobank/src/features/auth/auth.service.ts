@@ -1,4 +1,4 @@
-import { cardExpiry, newAccountNumber, newCardNumber } from "~/server/codes";
+import { newAccountNumber } from "~/server/codes";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { endOtherSessions, startSession } from "~/server/session";
@@ -10,6 +10,11 @@ import {
   PIN_LOCK_MINUTES,
 } from "./auth.rules";
 import { hashPin, verifyPin } from "./pin";
+import {
+  clearRegistrationCard,
+  consumeRegistrationCard,
+  registrationCardToken,
+} from "./card-preview.service";
 
 type PinOwner = { id: string; pinHash: string; lockedUntil: Date | null };
 
@@ -17,9 +22,8 @@ type Registration = {
   username: string;
   pin: string;
   brand: CardBrand;
-  fullName: string | null;
+  fullName: string;
   mobile: string | null;
-  email: string | null;
 };
 
 export async function isUsernameFree(username: string) {
@@ -30,24 +34,37 @@ export async function isUsernameFree(username: string) {
   return !taken;
 }
 
-export async function register({ pin, brand, ...profile }: Registration) {
-  const user = await db.user.create({
-    data: {
-      ...profile,
-      pinHash: await hashPin(pin),
-      accountNumber: newAccountNumber(),
-      card: {
-        create: {
-          brand,
-          number: newCardNumber(brand),
-          expiresAt: cardExpiry(),
+export async function createRegisteredAccount(
+  { pin, brand, ...profile }: Registration,
+  token: string,
+) {
+  const pinHash = await hashPin(pin);
+  return db.$transaction(async (tx) => {
+    const card = await consumeRegistrationCard(tx, token, brand);
+    return tx.user.create({
+      data: {
+        ...profile,
+        pinHash,
+        accountNumber: newAccountNumber(),
+        card: {
+          create: {
+            ...card,
+          },
         },
       },
-    },
-    select: { id: true, accountNumber: true, card: true },
+      select: { id: true },
+    });
   });
+}
+
+export async function register(profile: Registration) {
+  const user = await createRegisteredAccount(
+    profile,
+    await registrationCardToken(),
+  );
   await startSession(user.id);
-  return { accountNumber: user.accountNumber, card: user.card };
+  await clearRegistrationCard();
+  return { created: true };
 }
 
 async function checkPin(user: PinOwner, pin: string, wrongMessage: string) {

@@ -53,7 +53,11 @@ async function main() {
         accountNumber: newAccountNumber(),
         balance: OPENING_BALANCE,
         card: {
-          create: { number: newCardNumber("gobank"), expiresAt: cardExpiry() },
+          create: {
+            brand: "discover",
+            number: newCardNumber("discover"),
+            expiresAt: cardExpiry(),
+          },
         },
         transactions: {
           create: {

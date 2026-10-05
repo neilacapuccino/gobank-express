@@ -1,46 +1,44 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useReducer, useState } from "react";
 import { StepBar } from "~/shared/ui/step-bar";
 import { EMPTY_DRAFT, type RegistrationDraft } from "../auth.rules";
 import { errorMessage } from "~/trpc/error-message";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { StepCard } from "./step-card";
 import { StepDetails } from "./step-details";
 import { StepIdentity } from "./step-identity";
 import { StepReview } from "./step-review";
-import { AccountReady } from "./account-ready";
+import type { CardBrandId } from "~/features/card/card-brands";
 
 const TOTAL_STEPS = 4;
-
 type Action = { type: "patch"; patch: Partial<RegistrationDraft> };
+type CardPreview = RouterOutputs["auth"]["prepareCard"];
 
 function draftReducer(state: RegistrationDraft, action: Action) {
-  switch (action.type) {
-    case "patch":
-      return { ...state, ...action.patch };
-  }
+  return { ...state, ...action.patch };
 }
 
 export function RegistrationFlow() {
+  const router = useRouter();
   const [draft, dispatch] = useReducer(draftReducer, EMPTY_DRAFT);
   const [step, setStep] = useState(1);
-  const register = api.auth.register.useMutation();
-
+  const [card, setCard] = useState<CardPreview | null>(null);
+  const prepare = api.auth.prepareCard.useMutation();
+  const register = api.auth.register.useMutation({
+    onSuccess: () => {
+      router.replace("/dashboard");
+      router.refresh();
+    },
+  });
   const patch = (next: Partial<RegistrationDraft>) =>
     dispatch({ type: "patch", patch: next });
-
-  if (register.data) {
-    return (
-      <AccountReady
-        draft={draft}
-        accountNumber={register.data.accountNumber}
-        card={register.data.card}
-      />
-    );
-  }
-
+  const prepareCard = (brand: CardBrandId) => {
+    setCard(null);
+    prepare.mutate({ brand }, { onSuccess: setCard });
+  };
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex flex-col gap-5">
@@ -57,50 +55,49 @@ export function RegistrationFlow() {
         </div>
         <StepBar current={step} total={TOTAL_STEPS} />
       </header>
-
       <div key={step} className="animate-step-in mt-10 flex flex-1 flex-col">
-        {step === 1 ? (
+        {step === 1 && (
           <StepIdentity
             username={draft.username}
             onUsernameChange={(username) => patch({ username })}
             onComplete={(pin) => {
               patch({ pin });
               setStep(2);
+              prepareCard(draft.brand);
             }}
           />
-        ) : null}
-
-        {step === 2 ? (
+        )}
+        {step === 2 && (
           <StepCard
             brand={draft.brand}
             holder={draft.fullName.trim().toUpperCase() || "YOUR NAME"}
-            onBrandChange={(brand) => patch({ brand })}
+            preparing={prepare.isPending}
+            ready={card?.brand === draft.brand}
+            onBrandChange={(brand) => {
+              patch({ brand });
+              prepareCard(brand);
+            }}
             onNext={() => setStep(3)}
             onBack={() => setStep(1)}
           />
-        ) : null}
-
-        {step === 3 ? (
+        )}
+        {step === 3 && (
           <StepDetails
             fullName={draft.fullName}
             mobile={draft.mobile}
-            email={draft.email}
-            googleLinked={draft.googleLinked}
             onChange={patch}
             onNext={() => setStep(4)}
-            onSkip={() => {
-              patch({ fullName: "", mobile: "", email: "" });
-              setStep(4);
-            }}
             onBack={() => setStep(2)}
           />
-        ) : null}
-
-        {step === 4 ? (
+        )}
+        {step === 4 && card && (
           <StepReview
             draft={draft}
-            pending={register.isPending}
+            card={card}
+            pending={register.isPending || register.isSuccess}
             error={errorMessage(register.error)}
+            onBack={() => setStep(3)}
+            onRefreshCard={() => prepareCard(draft.brand)}
             onSubmit={() =>
               register.mutate({
                 username: draft.username,
@@ -108,12 +105,32 @@ export function RegistrationFlow() {
                 brand: draft.brand,
                 fullName: draft.fullName,
                 mobile: draft.mobile,
-                email: draft.email,
               })
             }
-            onBack={() => setStep(3)}
           />
-        ) : null}
+        )}
+        {step === 4 && !card && prepare.isPending && (
+          <p
+            role="status"
+            className="text-ink-muted py-8 text-center text-[14px]"
+          >
+            Preparing your card details…
+          </p>
+        )}
+        {prepare.isError && step > 1 && (
+          <div role="alert" className="mt-4">
+            <p className="text-danger text-[13px]">
+              {errorMessage(prepare.error)}
+            </p>
+            <button
+              type="button"
+              onClick={() => prepareCard(draft.brand)}
+              className="text-brand mt-2 min-h-10 text-[13px] font-medium"
+            >
+              Try again
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -89,18 +89,14 @@ export type RegistrationDraft = {
   brand: CardBrandId;
   fullName: string;
   mobile: string;
-  email: string;
-  googleLinked: boolean;
 };
 
 export const EMPTY_DRAFT: RegistrationDraft = {
   username: "",
   pin: "",
-  brand: "gobank",
+  brand: "discover",
   fullName: "",
   mobile: "",
-  email: "",
-  googleLinked: false,
 };
 
 export function cardholderName(draft: RegistrationDraft) {

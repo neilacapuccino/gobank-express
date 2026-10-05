@@ -30,7 +30,7 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
       label: "Mobile",
       value: profile.mobile ? formatMobile(profile.mobile) : null,
     },
-    { label: "Email", value: profile.email },
+    { label: "Gmail", value: profile.gmail },
     { label: "Member since", value: SINCE.format(profile.createdAt) },
   ];
 

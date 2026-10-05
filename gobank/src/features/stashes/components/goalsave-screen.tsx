@@ -1,5 +1,5 @@
 "use client";
-import { Plus, Vault } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
@@ -16,7 +16,9 @@ import { useGoalIcon } from "./goal-icon-preference";
 export function GoalSaveScreen() {
   const router = useRouter();
   const utils = api.useUtils();
-  const goals = api.stashes.list.useQuery();
+  const goals = api.stashes.list.useQuery(undefined, {
+    refetchInterval: 15_000,
+  });
   const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState("");
   const count = goals.data?.length ?? 0;
@@ -45,15 +47,7 @@ export function GoalSaveScreen() {
         aria-label="Savings overview"
         className="rounded-[28px] border border-white/[.08] bg-[#1b1b1d] p-6"
       >
-        <div className="flex items-center gap-2.5">
-          <Vault
-            size={19}
-            strokeWidth={1.7}
-            className="text-[#c4c4cc]"
-            aria-hidden
-          />
-          <p className="text-ink-muted text-[12px] font-medium">Total saved</p>
-        </div>
+        <p className="text-ink-muted text-[12px] font-medium">Total saved</p>
         <p className="mt-4 text-[clamp(1.8rem,8vw,2.5rem)] font-semibold tracking-tight break-all tabular-nums">
           {goals.data ? peso(total) : "—"}
         </p>
@@ -159,6 +153,9 @@ function GoalTile({
       </h2>
       <p className="mt-1.5 text-[20px] font-semibold tracking-tight break-all tabular-nums">
         {peso(goal.balance)}
+      </p>
+      <p className="mt-2 text-[10px] text-[#71d5f3]">
+        {(goal.interestRate * 100).toFixed(2)}% per year
       </p>
       {goal.goal !== null && (
         <p className="text-ink-faint mt-2 text-[10px] break-words">

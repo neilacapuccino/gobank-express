@@ -76,7 +76,7 @@ export function PinPad({ value, onChange, length, invalid }: PinPadProps) {
                 onClick={pop}
                 disabled={value.length === 0}
                 aria-label="Delete last digit"
-                className="text-ink-soft hover:bg-surface-sunken grid h-17 w-17 place-items-center rounded-full transition-colors duration-100 disabled:opacity-25"
+                className="text-ink-soft focus-visible:outline-brand grid h-17 w-17 place-items-center rounded-full transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-4 enabled:hover:bg-[#29292c] disabled:opacity-25"
               >
                 <BackspaceIcon />
               </button>
@@ -89,7 +89,7 @@ export function PinPad({ value, onChange, length, invalid }: PinPadProps) {
               type="button"
               onClick={() => push(key)}
               disabled={value.length >= length}
-              className="theme-control text-ink bg-surface-sunken hover:bg-surface-raised active:bg-line grid h-17 w-17 place-items-center rounded-full text-[24px] font-normal tabular-nums transition-colors duration-100 disabled:opacity-40"
+              className="text-ink focus-visible:outline-brand grid h-17 w-17 place-items-center rounded-full border border-[#3a3a3f] bg-[#272729] text-[24px] font-normal tabular-nums transition-colors duration-100 focus-visible:outline-2 focus-visible:outline-offset-4 enabled:hover:bg-[#343437] enabled:active:bg-[#404044] disabled:opacity-40"
             >
               {key}
             </button>

@@ -245,7 +245,7 @@ function RecipientStep({
           </h2>
 
           <p className="text-ink-soft mt-2 text-[12px] leading-relaxed">
-            Enter their account number, username, or mobile number.
+            Enter their username, linked Gmail, account number, or mobile.
           </p>
         </div>
       </section>
@@ -264,7 +264,7 @@ function RecipientStep({
           <input
             type="text"
             value={value}
-            placeholder="Account number, username or mobile"
+            placeholder="Username, Gmail, account or mobile"
             onChange={(event) => onChange(event.target.value)}
             className="text-ink placeholder:text-ink-faint h-13 w-full bg-transparent px-3.5 text-[14px] outline-none"
           />
@@ -274,7 +274,7 @@ function RecipientStep({
           <p className="text-danger mt-2 text-[12px]">{error}</p>
         ) : (
           <p className="text-ink-muted mt-2 text-[11px]">
-            Example: 20123456789 or @username
+            Example: @username or name@gmail.com
           </p>
         )}
       </section>

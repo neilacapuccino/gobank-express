@@ -14,6 +14,7 @@ enum CardBrand {
   mastercard
   jcb
   gobank
+  discover
 }
 
 enum BillerCategory {
@@ -45,10 +46,10 @@ model User {
   id                String    @id @default(cuid())
   username          String    @unique
   pinHash           String
-  fullName          String?
+  fullName          String
   profilePhoto      String?
   mobile            String?   @unique
-  email             String?   @unique
+  gmail             String?   @unique
   googleId          String?   @unique
   accountNumber     String    @unique
   balance           Int       @default(0)
@@ -62,42 +63,26 @@ model User {
   sessions         Session[]
   stashes          Stash[]
   transactions     Transaction[]
-  counterpartyOf   Transaction[]     @relation("Counterparty")
-  requestsSent     MoneyRequest[]    @relation("Requester")
-  requestsReceived MoneyRequest[]    @relation("Payer")
-  investmentWallet InvestmentWallet?
+  counterpartyOf   Transaction[]  @relation("Counterparty")
+  requestsSent     MoneyRequest[] @relation("Requester")
+  requestsReceived MoneyRequest[] @relation("Payer")
+  bitcoinTrades    BitcoinTrade[]
 }
 
-model InvestmentWallet {
-  userId         String            @id
-  satoshis       BigInt            @default(0)
-  costBasisCents Int               @default(0)
-  realizedCents  Int               @default(0)
-  version        Int               @default(0)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders         InvestmentOrder[]
-}
-
-model InvestmentOrder {
-  id            String           @id @default(cuid())
-  accountId     String
+model BitcoinTrade {
+  id            String   @id @default(cuid())
+  userId        String
   requestId     String
-  reference     String?          @unique
+  reference     String?  @unique
   side          String
   satoshis      BigInt
-  cashCents     Int
-  priceCents    Int
-  realizedCents Int              @default(0)
-  phpAfter      Int              @map("cashAfter")
-  satoshisAfter BigInt
-  quotedAt      DateTime
-  createdAt     DateTime         @default(now())
-  account       InvestmentWallet @relation(fields: [accountId], references: [userId], onDelete: Cascade)
+  phpCentavos   Int
+  priceCentavos Int
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([accountId, requestId])
-  @@index([accountId, createdAt(sort: Desc)])
+  @@unique([userId, requestId])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model Session {
@@ -115,8 +100,9 @@ model Session {
 model Card {
   id         String    @id @default(cuid())
   userId     String    @unique
-  brand      CardBrand @default(gobank)
+  brand      CardBrand @default(discover)
   number     String    @unique
+  cvvHash    String?
   expiresAt  DateTime
   locked     Boolean   @default(false)
   dailyLimit Int       @default(2000000)
@@ -126,15 +112,29 @@ model Card {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model RegistrationCard {
+  id         String    @id
+  brand      CardBrand
+  number     String    @unique
+  cvvHash    String
+  expiresAt  DateTime
+  validUntil DateTime
+  createdAt  DateTime  @default(now())
+
+  @@index([validUntil])
+}
+
 model Stash {
-  id           String   @id @default(cuid())
-  userId       String
-  name         String
-  goal         Int?
-  balance      Int      @default(0)
-  interestRate Float    @default(0.04)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String   @id @default(cuid())
+  userId            String
+  name              String
+  goal              Int?
+  balance           Int      @default(0)
+  interestRate      Float    @default(0.04)
+  interestCarry     Float    @default(0)
+  interestUpdatedAt DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]

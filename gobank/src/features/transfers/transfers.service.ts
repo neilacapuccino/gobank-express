@@ -1,4 +1,4 @@
-import { normaliseMobile } from "~/shared/lib/contact";
+import { normaliseGmail, normaliseMobile } from "~/shared/lib/contact";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { transfer } from "~/server/ledger";
@@ -8,12 +8,14 @@ export const PARTY = { id: true, username: true, fullName: true } as const;
 export async function findRecipient(handle: string, self: string) {
   const value = handle.trim().replace(/^@/, "").toLowerCase();
   const mobile = normaliseMobile(value);
+  const gmail = normaliseGmail(value);
 
   const user = await db.user.findFirst({
     where: {
       OR: [
         { accountNumber: value },
         { username: value },
+        ...(gmail ? [{ gmail, googleId: { not: null } }] : []),
         ...(mobile ? [{ mobile }] : []),
       ],
     },

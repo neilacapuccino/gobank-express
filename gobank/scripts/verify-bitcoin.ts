@@ -43,6 +43,7 @@ try {
     const user = await db.user.create({
       data: {
         username: `btc_test_${suffix}_${i}`,
+        fullName: "Bitcoin Test",
         accountNumber: `btc-test-${suffix}-${i}`,
         pinHash: "test-only-not-a-valid-pin",
       },
@@ -51,7 +52,7 @@ try {
     const empty = await getBitcoinPortfolio(user.id);
     assert.equal(empty.cashCents, 0);
     assert.equal(empty.satoshis, 0n);
-    assert.equal(empty.orders.length, 0);
+    assert.equal(empty.trades.length, 0);
     await assert.rejects(
       tradeBitcoin(user.id, randomUUID(), { side: "buy", cashCents: 100 }),
     );
@@ -71,17 +72,14 @@ try {
     tradeBitcoin(userId, requestId, { side: "buy", cashCents: 10_000 }),
   ]);
   assert.equal(first.id, repeated.id);
-  assert.equal(
-    await db.investmentOrder.count({ where: { accountId: userId } }),
-    1,
-  );
+  assert.equal(await db.bitcoinTrade.count({ where: { userId: userId } }), 1);
   const bought = await getBitcoinPortfolio(userId);
-  assert.equal(bought.cashCents, 1_000_000 - first.cashCents);
+  assert.equal(bought.cashCents, 1_000_000 - first.phpCentavos);
   assert.ok(first.reference);
   const debit = await db.transaction.findUniqueOrThrow({
     where: { reference_userId: { reference: first.reference, userId } },
   });
-  assert.equal(debit.amount, -first.cashCents);
+  assert.equal(debit.amount, -first.phpCentavos);
   assert.equal(debit.balanceAfter, bought.cashCents);
   assert.equal(debit.points, 0);
   await assert.rejects(
@@ -98,10 +96,10 @@ try {
     satoshis: first.satoshis,
   });
   const sold = await getBitcoinPortfolio(userId);
-  assert.equal(sold.cashCents, bought.cashCents + sale.cashCents);
+  assert.equal(sold.cashCents, bought.cashCents + sale.phpCentavos);
   assert.equal(sold.satoshis, 0n);
   assert.equal(sold.costBasisCents, 0);
-  assert.equal(sold.orders.length, 2);
+  assert.equal(sold.trades.length, 2);
   assert.ok(sale.reference);
   assert.equal(
     (
@@ -109,7 +107,7 @@ try {
         where: { reference_userId: { reference: sale.reference, userId } },
       })
     ).amount,
-    sale.cashCents,
+    sale.phpCentavos,
   );
   const entryCount = await db.transaction.count({ where: { userId } });
   await assert.rejects(
@@ -130,10 +128,7 @@ try {
     1,
   );
   assert.ok((await getBitcoinPortfolio(raceId)).cashCents >= 0);
-  assert.equal(
-    await db.investmentOrder.count({ where: { accountId: raceId } }),
-    1,
-  );
+  assert.equal(await db.bitcoinTrade.count({ where: { userId: raceId } }), 1);
   const mixedId = ids[2]!;
   const mixed = await Promise.allSettled([
     tradeBitcoin(mixedId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),

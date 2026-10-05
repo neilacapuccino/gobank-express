@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculateTrade, type TradingBalances } from "./bitcoin.rules";
+import {
+  calculateTrade,
+  summarizeTrades,
+  type TradingBalances,
+} from "./bitcoin.rules";
 import { btc, parseUnits, quoteIsFresh, SATOSHIS } from "./bitcoin.types";
 
 const FUNDED_CASH = 1_000_000;
@@ -9,6 +13,40 @@ const empty = (): TradingBalances => ({
   satoshis: 0n,
   costBasisCents: 0,
   realizedCents: 0,
+});
+
+void test("trade history reproduces holdings and profit without mutating records", () => {
+  const trades = Object.freeze([
+    Object.freeze({ side: "buy", satoshis: SATOSHIS, phpCentavos: 10_000_000 }),
+    Object.freeze({ side: "buy", satoshis: SATOSHIS, phpCentavos: 20_000_000 }),
+    Object.freeze({
+      side: "sell",
+      satoshis: SATOSHIS / 2n,
+      phpCentavos: 10_000_000,
+    }),
+  ]);
+  assert.deepEqual(summarizeTrades(trades), {
+    satoshis: (SATOSHIS * 3n) / 2n,
+    costBasisCents: 22_500_000,
+    realizedCents: 2_500_000,
+  });
+  const sold = summarizeTrades([
+    ...trades,
+    { side: "sell", satoshis: (SATOSHIS * 3n) / 2n, phpCentavos: 25_000_000 },
+  ]);
+  assert.deepEqual(sold, {
+    satoshis: 0n,
+    costBasisCents: 0,
+    realizedCents: 5_000_000,
+  });
+  assert.deepEqual(summarizeTrades([]), {
+    satoshis: 0n,
+    costBasisCents: 0,
+    realizedCents: 0,
+  });
+  assert.throws(() =>
+    summarizeTrades([{ side: "sell", satoshis: 1n, phpCentavos: 100 }]),
+  );
 });
 
 void test("fractional buys and full sales preserve balances and clear cost basis", () => {

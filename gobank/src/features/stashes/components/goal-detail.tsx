@@ -1,6 +1,7 @@
 "use client";
 import { ArrowDownLeft, ArrowUpRight, Settings2 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { peso, shortDate } from "~/shared/lib/format";
 import { toCentavos } from "~/shared/lib/money";
 import { PageHeader } from "~/shared/ui/page-header";
@@ -12,7 +13,7 @@ import { GoalIconPicker } from "./goal-icon-picker";
 import { useGoalIcon } from "./goal-icon-preference";
 
 export function GoalDetail({ id }: { id: string }) {
-  const query = api.stashes.get.useQuery({ id });
+  const query = api.stashes.get.useQuery({ id }, { refetchInterval: 15_000 });
   if (query.isPending) return <p role="status">Loading your GoalSave…</p>;
   if (query.isError)
     return (
@@ -34,11 +35,14 @@ export function GoalDetail({ id }: { id: string }) {
 type Goal = RouterOutputs["stashes"]["get"];
 function GoalContent({ goal }: { goal: Goal }) {
   const utils = api.useUtils();
+  const router = useRouter();
   const { icon, setIcon } = useGoalIcon(goal.id, goal.name);
   const [tab, setTab] = useState<"overview" | "transactions">("overview");
   const [action, setAction] = useState<"in" | "out" | "tools" | null>(null);
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
+  const [name, setName] = useState(goal.name);
+  const [confirmClose, setConfirmClose] = useState(false);
   const refresh = () => {
     void utils.stashes.get.invalidate({ id: goal.id });
     void utils.stashes.list.invalidate();
@@ -56,7 +60,15 @@ function GoalContent({ goal }: { goal: Goal }) {
     onSuccess: () => {
       refresh();
       setAction(null);
-      setMessage("Target updated.");
+      setMessage("Goal settings saved.");
+    },
+  });
+  const remove = api.stashes.remove.useMutation({
+    onSuccess: () => {
+      refresh();
+      void utils.account.activity.invalidate();
+      router.replace("/stashes");
+      router.refresh();
     },
   });
   const cents = toCentavos(Number(amount));
@@ -65,7 +77,9 @@ function GoalContent({ goal }: { goal: Goal }) {
     cents > 0 &&
     cents <= 100_000_000 &&
     (action !== "out" || cents <= goal.balance);
-  const pending = move.isPending || update.isPending;
+  const pending =
+    move.isPending || update.isPending || remove.isPending || remove.isSuccess;
+  const validName = name.trim().length > 0 && name.trim().length <= 40;
   return (
     <div className="bg-surface-sunken text-ink -mx-6 -mt-8 -mb-10 flex flex-1 flex-col pt-7">
       <div className="px-5">
@@ -95,6 +109,9 @@ function GoalContent({ goal }: { goal: Goal }) {
             onClick={() => {
               move.reset();
               update.reset();
+              remove.reset();
+              setConfirmClose(false);
+              setName(goal.name);
               setMessage("");
               setAmount(
                 value === "tools" && goal.goal ? String(goal.goal / 100) : "",
@@ -128,9 +145,10 @@ function GoalContent({ goal }: { goal: Goal }) {
               event.preventDefault();
               if (pending) return;
               if (action === "tools") {
-                if (amount.trim() === "" || valid)
+                if (validName && (amount.trim() === "" || valid))
                   update.mutate({
                     id: goal.id,
+                    name: name.trim(),
                     goal: amount.trim() ? cents : null,
                   });
               } else if (valid)
@@ -145,11 +163,21 @@ function GoalContent({ goal }: { goal: Goal }) {
                   : "Transfer out"}
             </h2>
             {action === "tools" && (
-              <GoalIconPicker
-                value={icon}
-                onChange={setIcon}
-                disabled={pending}
-              />
+              <>
+                <GoalIconPicker
+                  value={icon}
+                  onChange={setIcon}
+                  disabled={pending}
+                />
+                <TextField
+                  label="Goal name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                  maxLength={40}
+                  disabled={pending}
+                />
+              </>
             )}
             <TextField
               label={action === "tools" ? "Savings target" : "Amount"}
@@ -173,15 +201,16 @@ function GoalContent({ goal }: { goal: Goal }) {
                   : null
               }
             />
-            {(move.error ?? update.error) && (
+            {(move.error ?? update.error ?? remove.error) && (
               <p role="alert" className="text-danger text-sm">
-                {errorMessage(move.error ?? update.error)}
+                {errorMessage(move.error ?? update.error ?? remove.error)}
               </p>
             )}
             <button
               type="submit"
               disabled={
                 pending ||
+                (action === "tools" && !validName) ||
                 !(valid || (action === "tools" && amount.trim() === ""))
               }
               className="h-12 w-full rounded-2xl bg-[#71d5f3] font-semibold text-[#121214] transition-colors hover:bg-[#9ae1f7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d5f3] disabled:bg-[#353539] disabled:text-[#878792]"
@@ -189,9 +218,51 @@ function GoalContent({ goal }: { goal: Goal }) {
               {pending
                 ? "Saving…"
                 : action === "tools"
-                  ? "Save target"
+                  ? "Save settings"
                   : "Confirm transfer"}
             </button>
+            {action === "tools" &&
+              (confirmClose ? (
+                <div
+                  className="border-line space-y-3 rounded-xl border p-4"
+                  role="region"
+                  aria-label="Close goal confirmation"
+                >
+                  <h3 className="font-semibold">Close this goal?</h3>
+                  <p className="text-ink-soft text-[13px] leading-relaxed">
+                    {peso(goal.balance)} will return to your main account. This
+                    goal will be removed, and past transfers will stay in your
+                    account activity.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => remove.mutate({ id: goal.id })}
+                    className="bg-danger-soft text-danger h-11 w-full rounded-xl text-sm font-semibold disabled:opacity-45"
+                  >
+                    {remove.isPending
+                      ? "Closing goal…"
+                      : "Close goal and return savings"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => setConfirmClose(false)}
+                    className="text-ink-muted h-10 w-full text-sm"
+                  >
+                    Keep goal
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => setConfirmClose(true)}
+                  className="text-danger h-11 w-full text-sm font-medium disabled:opacity-45"
+                >
+                  Close goal
+                </button>
+              ))}
             <button
               type="button"
               disabled={pending}
@@ -233,6 +304,23 @@ function GoalContent({ goal }: { goal: Goal }) {
         <div id="goal-panel" role="tabpanel" aria-labelledby={`goal-${tab}`}>
           {tab === "overview" ? (
             <dl className="divide-line divide-y">
+              <div className="flex items-center justify-between gap-3 py-5 text-sm">
+                <dt>Annual growth rate</dt>
+                <dd className="font-semibold text-[#71d5f3]">
+                  {(goal.interestRate * 100).toFixed(2)}%
+                </dd>
+              </div>
+              <div className="py-5 text-sm">
+                <dt>Compound growth</dt>
+                <dd className="mt-2 font-medium">
+                  A = P × (1 + r / 365)<sup>d</sup>
+                </dd>
+                <p className="text-ink-muted mt-2 text-[11px] leading-relaxed">
+                  P is your savings, r is the annual rate, and d is elapsed
+                  days. Compounded daily using system time; interest stays in
+                  this goal.
+                </p>
+              </div>
               <div className="flex items-center justify-between gap-3 py-5 text-sm">
                 <dt>Target</dt>
                 <dd className="font-semibold">

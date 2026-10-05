@@ -18,6 +18,12 @@ Bitcoin purchases use the main PHP account balance directly.
 - Up to **5** goal-based sub-accounts ("Stashes") with custom names such as
   *Emergency Fund* or *Japan Trip*, each earning interest separately from the
   main balance.
+- Goal settings support renaming and closing a goal. Closing returns its whole
+  remaining balance, including settled interest, to the main account atomically.
+- Savings use the existing **4% annual rate**, compounded daily from local server
+  system time: `A = P × (1 + r / 365)^d`. Fractional centavos carry forward.
+  Opening a goal or changing its balance settles elapsed interest; a clock moving
+  backward never credits the same time twice. No online time or interest API is used.
 - A virtual debit card that can be toggled between `LOCKED` and `UNLOCKED`
   in-app, with adjustable daily spending limits.
 
@@ -41,6 +47,12 @@ Bitcoin purchases use the main PHP account balance directly.
 - Profile uses a default person icon. In Edit profile, add, replace or remove a
   PNG, JPG or WebP photo up to 5 MB. Uploaded photos are cropped and saved as
   256-pixel WebP avatars, with server validation and source metadata removed.
+- Full name is required. Gmail linking is optional and reserved for the member
+  implementing Google authentication. A linked, verified Gmail address can be
+  displayed in Profile and used to find a recipient; there is no generic Email field.
+- Registration reserves the card shown during review, with number/CVV/PIN reveal
+  controls. PIN and CVV are stored as salted hashes. Confirmation goes directly
+  to the dashboard. Visa, Mastercard, JCB and Discover share a black card face.
 - The dark GO menu links to Send money, Add money, Request, GoalSave, Pay bills,
   Buy load, Bitcoin and Profile. Its orb transitions to two rotating petal
   layers with a clear close button; reduced-motion preferences are respected.
@@ -62,15 +74,21 @@ Bitcoin purchases use the main PHP account balance directly.
   candles. Wider bodies and continuous flat sections make short ranges easier
   to read. Live streams have REST fallback.
   Longer ranges use hourly, four-hour and daily candles.
-- Fractional buys and sells persist with average cost, realized/unrealized
+- Fractional buys and sells persist with cost basis, realized/unrealized
   profit or loss and the latest 20 trades. The PHP debit/credit, bank activity
   reference and Bitcoin holding commit together. Self-trades earn no rewards.
 - Server prices and stale-quote checks protect trades. Integer centavos and
-  satoshis prevent balance drift. Serializable transactions, version checks and
+  satoshis prevent balance drift. Serializable transactions and
   per-user request IDs guard concurrent and repeated submissions.
 - External exchange execution, Bitcoin custody and withdrawals are not connected.
   Obsolete preview and conversion tables have been removed.
   New holdings start at zero with no free account money.
+- One table, **`BitcoinTrade`**, stores the trade history. A pure reducer derives
+  BTC holdings, remaining purchase cost and realized profit from that history.
+  `phpCentavos` is the PHP amount paid/received; `priceCentavos` is the quoted
+  PHP price per BTC. `satoshis` is BTC multiplied by 100,000,000.
+  `requestId` prevents repeat submissions; `reference` connects the bank receipt.
+  Redundant wallet state and balance snapshots have been removed. Fee is `0.00 PHP`.
 
 Run `npm run test:bitcoin` for calculation and candle tests. With a migrated
 database and network access, `npm run test:bitcoin:integration` verifies feeds,
@@ -250,14 +268,34 @@ Run from the `gobank/` directory.
 | `User` | Credentials, profile, main account number, balance and points |
 | `Session` | Signed-in devices, stored as a hash of the cookie token |
 | `Card` | The virtual debit card: brand, number, lock state, daily limit |
+| `RegistrationCard` | A temporary, browser-bound card reservation, expiring after 30 minutes |
+| `BitcoinTrade` | One Bitcoin buy/sell per row, belonging directly to a user |
 | `Stash` | Up to five goal savings pockets per user |
 | `Biller` | The pre-registered biller catalogue |
 | `Transaction` | The ledger. One row per money movement per user, with a reference, signed amount and balance snapshot |
 | `MoneyRequest` | Requests for money between users |
 
+The Bitcoin ERD is **User 1 → many BitcoinTrade**. There is no separate investment
+wallet entity: current holdings are calculated from the trades, and spending money
+remains in `User.balance`. The trade migration verifies that history reproduces
+every existing wallet before dropping it.
+
+Savings retain `interestUpdatedAt` to measure elapsed time and `interestCarry` to
+preserve fractions of a centavo. These fields prevent repeated credits and rounding
+losses; they are needed by the compound-interest calculation.
+
+For the defense, trace the code as **typed React component → validated tRPC procedure
+→ service transaction → Prisma table**. Pure functions in `bitcoin.rules.ts` and
+`savings-interest.ts` handle the calculations; database effects stay in services
+and the ledger.
+
+Before pushing, run `npm run check:ci`. The repository's `.githooks/pre-push` runs
+the same format, lint, fresh typecheck, unit tests and build checks when installed
+with `git config core.hooksPath .githooks`. GitHub Actions repeats those checks.
+
 - **Money is stored as whole centavos** in integer columns. `₱1,250.50` is
-  `125050`. Conversion happens only at the edges, in `src/lib/money.ts`.
-- **Balances only change through the ledger** (`src/server/services/ledger.ts`).
+  `125050`. Conversion happens only at the edges, in `src/shared/lib/money.ts`.
+- **Balances only change through the ledger** (`src/server/ledger.ts`).
   `post` moves money and writes the matching `Transaction` in one step; `spend`
   adds the card lock, the daily limit and points; `transfer` and `moveStash`
   build on those two.

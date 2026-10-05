@@ -9,8 +9,13 @@ import {
 } from "~/server/trpc";
 import { CardBrand } from "../../../generated/prisma";
 import { changePin, isUsernameFree, register, signIn } from "./auth.service";
+import { prepareRegistrationCard } from "./card-preview.service";
 
 export const authRouter = createTRPCRouter({
+  prepareCard: publicProcedure
+    .input(z.object({ brand: z.nativeEnum(CardBrand) }))
+    .mutation(({ input }) => prepareRegistrationCard(input.brand)),
+
   usernameAvailable: publicProcedure
     .input(z.object({ username: z.string() }))
     .query(({ input }) => {

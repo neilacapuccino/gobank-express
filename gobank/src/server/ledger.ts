@@ -1,4 +1,5 @@
 import { pointsEarned } from "~/shared/lib/money";
+import { compoundInterest } from "~/shared/lib/savings-interest";
 import { newReference } from "~/server/codes";
 import { asDatabaseError, fail, MESSAGES } from "~/server/errors";
 import type { Prisma, TransactionKind } from "../../generated/prisma";
@@ -144,4 +145,53 @@ export async function moveStash(
     amount: -amount,
     stashId,
   });
+}
+
+export async function settleStashInterest(tx: Tx, userId: string, id: string) {
+  const stash = await tx.stash.findUniqueOrThrow({ where: { id, userId } });
+  const result = compoundInterest(stash, new Date());
+  if (result.days === 0) return stash;
+  const updated = await tx.stash.updateMany({
+    where: {
+      id,
+      userId,
+      balance: stash.balance,
+      interestUpdatedAt: stash.interestUpdatedAt,
+    },
+    data: {
+      balance: result.balance,
+      interestCarry: result.interestCarry,
+      interestUpdatedAt: result.interestUpdatedAt,
+    },
+  });
+  if (updated.count !== 1)
+    fail("CONFLICT", "Your savings changed. Please try again.");
+  if (result.earned > 0) {
+    const user = await tx.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { balance: true },
+    });
+    await tx.transaction.create({
+      data: {
+        userId,
+        stashId: id,
+        reference: newReference(),
+        kind: "interest",
+        title: `Interest in ${stash.name}`,
+        amount: result.earned,
+        balanceAfter: user.balance,
+        details: {
+          savingsBalanceAfter: result.balance,
+          annualRate: stash.interestRate,
+          days: result.days,
+        },
+      },
+    });
+  }
+  return {
+    ...stash,
+    balance: result.balance,
+    interestCarry: result.interestCarry,
+    interestUpdatedAt: result.interestUpdatedAt,
+  };
 }

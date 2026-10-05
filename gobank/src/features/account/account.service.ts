@@ -16,19 +16,23 @@ export const getOverview = (userId: string) =>
     },
   });
 
-export const getProfile = (userId: string) =>
-  db.user.findUniqueOrThrow({
+export const getProfile = async (userId: string) => {
+  const profile = await db.user.findUniqueOrThrow({
     where: { id: userId },
     select: {
       username: true,
       fullName: true,
       profilePhoto: true,
       mobile: true,
-      email: true,
+      gmail: true,
+      googleId: true,
       accountNumber: true,
       createdAt: true,
     },
   });
+  const { googleId, ...details } = profile;
+  return { ...details, gmail: googleId ? details.gmail : null };
+};
 
 export async function listActivity(
   userId: string,
@@ -56,9 +60,8 @@ export const getTransaction = (userId: string, reference: string) =>
   });
 
 type ProfileUpdate = {
-  fullName: string | null;
+  fullName: string;
   mobile: string | null;
-  email: string | null;
   profilePhoto?: string | null;
 };
 

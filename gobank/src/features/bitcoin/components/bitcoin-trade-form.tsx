@@ -219,7 +219,7 @@ export function BitcoinTradeForm({
               {success.side === "buy" ? "Bitcoin bought" : "Bitcoin sold"}
             </p>
             <p className="mt-1 text-[11px]">
-              {btc(success.satoshis)} BTC · {money(success.cashCents)} PHP
+              {btc(success.satoshis)} BTC · {money(success.phpCentavos)} PHP
             </p>
           </div>
         </div>

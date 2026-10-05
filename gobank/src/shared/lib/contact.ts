@@ -13,12 +13,18 @@ export function validateMobile(raw: string): string | null {
   return null;
 }
 
-export function validateEmail(raw: string): string | null {
-  if (raw.trim().length === 0) return null;
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(raw.trim())) {
-    return "That does not look like an email";
-  }
+export function validateFullName(raw: string): string | null {
+  const length = raw.trim().length;
+  if (length < 2) return "Enter your full name";
+  if (length > 80) return "Use at most 80 characters";
   return null;
+}
+
+export function normaliseGmail(raw: string): string | null {
+  const value = raw.trim().toLowerCase();
+  return /^[a-z0-9][a-z0-9._+-]*@(gmail|googlemail)\.com$/.test(value)
+    ? value
+    : null;
 }
 
 export function formatMobile(raw: string) {

@@ -1,10 +1,10 @@
-import { validateEmail, validateMobile } from "~/shared/lib/contact";
+import { validateFullName, validateMobile } from "~/shared/lib/contact";
 import { TextField } from "~/shared/ui/text-field";
 
-export type ProfileValues = { fullName: string; mobile: string; email: string };
+export type ProfileValues = { fullName: string; mobile: string };
 
-export const profileIsValid = ({ mobile, email }: ProfileValues) =>
-  !validateMobile(mobile) && !validateEmail(email);
+export const profileIsValid = ({ fullName, mobile }: ProfileValues) =>
+  !validateFullName(fullName) && !validateMobile(mobile);
 
 type ProfileFieldsProps = {
   value: ProfileValues;
@@ -16,7 +16,9 @@ export function ProfileFields({ value, onChange }: ProfileFieldsProps) {
     <>
       <TextField
         label="Full name"
-        optional
+        required
+        minLength={2}
+        maxLength={80}
         placeholder="Your full name"
         autoComplete="name"
         value={value.fullName}
@@ -34,18 +36,6 @@ export function ProfileFields({ value, onChange }: ProfileFieldsProps) {
         onChange={(event) => onChange({ mobile: event.target.value })}
         error={validateMobile(value.mobile)}
         hint="Lets friends pay you by number."
-      />
-      <TextField
-        label="Email"
-        optional
-        type="email"
-        inputMode="email"
-        placeholder="you@example.com"
-        autoComplete="email"
-        autoCapitalize="none"
-        value={value.email}
-        onChange={(event) => onChange({ email: event.target.value })}
-        error={validateEmail(value.email)}
       />
     </>
   );

@@ -3,44 +3,28 @@ import { newReference } from "~/server/codes";
 import { asDatabaseError, fail } from "~/server/errors";
 import { post } from "~/server/ledger";
 import { getBitcoinQuote } from "./bitcoin.market";
-import { calculateTrade, type BitcoinTrade } from "./bitcoin.rules";
+import {
+  calculateTrade,
+  summarizeTrades,
+  type BitcoinTrade,
+} from "./bitcoin.rules";
 import { quoteIsFresh } from "./bitcoin.types";
 
-async function ensureWallet(userId: string) {
-  try {
-    await db.investmentWallet.upsert({
-      where: { userId },
-      create: { userId },
-      update: {},
-    });
-  } catch (error) {
-    if (asDatabaseError(error)?.code !== "P2002") throw error;
-    await db.investmentWallet.findUniqueOrThrow({ where: { userId } });
-  }
-}
-
 export async function getBitcoinPortfolio(userId: string) {
-  await ensureWallet(userId);
   return db.$transaction(
     async (tx) => {
-      const account = await tx.investmentWallet.findUniqueOrThrow({
-        where: { userId },
-      });
       const user = await tx.user.findUniqueOrThrow({
         where: { id: userId },
         select: { balance: true },
       });
-      const orders = await tx.investmentOrder.findMany({
-        where: { accountId: userId },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        take: 20,
+      const trades = await tx.bitcoinTrade.findMany({
+        where: { userId },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       });
       return {
-        satoshis: account.satoshis,
-        costBasisCents: account.costBasisCents,
-        realizedCents: account.realizedCents,
+        ...summarizeTrades(trades),
         cashCents: user.balance,
-        orders,
+        trades: trades.slice(-20).reverse(),
       };
     },
     { isolationLevel: "RepeatableRead" },
@@ -52,36 +36,39 @@ export async function tradeBitcoin(
   requestId: string,
   trade: BitcoinTrade,
 ) {
-  const duplicate = await db.investmentOrder.findUnique({
-    where: { accountId_requestId: { accountId: userId, requestId } },
-  });
+  const key = { userId_requestId: { userId, requestId } };
+  const duplicate = await db.bitcoinTrade.findUnique({ where: key });
   if (duplicate) return duplicate;
   const quote = await getBitcoinQuote();
-  // Never execute from a browser-supplied price or an expired market snapshot.
-  if (!quoteIsFresh(quote.asOf, Date.now()))
-    fail("BAD_REQUEST", "The quote expired. Refresh the price and try again.");
-  await ensureWallet(userId);
+
+  // Only server prices can settle a trade. Serialization prevents double spending.
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       return await db.$transaction(
         async (tx) => {
-          const repeated = await tx.investmentOrder.findUnique({
-            where: { accountId_requestId: { accountId: userId, requestId } },
-          });
+          const repeated = await tx.bitcoinTrade.findUnique({ where: key });
           if (repeated) return repeated;
           if (!quoteIsFresh(quote.asOf, Date.now()))
-            fail("BAD_REQUEST", "The quote expired. Try again.");
-          const account = await tx.investmentWallet.findUniqueOrThrow({
+            fail(
+              "BAD_REQUEST",
+              "The quote expired. Refresh the price and try again.",
+            );
+
+          const user = await tx.user.findUniqueOrThrow({
+            where: { id: userId },
+            select: { balance: true },
+          });
+          const history = await tx.bitcoinTrade.findMany({
             where: { userId },
+            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
           });
           let result;
           try {
-            const user = await tx.user.findUniqueOrThrow({
-              where: { id: userId },
-              select: { balance: true },
-            });
             result = calculateTrade(
-              { ...account, cashCents: user.balance },
+              {
+                ...summarizeTrades(history),
+                cashCents: user.balance,
+              },
               trade,
               quote.priceCents,
             );
@@ -105,28 +92,15 @@ export async function tradeBitcoin(
               priceCentavos: quote.priceCents,
             },
           });
-          await tx.investmentWallet.update({
-            where: { userId, version: account.version },
+          return tx.bitcoinTrade.create({
             data: {
-              satoshis: result.next.satoshis,
-              costBasisCents: result.next.costBasisCents,
-              realizedCents: result.next.realizedCents,
-              version: { increment: 1 },
-            },
-          });
-          return tx.investmentOrder.create({
-            data: {
-              accountId: userId,
+              userId,
               requestId,
               reference,
               side: trade.side,
               satoshis: result.satoshis,
-              cashCents: result.cashCents,
-              priceCents: quote.priceCents,
-              realizedCents: result.realizedCents,
-              phpAfter: result.next.cashCents,
-              satoshisAfter: result.next.satoshis,
-              quotedAt: new Date(quote.asOf),
+              phpCentavos: result.cashCents,
+              priceCentavos: quote.priceCents,
             },
           });
         },
@@ -135,15 +109,11 @@ export async function tradeBitcoin(
     } catch (error) {
       const code = asDatabaseError(error)?.code;
       if (code === "P2002") {
-        const repeated = await db.investmentOrder.findUnique({
-          where: { accountId_requestId: { accountId: userId, requestId } },
-        });
+        const repeated = await db.bitcoinTrade.findUnique({ where: key });
         if (repeated) return repeated;
       }
-      if (code !== "P2034" && code !== "P2025") throw error;
-      if (attempt === 3)
-        fail("CONFLICT", "Your portfolio changed. Please try again.");
+      if (code !== "P2034") throw error;
     }
   }
-  return fail("CONFLICT", "Please try this trade again.");
+  return fail("CONFLICT", "Your account changed. Please try this trade again.");
 }

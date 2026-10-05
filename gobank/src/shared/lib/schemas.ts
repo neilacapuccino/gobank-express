@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normaliseMobile, validateEmail, validateMobile } from "./contact";
+import { normaliseMobile, validateMobile } from "./contact";
 
 const blankToNull = (value: string) => value || null;
 
@@ -11,18 +11,10 @@ export const mobile = z
   .refine((value) => !validateMobile(value), "Use the format 09XXXXXXXXX")
   .transform((value) => blankToNull(normaliseMobile(value)));
 
-const email = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .refine((value) => !validateEmail(value), "That does not look like an email")
-  .transform(blankToNull);
-
 export const optionalText = (max: number) =>
   z.string().trim().max(max).transform(blankToNull);
 
 export const profileFields = {
-  fullName: optionalText(80),
+  fullName: z.string().trim().min(2, "Enter your full name").max(80),
   mobile,
-  email,
 };

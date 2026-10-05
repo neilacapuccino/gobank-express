@@ -11,12 +11,13 @@ import {
 
 const suffix = randomUUID().replaceAll("-", "");
 const ids: string[] = [];
-const fields = { fullName: null, mobile: null, email: null };
+const fields = { fullName: "Photo test", mobile: null };
 try {
   for (let index = 0; index < 2; index++) {
     const user = await db.user.create({
       data: {
         username: `photo_test_${suffix}_${index}`,
+        fullName: "Photo test",
         accountNumber: `photo-test-${suffix}-${index}`,
         pinHash: "test-only-not-a-valid-pin",
       },

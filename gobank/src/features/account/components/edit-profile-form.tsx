@@ -8,6 +8,7 @@ import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { prepareProfilePhoto } from "../profile-photo.client";
 import { ProfilePhotoPicker } from "./profile-photo-picker";
+import { GmailLink } from "./gmail-link";
 import {
   ProfileFields,
   profileIsValid,
@@ -24,7 +25,6 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
   const [value, setValue] = useState<ProfileValues>({
     fullName: profile.fullName ?? "",
     mobile: profile.mobile ?? "",
-    email: profile.email ?? "",
   });
 
   const save = api.account.updateProfile.useMutation({
@@ -76,6 +76,7 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
             setValue((current) => ({ ...current, ...patch }))
           }
         />
+        <GmailLink gmail={profile.gmail} />
       </div>
 
       {save.error ? (

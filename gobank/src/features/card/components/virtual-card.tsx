@@ -1,32 +1,42 @@
 "use client";
 
-import { getBrand, type CardBrandId } from "../card-brands";
+import { getBrand, type IssuedCardBrandId } from "../card-brands";
 import { cn } from "~/shared/lib/cn";
 import { CardBrandLogo } from "./card-brand-logo";
 
 type VirtualCardProps = {
-  brandId: CardBrandId;
+  brandId: IssuedCardBrandId;
   holder: string;
+  first4?: string;
   last4?: string;
+  number?: string;
+  expiresAt?: string;
   compact?: boolean;
 };
 
 export function VirtualCard({
   brandId,
   holder,
+  first4,
   last4 = "••••",
+  number,
+  expiresAt,
   compact,
 }: VirtualCardProps) {
   const brand = getBrand(brandId);
+  const prefix = first4 ?? brand.numberPrefix;
+  const expiry = expiresAt ? new Date(expiresAt) : null;
+  const expiryLabel = expiry
+    ? `${String(expiry.getUTCMonth() + 1).padStart(2, "0")}/${String(expiry.getUTCFullYear()).slice(-2)}`
+    : "••/••";
 
   return (
     <div
       className={cn(
-        "relative w-full overflow-hidden rounded-2xl p-5 ring-1 ring-white/10 transition-all duration-300 ring-inset",
+        "relative w-full overflow-hidden rounded-2xl bg-[#111113] p-5 ring-1 ring-white/10 ring-inset",
         "shadow-[0_1px_2px_rgba(13,18,32,0.16),0_12px_28px_-12px_rgba(13,18,32,0.45)]",
         compact ? "aspect-[16/9]" : "aspect-[1.586/1]",
       )}
-      style={{ backgroundColor: brand.face }}
     >
       <div className="relative flex h-full flex-col justify-between">
         <div className="flex items-center gap-2.5">
@@ -38,14 +48,23 @@ export function VirtualCard({
 
         <div className="flex flex-col gap-3">
           <p
+            aria-label={
+              number
+                ? `Card number ${number}`
+                : last4 === "••••"
+                  ? `Card preview starting with ${prefix}`
+                  : `Card starting with ${prefix}, ending in ${last4}`
+            }
             className={cn(
               "font-medium tracking-[0.16em] text-white/90 tabular-nums",
               compact ? "text-[13px]" : "text-[16px]",
             )}
           >
-            <span aria-hidden>•••• •••• •••• </span>
-            <span className="sr-only">Card ending in </span>
-            {last4}
+            <span aria-hidden>
+              {number
+                ? number.match(/.{1,4}/g)?.join(" ")
+                : `${prefix} •••• •••• ${last4}`}
+            </span>
           </p>
           <div className="flex items-end justify-between gap-4">
             <div className="min-w-0">
@@ -71,7 +90,7 @@ export function VirtualCard({
                   compact ? "text-[11px]" : "text-[13px]",
                 )}
               >
-                ••/••
+                {expiryLabel}
               </p>
             </div>
             <CardBrandLogo
