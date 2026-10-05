@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { BankingIllustration } from "~/shared/ui/banking-illustration";
-import { Screen } from "~/shared/ui/screen";
+import Image from "next/image";
+import { GoBankLogo } from "~/features/account/components/gobank-logo";
+import { WelcomeActions } from "~/features/auth/components/welcome-actions";
 
 export const metadata: Metadata = {
   title: "GoBank Express",
@@ -9,41 +9,43 @@ export const metadata: Metadata = {
 
 export default function WelcomePage() {
   return (
-    <Screen>
-      <div className="flex flex-1 flex-col items-center text-center">
-        <div className="flex flex-1 flex-col items-center justify-center">
-          <BankingIllustration className="w-full max-w-[280px]" />
+    <div className="min-h-dvh bg-[#020b16] text-[#f4f7fc]">
+      <main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col border-[#172333] px-6 py-6 sm:border-x">
+        <header className="flex justify-center">
+          <GoBankLogo className="h-9 w-[110px]" />
+        </header>
 
-          <h1 className="text-ink mt-8 text-[27px] leading-tight font-semibold tracking-tight">
-            Let&rsquo;s get started
+        <section className="flex flex-1 flex-col items-center justify-center pt-2 pb-6 text-center">
+          <div className="relative isolate h-[clamp(200px,calc(100dvh-380px),400px)] w-full max-w-[380px]">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -inset-x-6 -inset-y-5 bg-[radial-gradient(ellipse_at_50%_48%,#006cff28_0%,#005fff0d_40%,transparent_70%)]"
+            />
+            <Image
+              src="/images/welcome-globe.webp"
+              alt="A blue globe connecting money transfers, pesos, and people"
+              fill
+              priority
+              sizes="(max-width: 440px) calc(100vw - 48px), 380px"
+              className="object-contain"
+            />
+          </div>
+
+          <h1 className="mt-5 text-[32px] leading-[1.12] font-semibold tracking-tight">
+            Send, receive,
+            <br />
+            <span className="text-[#20bfff]">and grow</span>
           </h1>
 
-          <p className="text-ink-muted mt-3 max-w-[280px] text-[14.5px] leading-relaxed">
-            Never a better time than now to start managing your money with ease.
+          <p className="mt-4 max-w-[300px] text-[14px] leading-6 text-[#acb8ca]">
+            Send money, pay bills, and buy Bitcoin.
+            <br />
+            All in one app.
           </p>
+        </section>
 
-          <div className="mt-7 flex items-center gap-2" aria-hidden>
-            <span className="bg-line-strong h-1.5 w-1.5 rounded-full" />
-            <span className="bg-line-strong h-1.5 w-1.5 rounded-full" />
-            <span className="bg-brand h-1.5 w-4 rounded-full" />
-          </div>
-        </div>
-
-        <div className="mt-10 flex w-full flex-col items-center gap-1">
-          <Link
-            href="/register"
-            className="bg-brand hover:bg-brand-hover inline-flex h-13 w-full items-center justify-center rounded-full text-[15px] font-medium text-white transition-colors duration-150"
-          >
-            Create Account
-          </Link>
-          <Link
-            href="/signin"
-            className="text-brand hover:text-brand-hover inline-flex h-12 items-center justify-center px-4 text-[14.5px] font-medium transition-colors duration-150"
-          >
-            Login to Account
-          </Link>
-        </div>
-      </div>
-    </Screen>
+        <WelcomeActions />
+      </main>
+    </div>
   );
 }
