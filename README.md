@@ -41,12 +41,15 @@ Bitcoin purchases use the main PHP account balance directly.
 - Bitcoin only, at `/stocks`, with a black screen and prices, holdings and
   trade amounts in PHP. Buy directly from the main PHP account; sell Bitcoin to
   credit PHP back. There is no USD wallet or manual currency conversion.
-- Live Binance.US BTC/USD market data is priced in pesos using Frankfurter's
-  daily USD/PHP reference rate. The reference date is shown; PHP prices follow
-  Bitcoin updates. Historical candles use the current reference rate.
+- Live Binance BTC/USDT market data is priced in pesos using the current
+  Binance.US USDT/USD bid/ask midpoint and Frankfurter's daily USD/PHP reference
+  rate. The reference date is shown; PHP prices follow Bitcoin updates.
+  Historical candles use the current conversion rate.
 - Line and candlestick charts show 1 minute, 1 hour, 1 week, 1 month or 1 year.
-  Short views use one-minute candles. The stream updates current OHLC candles
-  about every two seconds, with a five-second REST fallback and pause/resume.
+  The minute view combines sixty native one-second candles into three-second
+  candles with their actual OHLC values; the hourly view uses sixty one-minute
+  candles. Wider bodies and continuous flat sections make short ranges easier
+  to read. Live streams have REST fallback.
   Longer ranges use hourly, four-hour and daily candles.
 - Fractional buys and sells persist with average cost, realized/unrealized
   profit or loss and the latest 20 trades. The PHP debit/credit, bank activity
@@ -55,8 +58,8 @@ Bitcoin purchases use the main PHP account balance directly.
   satoshis prevent balance drift. Serializable transactions, version checks and
   per-user request IDs guard concurrent and repeated submissions.
 - External exchange execution, Bitcoin custody and withdrawals are not connected.
-  Legacy preview and conversion records are retained separately from active
-  PHP holdings. New holdings start at zero with no free account money.
+  Obsolete preview and conversion tables have been removed.
+  New holdings start at zero with no free account money.
 
 Run `npm run test:bitcoin` for calculation and candle tests. With a migrated
 database and network access, `npm run test:bitcoin:integration` verifies feeds,

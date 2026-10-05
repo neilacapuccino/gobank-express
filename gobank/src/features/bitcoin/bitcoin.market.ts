@@ -13,7 +13,7 @@ import {
 
 const numeric = z.coerce.number().finite().positive();
 const ticker = z.object({
-  symbol: z.literal("BTCUSD"),
+  symbol: z.literal("BTCUSDT"),
   lastPrice: numeric,
   openPrice: numeric,
   highPrice: numeric,
@@ -21,6 +21,13 @@ const ticker = z.object({
   volume: z.coerce.number().finite().nonnegative(),
   closeTime: z.number().int().positive(),
 });
+const conversionQuote = z
+  .object({
+    symbol: z.literal("USDTUSD"),
+    bidPrice: numeric,
+    askPrice: numeric,
+  })
+  .refine((value) => value.askPrice >= value.bidPrice);
 const candle = z
   .tuple([
     z.number().int().positive(),
@@ -37,9 +44,13 @@ type Cache<T> = { expires: number; promise: Promise<T> };
 let quoteCache: Cache<BitcoinQuote> | undefined;
 const charts = new Map<BitcoinRange, Cache<BitcoinCandle[]>>();
 
-async function read<T>(path: string, schema: z.ZodType<T>): Promise<T> {
+async function read<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  base = "https://data-api.binance.vision/api/v3",
+): Promise<T> {
   try {
-    const response = await fetch(`https://api.binance.us/api/v3/${path}`, {
+    const response = await fetch(`${base}/${path}`, {
       cache: "no-store",
       signal: AbortSignal.timeout(8_000),
       headers: { Accept: "application/json" },
@@ -56,17 +67,23 @@ export async function getBitcoinQuote(): Promise<BitcoinQuote> {
     const entry = {
       expires: Date.now() + 5_000,
       promise: Promise.all([
-        read("ticker/24hr?symbol=BTCUSD", ticker),
+        read("ticker/24hr?symbol=BTCUSDT", ticker),
         getPhpRate(),
-      ]).then(([value, fx]) => {
+        read(
+          "ticker/bookTicker?symbol=USDTUSD",
+          conversionQuote,
+          "https://api.binance.us/api/v3",
+        ),
+      ]).then(([value, fx, peg]) => {
+        const phpPerQuote = (fx.rate * (peg.bidPrice + peg.askPrice)) / 2;
         const result = {
-          priceCents: Math.round(value.lastPrice * fx.rate * 100),
-          openCents: Math.round(value.openPrice * fx.rate * 100),
-          highCents: Math.round(value.highPrice * fx.rate * 100),
-          lowCents: Math.round(value.lowPrice * fx.rate * 100),
+          priceCents: Math.round(value.lastPrice * phpPerQuote * 100),
+          openCents: Math.round(value.openPrice * phpPerQuote * 100),
+          highCents: Math.round(value.highPrice * phpPerQuote * 100),
+          lowCents: Math.round(value.lowPrice * phpPerQuote * 100),
           volume: value.volume,
           asOf: value.closeTime,
-          phpPerUsd: fx.rate,
+          phpPerQuote,
           rateDate: fx.date,
         };
         if (
@@ -91,9 +108,9 @@ export function getBitcoinChart(range: BitcoinRange) {
   if (existing && existing.expires > Date.now()) return existing.promise;
   const { interval, limit } = BITCOIN_CANDLES[range];
   const entry = {
-    expires: Date.now() + 5_000,
+    expires: Date.now() + (range === "1MIN" ? 2_000 : 5_000),
     promise: read(
-      `klines?symbol=BTCUSD&interval=${interval}&limit=${limit}`,
+      `klines?symbol=BTCUSDT&interval=${interval}&limit=${limit}`,
       z.array(candle).min(2),
     ).then((rows) =>
       rows

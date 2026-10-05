@@ -4,7 +4,11 @@ export const BITCOIN_CANDLES: Record<
   BitcoinRange,
   { interval: string; limit: number; label: string }
 > = {
-  "1MIN": { interval: "1m", limit: 2, label: "1-minute candles" },
+  "1MIN": {
+    interval: "1s",
+    limit: 60,
+    label: "1-second candles · last 60 seconds",
+  },
   "1H": { interval: "1m", limit: 60, label: "1-minute candles" },
   "1W": { interval: "1h", limit: 168, label: "1-hour candles" },
   "1M": { interval: "4h", limit: 180, label: "4-hour candles" },
@@ -17,7 +21,7 @@ export type BitcoinQuote = {
   lowCents: number;
   volume: number;
   asOf: number;
-  phpPerUsd: number;
+  phpPerQuote: number;
   rateDate: string;
 };
 export type BitcoinCandle = {

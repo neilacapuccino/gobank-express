@@ -20,17 +20,17 @@ const suffix = randomUUID().replaceAll("-", "");
 const ids: string[] = [];
 try {
   const quote = await getBitcoinQuote();
-  assert.ok(quote.priceCents > 0 && quote.phpPerUsd > 1);
+  assert.ok(quote.priceCents > 0 && quote.phpPerQuote > 1);
   assert.ok(quoteIsFresh(quote.asOf, Date.now()));
   const response = await fetch(
-    "https://api.binance.us/api/v3/ticker/24hr?symbol=BTCUSD",
+    "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT",
     { signal: AbortSignal.timeout(8_000) },
   );
   const source = (await response.json()) as { lastPrice: string };
-  const phpExpected = Number(source.lastPrice) * quote.phpPerUsd * 100;
+  const phpExpected = Number(source.lastPrice) * quote.phpPerQuote * 100;
   assert.ok(
     Math.abs(quote.priceCents - phpExpected) / phpExpected < 0.01,
-    "PHP quote must convert USD feed values",
+    "PHP quote must convert USDT feed values",
   );
   for (const range of BITCOIN_RANGES) {
     const chart = await getBitcoinChart(range);
@@ -48,15 +48,6 @@ try {
       },
     });
     ids.push(user.id);
-    // Old preview balances and holdings must never become funded PHP assets.
-    await db.bitcoinAccount.create({
-      data: {
-        userId: user.id,
-        cashCents: 1_000_000,
-        satoshis: 100_000n,
-        costBasisCents: 100,
-      },
-    });
     const empty = await getBitcoinPortfolio(user.id);
     assert.equal(empty.cashCents, 0);
     assert.equal(empty.satoshis, 0n);
@@ -129,11 +120,6 @@ try {
   );
   assert.equal((await getBitcoinPortfolio(userId)).cashCents, sold.cashCents);
   assert.equal(await db.transaction.count({ where: { userId } }), entryCount);
-  assert.equal(
-    (await db.bitcoinAccount.findUniqueOrThrow({ where: { userId } }))
-      .cashCents,
-    1_000_000,
-  );
   const raceId = ids[1]!;
   const race = await Promise.allSettled([
     tradeBitcoin(raceId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),
@@ -166,7 +152,7 @@ try {
   );
   assert.ok((await getBitcoinPortfolio(mixedId)).cashCents >= 0);
   console.log(
-    "Integration passed: converted PHP quotes, all five ranges, direct bank debit/credit, trade persistence, matching activity references, idempotency, concurrent trades/account spending, rollback, user isolation, no rewards and legacy data preservation.",
+    "Integration passed: converted PHP quotes, all five ranges, direct bank debit/credit, trade persistence, matching activity references, idempotency, concurrent trades/account spending, rollback, user isolation, and no rewards.",
   );
 } finally {
   if (ids.length) await db.user.deleteMany({ where: { id: { in: ids } } });

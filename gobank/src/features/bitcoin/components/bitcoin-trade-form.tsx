@@ -294,9 +294,8 @@ export function BitcoinTradeForm({
               </div>
             </dl>
             <p className="text-ink-muted mt-5 rounded-xl bg-white/5 p-3 text-[11px] leading-relaxed">
-              Your final fill uses the latest Binance.US price when confirmed.
-              Buying debits your PHP account. Selling credits PHP back to your
-              account.
+              Your final fill uses the latest PHP quote when confirmed. Buying
+              debits your PHP account. Selling credits PHP back to your account.
             </p>
             {mutation.error && (
               <p role="alert" className="mt-4 text-[12px] text-rose-300">

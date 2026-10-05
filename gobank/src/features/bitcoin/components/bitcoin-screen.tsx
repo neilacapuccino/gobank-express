@@ -119,7 +119,7 @@ export function BitcoinScreen() {
           <span className="text-ink-faint text-[9px]">
             {quote
               ? `Updated ${new Date(quote.asOf).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
-              : "Binance.US market data"}
+              : "Binance market data"}
           </span>
         </div>
         {!fresh && quote && (
@@ -306,14 +306,14 @@ export function BitcoinScreen() {
         Live Bitcoin market data from{" "}
         <a
           className="underline underline-offset-2"
-          href="https://www.binance.us/"
+          href="https://www.binance.com/en/trade/BTC_USDT"
           target="_blank"
           rel="noreferrer"
         >
-          Binance.US
+          Binance
         </a>
         .<br />
-        PHP pricing uses the{" "}
+        PHP pricing includes the current USDT/USD market rate and the{" "}
         <a
           href="https://frankfurter.dev/"
           target="_blank"
@@ -323,7 +323,7 @@ export function BitcoinScreen() {
           Frankfurter
         </a>{" "}
         reference rate{quote ? ` dated ${quote.rateDate}` : ""}.<br />
-        Charts use the current PHP reference rate.
+        Charts use the current conversion rate.
         <br />
         Trades settle in your GoBank account. External exchange orders and
         withdrawals are unavailable.

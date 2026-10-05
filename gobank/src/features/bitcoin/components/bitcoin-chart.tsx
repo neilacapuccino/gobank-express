@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { CandlestickChart, ChartNoAxesCombined, RefreshCw } from "lucide-react";
 import { useBitcoinCandles } from "../hooks/use-bitcoin-candles";
+import { groupCandles } from "../bitcoin.candles";
 import {
   BITCOIN_RANGES,
   BITCOIN_CANDLES,
@@ -15,27 +16,24 @@ import {
 const W = 360,
   H = 216,
   LEFT = 12,
-  RIGHT = 54,
+  RIGHT = 68,
   TOP = 16,
   BOTTOM = 26;
 
 export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
   const [range, setRange] = useState<BitcoinRange>("1H");
   const [mode, setMode] = useState<"line" | "candles">("candles");
-  const [live, setLive] = useState(true);
   const [cursor, setCursor] = useState<number | null>(null);
   const id = useId().replaceAll(":", "");
-  const { chart, status, streaming, updatedAt } = useBitcoinCandles(
-    range,
-    live,
-  );
+  const { chart, points: history, updatedAt } = useBitcoinCandles(range);
+  const candles = range === "1MIN" ? groupCandles(history, 3_000) : history;
   const points = quote
-    ? (chart.data ?? []).map((point) => ({
+    ? candles.map((point) => ({
         ...point,
-        open: point.open * quote.phpPerUsd,
-        high: point.high * quote.phpPerUsd,
-        low: point.low * quote.phpPerUsd,
-        close: point.close * quote.phpPerUsd,
+        open: point.open * quote.phpPerQuote,
+        high: point.high * quote.phpPerQuote,
+        low: point.low * quote.phpPerQuote,
+        close: point.close * quote.phpPerQuote,
       }))
     : [];
   const first = points[0];
@@ -46,7 +44,7 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
   const high = Math.max(
     ...points.map((p) => (mode === "candles" ? p.high : p.close)),
   );
-  const spread = Math.max(high - low, high * 0.002);
+  const spread = Math.max(high - low, high * 0.00001, 0.01);
   const minimum = low - spread * 0.12;
   const maximum = high + spread * 0.12;
   const y = (value: number) =>
@@ -62,6 +60,14 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
       (p, i) => `${i ? "L" : "M"}${x(p).toFixed(2)},${y(p.close).toFixed(2)}`,
     )
     .join(" ");
+  const flatPath = points
+    .slice(1)
+    .map((point, index) => {
+      const previous = points[index]!;
+      if (Math.abs(y(point.open) - y(previous.close)) >= 1.5) return "";
+      return `M${x(previous)},${y(previous.close)} L${x(point)},${y(point.open)}`;
+    })
+    .join(" ");
   const up = !!first && !!last && last.close >= first.close;
   const color = up ? "#56e3b1" : "#fb7185";
   const selected =
@@ -72,13 +78,15 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
     new Date(time).toLocaleString(
       "en-US",
       range === "1MIN" || range === "1H"
-        ? { hour: "numeric", minute: "2-digit" }
+        ? {
+            hour: "numeric",
+            minute: "2-digit",
+            ...(range === "1MIN" ? { second: "2-digit" } : {}),
+          }
         : { month: "short", day: "numeric" },
     );
-  const width = Math.min(
-    10,
-    Math.max(1, ((W - LEFT - RIGHT) / Math.max(points.length, 1)) * 0.55),
-  );
+  const slot = (W - LEFT - RIGHT) / Math.max(points.length - 1, 1);
+  const width = Math.min(12, Math.max(1, slot * 0.72));
 
   return (
     <section
@@ -133,19 +141,11 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
         </div>
       </div>
       <div className="mb-3 flex items-center justify-between gap-2 text-[9px]">
-        <span className="text-ink-faint">{BITCOIN_CANDLES[range].label}</span>
-        <button
-          type="button"
-          aria-label={live ? "Pause live candles" : "Resume live candles"}
-          aria-pressed={live}
-          onClick={() => setLive(!live)}
-          className={`flex min-h-7 items-center gap-1.5 rounded-lg px-2 ${streaming ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "text-ink-muted bg-white/5"}`}
-        >
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${streaming ? "animate-pulse bg-[#56e3b1]" : "bg-current"}`}
-          />
-          {status}
-        </button>
+        <span className="text-ink-faint">
+          {range === "1MIN"
+            ? "3-second candles · last 60 seconds"
+            : BITCOIN_CANDLES[range].label}
+        </span>
       </div>
       <div className="relative min-h-[216px]">
         {chart.isPending || (!quote && !chart.isError) ? (
@@ -212,7 +212,6 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
                       y2={y(value)}
                       stroke="#ffffff"
                       strokeOpacity=".065"
-                      strokeDasharray="3 5"
                     />
                     <text
                       x={W - RIGHT + 8}
@@ -223,7 +222,7 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
                       ₱
                       {new Intl.NumberFormat("en-US", {
                         notation: "compact",
-                        maximumFractionDigits: 3,
+                        maximumFractionDigits: range === "1MIN" ? 6 : 3,
                       }).format(value)}
                     </text>
                   </g>
@@ -242,34 +241,56 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
                     strokeWidth="2"
                     strokeLinejoin="round"
                   />
-                  <circle cx={x(last)} cy={y(last.close)} r="3" fill={color} />
                 </>
               ) : (
-                points.map((point) => (
-                  <g
-                    key={point.time}
-                    stroke={point.close >= point.open ? "#56e3b1" : "#fb7185"}
-                    fill={point.close >= point.open ? "#56e3b1" : "#fb7185"}
-                  >
-                    <line
-                      x1={x(point)}
-                      x2={x(point)}
-                      y1={y(point.high)}
-                      y2={y(point.low)}
-                      strokeWidth="1"
-                    />
-                    <rect
-                      x={x(point) - width / 2}
-                      y={y(Math.max(point.open, point.close))}
-                      width={width}
-                      height={Math.max(
-                        1,
-                        Math.abs(y(point.open) - y(point.close)),
-                      )}
-                      stroke="none"
-                    />
-                  </g>
-                ))
+                <>
+                  <path
+                    d={flatPath}
+                    fill="none"
+                    stroke="#87b9a5"
+                    strokeWidth="1.5"
+                    strokeOpacity=".8"
+                    strokeLinejoin="round"
+                  />
+                  {points.map((point) => {
+                    const openY = y(point.open),
+                      closeY = y(point.close);
+                    const flat =
+                      Math.abs(openY - closeY) < 1.5 &&
+                      Math.abs(y(point.high) - y(point.low)) < 3;
+                    const bodyWidth = flat ? Math.min(20, slot + 0.5) : width;
+                    const bodyHeight = flat
+                      ? 1.5
+                      : Math.max(3, Math.abs(openY - closeY));
+                    const candleColor = flat
+                      ? "#87b9a5"
+                      : point.close >= point.open
+                        ? "#56e3b1"
+                        : "#fb7185";
+                    return (
+                      <g
+                        key={point.time}
+                        stroke={candleColor}
+                        fill={candleColor}
+                      >
+                        <line
+                          x1={x(point)}
+                          x2={x(point)}
+                          y1={y(point.high)}
+                          y2={y(point.low)}
+                          strokeWidth="1"
+                        />
+                        <rect
+                          x={x(point) - bodyWidth / 2}
+                          y={(openY + closeY - bodyHeight) / 2}
+                          width={bodyWidth}
+                          height={bodyHeight}
+                          stroke="none"
+                        />
+                      </g>
+                    );
+                  })}
+                </>
               )}
               <text x={LEFT} y={H - 4} fill="#878792" fontSize="9">
                 {labelTime(first.time)}
@@ -292,15 +313,6 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
                     y2={H - BOTTOM}
                     stroke="#ffffff"
                     strokeOpacity=".4"
-                    strokeDasharray="3 3"
-                  />
-                  <circle
-                    cx={x(selected)}
-                    cy={y(selected.close)}
-                    r="4"
-                    fill={color}
-                    stroke="#171719"
-                    strokeWidth="2"
                   />
                 </g>
               )}
@@ -347,10 +359,10 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
               : value === "1H"
                 ? "1 hr"
                 : value === "1W"
-                  ? "1 week"
+                  ? "1 wk"
                   : value === "1M"
-                    ? "1 month"
-                    : "1 year"}
+                    ? "1 mo"
+                    : "1 yr"}
           </button>
         ))}
       </div>
@@ -362,17 +374,11 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
             minute: "2-digit",
             second: "2-digit",
           })}
-          {live && !streaming ? " · Waiting for live stream" : ""}
         </p>
       )}
       {chart.isError && chart.data && (
         <p className="mt-2 text-[10px] text-amber-300">
           Chart refresh failed. Showing the last loaded history.
-        </p>
-      )}
-      {mode === "candles" && points.some((point) => point.volume === 0) && (
-        <p className="text-ink-faint mt-2 text-[9px]">
-          Flat candles mark periods without trades.
         </p>
       )}
     </section>
