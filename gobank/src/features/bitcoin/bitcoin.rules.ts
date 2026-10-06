@@ -1,4 +1,4 @@
-import { MAX_CENTS, SATOSHIS } from "./bitcoin.types";
+import { BITCOIN_FEE_CENTS, MAX_CENTS, SATOSHIS } from "./bitcoin.types";
 
 export type TradingBalances = {
   cashCents: number;
@@ -61,7 +61,7 @@ export function calculateTrade(
     throw new Error("Price is unavailable. Try again.");
   const price = BigInt(priceCents);
   let satoshis: bigint;
-  let cashCents: number;
+  let tradeCents: number;
   if (trade.side === "buy") {
     if (
       !Number.isSafeInteger(trade.cashCents) ||
@@ -69,23 +69,28 @@ export function calculateTrade(
       trade.cashCents > MAX_CENTS
     )
       throw new Error("Enter at least ₱1.00.");
-    if (trade.cashCents > account.cashCents)
-      throw new Error("Not enough PHP in your account.");
     satoshis = (BigInt(trade.cashCents) * SATOSHIS) / price;
     if (satoshis === 0n)
       throw new Error("This amount is too small to buy Bitcoin.");
     // Round purchase costs up and sale proceeds down, preventing rounding profits.
-    cashCents = Number((satoshis * price + SATOSHIS - 1n) / SATOSHIS);
+    tradeCents = Number((satoshis * price + SATOSHIS - 1n) / SATOSHIS);
   } else {
     satoshis = trade.satoshis;
     if (satoshis <= 0n)
       throw new Error("Enter a Bitcoin amount greater than zero.");
     if (satoshis > account.satoshis)
       throw new Error("Not enough Bitcoin to sell.");
-    cashCents = Number((satoshis * price) / SATOSHIS);
-    if (cashCents === 0)
+    tradeCents = Number((satoshis * price) / SATOSHIS);
+    if (tradeCents === 0)
       throw new Error("This amount is worth less than ₱0.01.");
   }
+  const cashCents =
+    tradeCents +
+    (trade.side === "buy" ? BITCOIN_FEE_CENTS : -BITCOIN_FEE_CENTS);
+  if (trade.side === "buy" && cashCents > account.cashCents)
+    throw new Error("Not enough PHP in your account.");
+  if (cashCents <= 0)
+    throw new Error("Sale proceeds must exceed the ₱10.00 fee.");
   const holdings = applyTrade(account, {
     side: trade.side,
     satoshis,
@@ -103,5 +108,12 @@ export function calculateTrade(
     )
   )
     throw new Error("This trade exceeds the account limit.");
-  return { next, satoshis, cashCents, realizedCents };
+  return {
+    next,
+    satoshis,
+    tradeCents,
+    cashCents,
+    feeCents: BITCOIN_FEE_CENTS,
+    realizedCents,
+  };
 }

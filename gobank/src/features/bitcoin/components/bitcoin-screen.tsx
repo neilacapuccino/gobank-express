@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { BackButton } from "~/shared/ui/back-button";
 import { api } from "~/trpc/react";
-import { btc, holdingValue, money } from "../bitcoin.types";
+import { BITCOIN_FEE_CENTS, btc, holdingValue, money } from "../bitcoin.types";
 import { useBitcoinFeed } from "../hooks/use-bitcoin-feed";
 import { BitcoinChart } from "./bitcoin-chart";
 import { BitcoinTradeForm } from "./bitcoin-trade-form";
@@ -192,7 +192,7 @@ export function BitcoinScreen() {
           <div>
             <dt className="text-[#8da99b]">Fee</dt>
             <dd className="mt-1 text-[13px] font-semibold">
-              {money(0)}
+              {money(BITCOIN_FEE_CENTS)}
               <span className="ml-1 text-[9px] font-normal text-[#8da99b]">
                 PHP
               </span>

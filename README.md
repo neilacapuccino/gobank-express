@@ -88,7 +88,10 @@ Bitcoin purchases use the main PHP account balance directly.
   `phpCentavos` is the PHP amount paid/received; `priceCentavos` is the quoted
   PHP price per BTC. `satoshis` is BTC multiplied by 100,000,000.
   `requestId` prevents repeat submissions; `reference` connects the bank receipt.
-  Redundant wallet state and balance snapshots have been removed. Fee is `0.00 PHP`.
+  Redundant wallet state and balance snapshots have been removed. Each new buy or
+  sell charges a fixed **₱10.00 fee**. A buy debits Bitcoin value plus the fee;
+  a sale credits proceeds minus the fee. Trade history records the actual PHP
+  debit/credit, so cost basis and profit include fees without another table.
 
 Run `npm run test:bitcoin` for calculation and candle tests. With a migrated
 database and network access, `npm run test:bitcoin:integration` verifies feeds,

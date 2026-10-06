@@ -35,6 +35,7 @@ export type BitcoinCandle = {
 export const SATOSHIS = 100_000_000n;
 
 export const MAX_CENTS = 2_000_000_000;
+export const BITCOIN_FEE_CENTS = 1_000;
 
 export const quoteIsFresh = (asOf: number, now: number) =>
   Number.isFinite(asOf) && now - asOf < 60_000 && asOf - now < 10_000;

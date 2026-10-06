@@ -14,7 +14,9 @@ import {
 } from "../src/features/bitcoin/bitcoin.market";
 import {
   BITCOIN_RANGES,
+  BITCOIN_FEE_CENTS,
   quoteIsFresh,
+  SATOSHIS,
 } from "../src/features/bitcoin/bitcoin.types";
 const suffix = randomUUID().replaceAll("-", "");
 const ids: string[] = [];
@@ -72,6 +74,12 @@ try {
     tradeBitcoin(userId, requestId, { side: "buy", cashCents: 10_000 }),
   ]);
   assert.equal(first.id, repeated.id);
+  assert.equal(
+    first.phpCentavos,
+    Number(
+      (first.satoshis * BigInt(first.priceCentavos) + SATOSHIS - 1n) / SATOSHIS,
+    ) + BITCOIN_FEE_CENTS,
+  );
   assert.equal(await db.bitcoinTrade.count({ where: { userId: userId } }), 1);
   const bought = await getBitcoinPortfolio(userId);
   assert.equal(bought.cashCents, 1_000_000 - first.phpCentavos);
@@ -82,6 +90,10 @@ try {
   assert.equal(debit.amount, -first.phpCentavos);
   assert.equal(debit.balanceAfter, bought.cashCents);
   assert.equal(debit.points, 0);
+  assert.equal(
+    (debit.details as { feeCentavos: number }).feeCentavos,
+    BITCOIN_FEE_CENTS,
+  );
   await assert.rejects(
     tradeBitcoin(userId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),
   );
@@ -96,6 +108,11 @@ try {
     satoshis: first.satoshis,
   });
   const sold = await getBitcoinPortfolio(userId);
+  assert.equal(
+    sale.phpCentavos,
+    Number((sale.satoshis * BigInt(sale.priceCentavos)) / SATOSHIS) -
+      BITCOIN_FEE_CENTS,
+  );
   assert.equal(sold.cashCents, bought.cashCents + sale.phpCentavos);
   assert.equal(sold.satoshis, 0n);
   assert.equal(sold.costBasisCents, 0);
@@ -119,9 +136,10 @@ try {
   assert.equal((await getBitcoinPortfolio(userId)).cashCents, sold.cashCents);
   assert.equal(await db.transaction.count({ where: { userId } }), entryCount);
   const raceId = ids[1]!;
+  const fullBudget = 1_000_000 - BITCOIN_FEE_CENTS;
   const race = await Promise.allSettled([
-    tradeBitcoin(raceId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),
-    tradeBitcoin(raceId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),
+    tradeBitcoin(raceId, randomUUID(), { side: "buy", cashCents: fullBudget }),
+    tradeBitcoin(raceId, randomUUID(), { side: "buy", cashCents: fullBudget }),
   ]);
   assert.equal(
     race.filter((result) => result.status === "fulfilled").length,
@@ -131,7 +149,7 @@ try {
   assert.equal(await db.bitcoinTrade.count({ where: { userId: raceId } }), 1);
   const mixedId = ids[2]!;
   const mixed = await Promise.allSettled([
-    tradeBitcoin(mixedId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),
+    tradeBitcoin(mixedId, randomUUID(), { side: "buy", cashCents: fullBudget }),
     db.$transaction((tx) =>
       post(tx, {
         userId: mixedId,
@@ -147,7 +165,7 @@ try {
   );
   assert.ok((await getBitcoinPortfolio(mixedId)).cashCents >= 0);
   console.log(
-    "Integration passed: converted PHP quotes, all five ranges, direct bank debit/credit, trade persistence, matching activity references, idempotency, concurrent trades/account spending, rollback, user isolation, and no rewards.",
+    "Integration passed: converted PHP quotes, all five ranges, fixed buy/sell fees, direct bank debit/credit, trade persistence, matching activity references, idempotency, concurrent trades/account spending, rollback, user isolation, and no rewards.",
   );
 } finally {
   if (ids.length) await db.user.deleteMany({ where: { id: { in: ids } } });

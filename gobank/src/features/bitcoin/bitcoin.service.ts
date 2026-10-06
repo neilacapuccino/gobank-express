@@ -90,6 +90,7 @@ export async function tradeBitcoin(
             details: {
               satoshis: result.satoshis.toString(),
               priceCentavos: quote.priceCents,
+              feeCentavos: result.feeCents,
             },
           });
           return tx.bitcoinTrade.create({
