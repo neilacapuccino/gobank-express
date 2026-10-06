@@ -53,7 +53,7 @@ export function ProfilePhotoPicker({
             type="button"
             disabled={busy}
             onClick={onRemove}
-            className="text-ink-muted hover:text-ink min-h-10 px-2 text-[12px] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+            className="text-danger min-h-10 px-2 text-[12px] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
           >
             Remove
           </button>

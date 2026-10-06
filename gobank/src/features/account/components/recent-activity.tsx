@@ -75,7 +75,7 @@ export function RecentActivity({ entries }: { entries: Entry[] }) {
                     className={
                       incoming
                         ? "text-brand shrink-0 text-[14px] font-semibold tabular-nums"
-                        : "text-ink shrink-0 text-[14px] font-semibold tabular-nums"
+                        : "text-danger shrink-0 text-[14px] font-semibold tabular-nums"
                     }
                   >
                     {incoming ? "+" : "−"}
