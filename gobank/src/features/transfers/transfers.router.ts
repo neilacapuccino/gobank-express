@@ -1,9 +1,17 @@
 import { z } from "zod";
 import { centavos, optionalText } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
-import { findRecipient, sendMoney } from "./transfers.service";
+import {
+  findRecipient,
+  getRecentRecipients,
+  sendMoney,
+} from "./transfers.service";
 
 export const transfersRouter = createTRPCRouter({
+  recent: protectedProcedure.query(({ ctx }) =>
+    getRecentRecipients(ctx.userId),
+  ),
+
   recipient: protectedProcedure
     .input(z.object({ to: z.string().min(1) }))
     .query(({ ctx, input }) => findRecipient(input.to, ctx.userId)),

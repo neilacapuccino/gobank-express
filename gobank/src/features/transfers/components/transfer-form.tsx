@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, CheckCircle2, UserRound } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { dateTime, digitsOnly, peso } from "~/shared/lib/format";
@@ -14,13 +15,24 @@ type Step = "recipient" | "amount" | "review";
 
 const AMOUNT_DIGITS = 6;
 
+type Recipient = {
+  id: string;
+  username: string;
+  fullName: string;
+  profilePhoto: string | null;
+};
+
 export function TransferForm() {
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("recipient");
   const [recipientInput, setRecipientInput] = useState("");
+  const [selectedRecipient, setSelectedRecipient] =
+    useState<Recipient | null>(null);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+
+  const recentRecipients = api.transfers.recent.useQuery();
 
   const recipient = api.transfers.recipient.useQuery(
     {
@@ -41,18 +53,23 @@ export function TransferForm() {
     const result = await recipient.refetch();
 
     if (result.data) {
+      setSelectedRecipient(result.data);
       setStep("amount");
     }
   };
 
   const continueToReview = () => {
-    if (!recipient.data || amountInCentavos <= 0) return;
+    if ((!recipient.data && !selectedRecipient) || amountInCentavos <= 0) {
+      return;
+    }
 
     setStep("review");
   };
 
   const sendMoney = () => {
-    if (!recipient.data || amountInCentavos <= 0) return;
+    if ((!recipient.data && !selectedRecipient) || amountInCentavos <= 0) {
+      return;
+    }
 
     send.mutate({
       to: recipientInput.trim(),
@@ -76,6 +93,8 @@ export function TransferForm() {
     router.push("/dashboard");
     router.refresh();
   };
+
+  const currentRecipient = selectedRecipient ?? recipient.data ?? null;
 
   if (send.data) {
     return (
@@ -111,12 +130,12 @@ export function TransferForm() {
             <div className="border-line mt-6 space-y-4 border-t pt-4">
               <Detail
                 label="Recipient"
-                value={recipient.data?.fullName ?? ""}
+                value={currentRecipient?.fullName ?? ""}
               />
 
               <Detail
                 label="Username"
-                value={`@${recipient.data?.username ?? ""}`}
+                value={`@${currentRecipient?.username ?? ""}`}
               />
 
               <Detail label="Reference" value={send.data.reference} />
@@ -179,19 +198,24 @@ export function TransferForm() {
           value={recipientInput}
           loading={recipient.isFetching}
           error={recipient.error ? errorMessage(recipient.error) : null}
+          recentRecipients={recentRecipients.data ?? []}
+          recentLoading={recentRecipients.isLoading}
+          onRecentSelect={(recent) => {
+            setRecipientInput(recent.username);
+            setSelectedRecipient(recent);
+            setStep("amount");
+          }}
           onChange={(value) => {
             setRecipientInput(value);
+            setSelectedRecipient(null);
           }}
           onContinue={findRecipient}
         />
       ) : null}
 
-      {step === "amount" && recipient.data ? (
+      {step === "amount" && currentRecipient ? (
         <AmountStep
-          recipient={{
-            ...recipient.data,
-            fullName: recipient.data.fullName ?? "",
-          }}
+          recipient={currentRecipient}
           amount={amount}
           note={note}
           onAmountChange={setAmount}
@@ -200,12 +224,9 @@ export function TransferForm() {
         />
       ) : null}
 
-      {step === "review" && recipient.data ? (
+      {step === "review" && currentRecipient ? (
         <ReviewStep
-          recipient={{
-            ...recipient.data,
-            fullName: recipient.data.fullName ?? "",
-          }}
+          recipient={currentRecipient}
           amount={amountInCentavos}
           note={note}
           loading={send.isPending}
@@ -221,12 +242,18 @@ function RecipientStep({
   value,
   loading,
   error,
+  recentRecipients,
+  recentLoading,
+  onRecentSelect,
   onChange,
   onContinue,
 }: {
   value: string;
   loading: boolean;
   error: string | null;
+  recentRecipients: Recipient[];
+  recentLoading: boolean;
+  onRecentSelect: (recipient: Recipient) => void;
   onChange: (value: string) => void;
   onContinue: () => void;
 }) {
@@ -245,14 +272,79 @@ function RecipientStep({
           </h2>
 
           <p className="text-ink-soft mt-2 text-[12px] leading-relaxed">
-            Enter their username, linked Gmail, account number, or mobile.
+            Choose someone you recently sent money to or search for a recipient.
           </p>
         </div>
       </section>
 
-      <section className="mt-8">
+      <section className="mt-7">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-ink text-[13px] font-semibold">Recent</h3>
+
+          {recentRecipients.length > 0 ? (
+            <span className="text-ink-muted text-[10px]">
+              {recentRecipients.length} recipient
+              {recentRecipients.length === 1 ? "" : "s"}
+            </span>
+          ) : null}
+        </div>
+
+        {recentLoading ? (
+          <div className="bg-surface-sunken text-ink-muted rounded-xl px-4 py-4 text-center text-[12px]">
+            Loading recent recipients...
+          </div>
+        ) : recentRecipients.length === 0 ? (
+          <div className="bg-surface-sunken text-ink-muted rounded-xl px-4 py-4 text-center text-[12px]">
+            No recent recipients
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentRecipients.map((recipient) => (
+              <button
+                key={recipient.id}
+                type="button"
+                onClick={() => onRecentSelect(recipient)}
+                className="bg-surface hover:bg-surface-sunken border-line flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors"
+              >
+                {recipient.profilePhoto ? (
+                  <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
+                    <Image
+                      src={recipient.profilePhoto}
+                      alt={`${recipient.fullName}'s profile`}
+                      fill
+                      sizes="44px"
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </span>
+                ) : (
+                  <span className="bg-brand-soft text-brand grid h-11 w-11 shrink-0 place-items-center rounded-full">
+                    <UserRound size={20} strokeWidth={1.8} />
+                  </span>
+                )}
+
+                <span className="min-w-0">
+                  <span className="text-ink block truncate text-[13px] font-semibold">
+                    {recipient.fullName}
+                  </span>
+
+                  <span className="text-ink-muted mt-0.5 block truncate text-[11px]">
+                    @{recipient.username}
+                  </span>
+                </span>
+
+                <span className="text-ink-faint ml-auto text-[18px]">
+                  →
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="mt-7">
         <label className="text-ink-soft mb-2 block text-[13px] font-medium">
-          Recipient
+          Search recipient
         </label>
 
         <div
@@ -306,10 +398,7 @@ function AmountStep({
   onNoteChange,
   onContinue,
 }: {
-  recipient: {
-    fullName: string;
-    username: string;
-  };
+  recipient: Recipient;
   amount: string;
   note: string;
   onAmountChange: (value: string) => void;
@@ -321,9 +410,22 @@ function AmountStep({
   return (
     <div className="flex flex-1 flex-col">
       <section className="bg-surface-sunken mt-6 flex items-center gap-3 rounded-2xl p-4">
-        <div className="bg-brand-soft text-brand grid h-11 w-11 shrink-0 place-items-center rounded-full">
-          <UserRound size={20} strokeWidth={1.8} />
-        </div>
+        {recipient.profilePhoto ? (
+          <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
+            <Image
+              src={recipient.profilePhoto}
+              alt={`${recipient.fullName}'s profile`}
+              fill
+              sizes="44px"
+              unoptimized
+              className="object-cover"
+            />
+          </span>
+        ) : (
+          <div className="bg-brand-soft text-brand grid h-11 w-11 shrink-0 place-items-center rounded-full">
+            <UserRound size={20} strokeWidth={1.8} />
+          </div>
+        )}
 
         <div className="min-w-0">
           <p className="text-ink truncate text-[13px] font-semibold">
@@ -410,10 +512,7 @@ function ReviewStep({
   error,
   onSend,
 }: {
-  recipient: {
-    fullName: string;
-    username: string;
-  };
+  recipient: Recipient;
   amount: number;
   note: string;
   loading: boolean;
@@ -423,12 +522,25 @@ function ReviewStep({
   return (
     <div className="flex flex-1 flex-col">
       <section className="mt-6">
-        <p className="text-ink-muted text-[11px]">Youre sending to</p>
+        <p className="text-ink-muted text-[11px]">You're sending to</p>
 
         <div className="mt-2 flex items-center gap-3">
-          <div className="bg-brand-soft text-brand grid h-12 w-12 place-items-center rounded-full">
-            <UserRound size={21} strokeWidth={1.8} />
-          </div>
+          {recipient.profilePhoto ? (
+            <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full">
+              <Image
+                src={recipient.profilePhoto}
+                alt={`${recipient.fullName}'s profile`}
+                fill
+                sizes="48px"
+                unoptimized
+                className="object-cover"
+              />
+            </span>
+          ) : (
+            <div className="bg-brand-soft text-brand grid h-12 w-12 shrink-0 place-items-center rounded-full">
+              <UserRound size={21} strokeWidth={1.8} />
+            </div>
+          )}
 
           <div>
             <p className="text-ink text-[14px] font-semibold">
