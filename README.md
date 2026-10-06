@@ -201,8 +201,9 @@ npm run db:migrate
 
 `npm install` also rebuilds the Prisma client, and `db:migrate` applies any
 new migrations (it does nothing if the database is already up to date).
-`npm run dev` regenerates the client too, so a missed `npm install` no longer
-shows "Can't resolve '../../generated/prisma'".
+`npm run dev` generates the Prisma client only when it is missing or the schema
+has changed. It checks port 3001 first and reports an existing server; on Windows,
+stop the server before regenerating Prisma so its engine DLL is not locked.
 
 ## Available scripts
 
@@ -210,7 +211,7 @@ Run from the `gobank/` directory.
 
 | Script | Action |
 | ------ | ------ |
-| `npm run dev` | Regenerate the Prisma client, then start the dev server on port 3001 |
+| `npm run dev` | Check port 3001, generate Prisma when needed, then start the dev server |
 | `npm run build` | Production build |
 | `npm run start` | Serve an existing production build |
 | `npm run preview` | Build, then serve the result |
