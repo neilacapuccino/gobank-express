@@ -97,7 +97,7 @@ export function FeatureGrid({
 					<Link
 						key={item.href}
 						href={item.href}
-						className="flex min-h-20 items-center justify-center gap-3 rounded-[24px] bg-white px-3 py-4 text-[14px] font-bold text-[#282938] shadow-[0_5px_18px_-10px_#256d8035]"
+						className="flex min-h-20 items-center justify-center gap-3 rounded-[24px] bg-white px-3 py-4 text-[14px] font-medium text-[#282938] shadow-[0_5px_18px_-10px_#256d8035]"
 					>
 						<PocketIcon name={item.icon} width={25} height={25} />
 						{item.label}

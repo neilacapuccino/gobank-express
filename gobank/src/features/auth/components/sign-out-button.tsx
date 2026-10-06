@@ -16,10 +16,9 @@ export function SignOutButton() {
 
 	return (
 		<Button
-			variant="outline"
 			disabled={signOut.isPending || signOut.isSuccess}
 			onClick={() => signOut.mutate()}
-			className="text-danger! hover:bg-danger-soft!"
+			className="bg-danger! focus-visible:ring-danger/40! enabled:hover:bg-red-700! disabled:opacity-45"
 		>
 			<LogOut size={17} strokeWidth={1.9} aria-hidden />
 			{signOut.isPending || signOut.isSuccess ? "Signing out" : "Sign out"}
