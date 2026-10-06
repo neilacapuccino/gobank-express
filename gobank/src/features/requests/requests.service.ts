@@ -3,6 +3,8 @@ import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { transfer } from "~/server/ledger";
 
+export const MAX_REQUEST_AMOUNT = 2_000_000;
+
 export const listRequests = (userId: string) =>
 	db.moneyRequest.findMany({
 		where: {
@@ -37,6 +39,18 @@ export async function requestMoney(
 	amount: number,
 	note: string | null,
 ) {
+	if (!Number.isInteger(amount)) {
+		fail("BAD_REQUEST", "Request amount must be a whole centavo value.");
+	}
+
+	if (amount <= 0) {
+		fail("BAD_REQUEST", "Request amount must be greater than ₱0.00.");
+	}
+
+	if (amount > MAX_REQUEST_AMOUNT) {
+		fail("BAD_REQUEST", "You can request a maximum of ₱20,000.00.");
+	}
+
 	const payer = await findRecipient(from, userId);
 
 	return db.moneyRequest.create({

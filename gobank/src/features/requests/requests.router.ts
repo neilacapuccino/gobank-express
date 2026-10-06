@@ -3,6 +3,7 @@ import { centavos, optionalText } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import {
 	cancelRequest,
+	MAX_REQUEST_AMOUNT,
 	listPendingRequestsForNotifications,
 	listRequests,
 	requestMoney,
@@ -20,7 +21,7 @@ export const requestsRouter = createTRPCRouter({
 		.input(
 			z.object({
 				from: z.string().min(1),
-				amount: centavos,
+				amount: centavos.max(MAX_REQUEST_AMOUNT),
 				note: optionalText(120),
 			}),
 		)
