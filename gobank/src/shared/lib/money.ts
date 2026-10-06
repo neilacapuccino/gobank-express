@@ -7,7 +7,7 @@ export const toCentavos = (pesos: number) => Math.round(pesos * 100);
 export const toPesos = (centavos: number) => centavos / 100;
 
 export const pointsEarned = (spent: number) =>
-  Math.floor(spent / CENTAVOS_PER_POINT_EARNED);
+	Math.floor(spent / CENTAVOS_PER_POINT_EARNED);
 
 export const pointsValue = (points: number) =>
-  points * CENTAVOS_PER_POINT_REDEEMED;
+	points * CENTAVOS_PER_POINT_REDEEMED;

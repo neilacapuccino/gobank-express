@@ -4,10 +4,10 @@ import { Screen } from "~/shared/ui/screen";
 import { currentUserId } from "~/server/session";
 
 export default async function AuthLayout({
-  children,
+	children,
 }: {
-  children: ReactNode;
+	children: ReactNode;
 }) {
-  if (await currentUserId()) redirect("/dashboard");
-  return <Screen>{children}</Screen>;
+	if (await currentUserId()) redirect("/dashboard");
+	return <Screen>{children}</Screen>;
 }

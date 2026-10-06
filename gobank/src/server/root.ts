@@ -11,16 +11,16 @@ import { walletRouter } from "~/features/wallet/wallet.router";
 import { createCallerFactory, createTRPCRouter } from "~/server/trpc";
 
 export const appRouter = createTRPCRouter({
-  auth: authRouter,
-  account: accountRouter,
-  wallet: walletRouter,
-  transfers: transfersRouter,
-  requests: requestsRouter,
-  bills: billsRouter,
-  stashes: stashesRouter,
-  card: cardRouter,
-  rewards: rewardsRouter,
-  bitcoin: bitcoinRouter,
+	auth: authRouter,
+	account: accountRouter,
+	wallet: walletRouter,
+	transfers: transfersRouter,
+	requests: requestsRouter,
+	bills: billsRouter,
+	stashes: stashesRouter,
+	card: cardRouter,
+	rewards: rewardsRouter,
+	bitcoin: bitcoinRouter,
 });
 
 export type AppRouter = typeof appRouter;
