@@ -270,9 +270,39 @@ function RecipientStep({
           </h2>
 
           <p className="text-ink-soft mt-2 text-[12px] leading-relaxed">
-            Choose someone you recently sent money to or search for a recipient.
+            Search for a recipient or choose someone you recently sent money
+            to.
           </p>
         </div>
+      </section>
+
+      <section className="mt-7">
+        <label className="text-ink-soft mb-2 block text-[13px] font-medium">
+          Search recipient
+        </label>
+
+        <div
+          className={cn(
+            "border-line-strong bg-surface focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-xl border transition-colors focus-within:ring-2",
+            error ? "border-danger" : null,
+          )}
+        >
+          <input
+            type="text"
+            value={value}
+            placeholder="Username, Gmail, account or mobile"
+            onChange={(event) => onChange(event.target.value)}
+            className="text-ink placeholder:text-ink-faint h-13 w-full bg-transparent px-3.5 text-[14px] outline-none"
+          />
+        </div>
+
+        {error ? (
+          <p className="text-danger mt-2 text-[12px]">{error}</p>
+        ) : (
+          <p className="text-ink-muted mt-2 text-[11px]">
+            Example: @username or name@gmail.com
+          </p>
+        )}
       </section>
 
       <section className="mt-7">
@@ -331,41 +361,10 @@ function RecipientStep({
                   </span>
                 </span>
 
-                <span className="text-ink-faint ml-auto text-[18px]">
-                  →
-                </span>
+                <span className="text-ink-faint ml-auto text-[18px]">→</span>
               </button>
             ))}
           </div>
-        )}
-      </section>
-
-      <section className="mt-7">
-        <label className="text-ink-soft mb-2 block text-[13px] font-medium">
-          Search recipient
-        </label>
-
-        <div
-          className={cn(
-            "border-line-strong bg-surface focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-xl border transition-colors focus-within:ring-2",
-            error ? "border-danger" : null,
-          )}
-        >
-          <input
-            type="text"
-            value={value}
-            placeholder="Username, Gmail, account or mobile"
-            onChange={(event) => onChange(event.target.value)}
-            className="text-ink placeholder:text-ink-faint h-13 w-full bg-transparent px-3.5 text-[14px] outline-none"
-          />
-        </div>
-
-        {error ? (
-          <p className="text-danger mt-2 text-[12px]">{error}</p>
-        ) : (
-          <p className="text-ink-muted mt-2 text-[11px]">
-            Example: @username or name@gmail.com
-          </p>
         )}
       </section>
 
