@@ -4,34 +4,34 @@ import { cn } from "~/shared/lib/cn";
 type Variant = "primary" | "outline" | "ghost";
 
 const BASE =
-  "inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed";
+	"inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 font-medium transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed";
 
 const VARIANTS: Record<Variant, string> = {
-  primary:
-    "theme-control h-13 text-[15px] bg-brand text-white enabled:hover:bg-brand-hover disabled:bg-brand/35 disabled:text-white/65",
-  outline:
-    "theme-control h-13 text-[15px] border border-line-strong bg-surface text-ink hover:bg-surface-sunken disabled:opacity-45",
-  ghost:
-    "h-11 text-[14px] text-ink-muted enabled:hover:text-ink disabled:opacity-45",
+	primary:
+		"theme-control h-13 text-[15px] bg-brand text-white enabled:hover:bg-brand-hover disabled:bg-brand/35 disabled:text-white/65",
+	outline:
+		"theme-control h-13 text-[15px] border border-line-strong bg-surface text-ink hover:bg-surface-sunken disabled:opacity-45",
+	ghost:
+		"h-11 text-[14px] text-ink-muted enabled:hover:text-ink disabled:opacity-45",
 };
 
 export const buttonClass = (variant: Variant = "primary") =>
-  cn(BASE, VARIANTS[variant]);
+	cn(BASE, VARIANTS[variant]);
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: Variant;
-  children: ReactNode;
+	variant?: Variant;
+	children: ReactNode;
 };
 
 export function Button({
-  variant = "primary",
-  children,
-  className,
-  ...props
+	variant = "primary",
+	children,
+	className,
+	...props
 }: ButtonProps) {
-  return (
-    <button className={cn(buttonClass(variant), className)} {...props}>
-      {children}
-    </button>
-  );
+	return (
+		<button className={cn(buttonClass(variant), className)} {...props}>
+			{children}
+		</button>
+	);
 }

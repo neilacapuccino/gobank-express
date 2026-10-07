@@ -5,7 +5,6 @@ as GoTyme. GoBank Express reduces core financial operations to an approachable,
 mobile-first model: a main spending account, high-interest goal-based savings
 called **Stashes**, instant peer-to-peer transfers, and cash-convertible reward
 points earned on everyday spending. Banking amounts are in Philippine Pesos (₱).
-Bitcoin purchases use the main PHP account balance directly.
 
 > **Status:** early development. The database schema covers every feature
 > below; several screens are still scaffolded placeholders.
@@ -61,46 +60,10 @@ Bitcoin purchases use the main PHP account balance directly.
 
 ### Bitcoin portfolio
 
-- Bitcoin only, at `/stocks`, with a black screen and prices, holdings and
-  trade amounts in PHP. Buy directly from the main PHP account; sell Bitcoin to
-  credit PHP back. There is no USD wallet or manual currency conversion.
-- Live Binance BTC/USDT market data is priced in pesos using the current
-  Binance.US USDT/USD bid/ask midpoint and Frankfurter's daily USD/PHP reference
-  rate. The reference date is shown; PHP prices follow Bitcoin updates.
-  Historical candles use the current conversion rate.
-- Line and candlestick charts show 1 minute, 1 hour, 1 week, 1 month or 1 year.
-  The minute view combines sixty native one-second candles into three-second
-  candles with their actual OHLC values; the hourly view uses sixty one-minute
-  candles. Wider bodies and continuous flat sections make short ranges easier
-  to read. Live streams have REST fallback.
-  Longer ranges use hourly, four-hour and daily candles.
-- Fractional buys and sells persist with cost basis, realized/unrealized
-  profit or loss and the latest 20 trades. The PHP debit/credit, bank activity
-  reference and Bitcoin holding commit together. Self-trades earn no rewards.
-- Server prices and stale-quote checks protect trades. Integer centavos and
-  satoshis prevent balance drift. Serializable transactions and
-  per-user request IDs guard concurrent and repeated submissions.
-- External exchange execution, Bitcoin custody and withdrawals are not connected.
-  Obsolete preview and conversion tables have been removed.
-  New holdings start at zero with no free account money.
-- One table, **`BitcoinTrade`**, stores the trade history. A pure reducer derives
-  BTC holdings, remaining purchase cost and realized profit from that history.
-  `phpCentavos` is the PHP amount paid/received; `priceCentavos` is the quoted
-  PHP price per BTC. `satoshis` is BTC multiplied by 100,000,000.
-  `requestId` prevents repeat submissions; `reference` connects the bank receipt.
-  Redundant wallet state and balance snapshots have been removed. Each new buy or
-  sell charges a fixed **₱10.00 fee**. A buy debits Bitcoin value plus the fee;
-  a sale credits proceeds minus the fee. Trade history records the actual PHP
-  debit/credit, so cost basis and profit include fees without another table.
-
-Run `npm run test:bitcoin` for calculation and candle tests. With a migrated
-database and network access, `npm run test:bitcoin:integration` verifies feeds,
-PHP ledger settlement, persistence, duplicates, concurrency and user isolation
-using temporary users that are deleted afterward.
-
-Apply migrations with `npm run db:migrate`, then regenerate Prisma with
-`npm install` (or `npx prisma generate`). On Windows, stop the dev server first
-if it holds the Prisma engine DLL open.
+At `/stocks`, users can view live Bitcoin prices and buy or sell through their
+main PHP balance, with a fixed ₱10 fee per trade. A single `BitcoinTrade` table
+keeps the trade history, while server checks prevent overspending and repeated
+transactions.
 
 ## Tech stack
 
@@ -238,8 +201,9 @@ npm run db:migrate
 
 `npm install` also rebuilds the Prisma client, and `db:migrate` applies any
 new migrations (it does nothing if the database is already up to date).
-`npm run dev` regenerates the client too, so a missed `npm install` no longer
-shows "Can't resolve '../../generated/prisma'".
+`npm run dev` generates the Prisma client only when it is missing or the schema
+has changed. It checks port 3001 first and reports an existing server; on Windows,
+stop the server before regenerating Prisma so its engine DLL is not locked.
 
 ## Available scripts
 
@@ -247,7 +211,7 @@ Run from the `gobank/` directory.
 
 | Script | Action |
 | ------ | ------ |
-| `npm run dev` | Regenerate the Prisma client, then start the dev server on port 3001 |
+| `npm run dev` | Check port 3001, generate Prisma when needed, then start the dev server |
 | `npm run build` | Production build |
 | `npm run start` | Serve an existing production build |
 | `npm run preview` | Build, then serve the result |
@@ -277,11 +241,6 @@ Run from the `gobank/` directory.
 | `Biller` | The pre-registered biller catalogue |
 | `Transaction` | The ledger. One row per money movement per user, with a reference, signed amount and balance snapshot |
 | `MoneyRequest` | Requests for money between users |
-
-The Bitcoin ERD is **User 1 → many BitcoinTrade**. There is no separate investment
-wallet entity: current holdings are calculated from the trades, and spending money
-remains in `User.balance`. The trade migration verifies that history reproduces
-every existing wallet before dropping it.
 
 Savings retain `interestUpdatedAt` to measure elapsed time and `interestCarry` to
 preserve fractions of a centavo. These fields prevent repeated credits and rounding

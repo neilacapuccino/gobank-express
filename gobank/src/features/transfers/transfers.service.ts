@@ -11,21 +11,21 @@ export const PARTY = {
 } as const;
 
 export async function findRecipient(handle: string, self: string) {
-  const value = handle.trim().replace(/^@/, "").toLowerCase();
-  const mobile = normaliseMobile(value);
-  const gmail = normaliseGmail(value);
+	const value = handle.trim().replace(/^@/, "").toLowerCase();
+	const mobile = normaliseMobile(value);
+	const gmail = normaliseGmail(value);
 
-  const user = await db.user.findFirst({
-    where: {
-      OR: [
-        { accountNumber: value },
-        { username: value },
-        ...(gmail ? [{ gmail, googleId: { not: null } }] : []),
-        ...(mobile ? [{ mobile }] : []),
-      ],
-    },
-    select: PARTY,
-  });
+	const user = await db.user.findFirst({
+		where: {
+			OR: [
+				{ accountNumber: value },
+				{ username: value },
+				...(gmail ? [{ gmail, googleId: { not: null } }] : []),
+				...(mobile ? [{ mobile }] : []),
+			],
+		},
+		select: PARTY,
+	});
 
   if (!user) return fail("NOT_FOUND", MESSAGES.recipientNotFound);
   if (user.id === self) fail("BAD_REQUEST", MESSAGES.ownAccount);
@@ -66,10 +66,10 @@ export async function getRecentRecipients(userId: string) {
 }
 
 export async function sendMoney(
-  userId: string,
-  to: string,
-  amount: number,
-  note: string | null,
+	userId: string,
+	to: string,
+	amount: number,
+	note: string | null,
 ) {
   const receiver = await findRecipient(to, userId);
 

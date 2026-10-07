@@ -388,12 +388,12 @@ function RecipientStep({
 }
 
 function AmountStep({
-  recipient,
-  amount,
-  note,
-  onAmountChange,
-  onNoteChange,
-  onContinue,
+	recipient,
+	amount,
+	note,
+	onAmountChange,
+	onNoteChange,
+	onContinue,
 }: {
   recipient: Recipient;
   amount: string;
@@ -503,12 +503,12 @@ function AmountStep({
 }
 
 function ReviewStep({
-  recipient,
-  amount,
-  note,
-  loading,
-  error,
-  onSend,
+	recipient,
+	amount,
+	note,
+	loading,
+	error,
+	onSend,
 }: {
   recipient: Recipient;
   amount: number;

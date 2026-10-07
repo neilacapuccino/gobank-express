@@ -20,188 +20,188 @@ const ACCOUNT_DIGITS = 12;
 const AMOUNT_DIGITS = 6;
 
 export function BillPayment() {
-  const router = useRouter();
-  const [categoryId, setCategoryId] = useState<Category | null>(null);
-  const [billerId, setBillerId] = useState<string | null>(null);
-  const [accountNumber, setAccountNumber] = useState("");
-  const [amount, setAmount] = useState("");
+	const router = useRouter();
+	const [categoryId, setCategoryId] = useState<Category | null>(null);
+	const [billerId, setBillerId] = useState<string | null>(null);
+	const [accountNumber, setAccountNumber] = useState("");
+	const [amount, setAmount] = useState("");
 
-  const catalogue = api.bills.billers.useQuery();
-  const pay = api.bills.pay.useMutation();
+	const catalogue = api.bills.billers.useQuery();
+	const pay = api.bills.pay.useMutation();
 
-  const category = findCategory(categoryId);
-  const billers =
-    catalogue.data?.filter((biller) => biller.category === categoryId) ?? [];
-  const biller = billers.find((item) => item.id === billerId);
-  const centavos = toCentavos(Number(amount));
+	const category = findCategory(categoryId);
+	const billers =
+		catalogue.data?.filter((biller) => biller.category === categoryId) ?? [];
+	const biller = billers.find((item) => item.id === billerId);
+	const centavos = toCentavos(Number(amount));
 
-  const canPay =
-    Boolean(biller) &&
-    accountNumber.length >= 4 &&
-    centavos > 0 &&
-    !pay.isPending;
+	const canPay =
+		Boolean(biller) &&
+		accountNumber.length >= 4 &&
+		centavos > 0 &&
+		!pay.isPending;
 
-  const chooseCategory = (id: Category) => {
-    setCategoryId(id);
-    setBillerId(null);
-  };
+	const chooseCategory = (id: Category) => {
+		setCategoryId(id);
+		setBillerId(null);
+	};
 
-  const payNow = () => {
-    if (!canPay || !biller) return;
-    pay.mutate({ billerId: biller.id, accountNumber, amount: centavos });
-  };
+	const payNow = () => {
+		if (!canPay || !biller) return;
+		pay.mutate({ billerId: biller.id, accountNumber, amount: centavos });
+	};
 
-  const done = () => {
-    router.push("/dashboard");
-    router.refresh();
-  };
+	const done = () => {
+		router.push("/dashboard");
+		router.refresh();
+	};
 
-  return (
-    <div className="flex flex-1 flex-col pb-10">
-      <header className="relative flex h-16 items-center justify-center">
-        <BackButton
-          href="/dashboard"
-          label="Back to dashboard"
-          className="absolute left-0"
-        />
-        <div className="text-center">
-          <h1 className="text-[16px] font-semibold tracking-tight">
-            Pay Bills
-          </h1>
-          <p className="text-ink-soft mt-0.5 text-[11px]">
-            Pay your bills easily
-          </p>
-        </div>
-      </header>
+	return (
+		<div className="flex flex-1 flex-col pb-10">
+			<header className="relative flex h-16 items-center justify-center">
+				<BackButton
+					href="/dashboard"
+					label="Back to dashboard"
+					className="absolute left-0"
+				/>
+				<div className="text-center">
+					<h1 className="text-[16px] font-semibold tracking-tight">
+						Pay Bills
+					</h1>
+					<p className="text-ink-soft mt-0.5 text-[11px]">
+						Pay your bills easily
+					</p>
+				</div>
+			</header>
 
-      <section className="mt-4">
-        <SectionTitle>What do you want to pay?</SectionTitle>
-        <div className="grid grid-cols-4 gap-2">
-          {CATEGORIES.map((item) => (
-            <CategoryCard
-              key={item.id}
-              label={item.label}
-              icon={item.icon}
-              selected={categoryId === item.id}
-              onClick={() => chooseCategory(item.id)}
-            />
-          ))}
-        </div>
-      </section>
+			<section className="mt-4">
+				<SectionTitle>What do you want to pay?</SectionTitle>
+				<div className="grid grid-cols-4 gap-2">
+					{CATEGORIES.map((item) => (
+						<CategoryCard
+							key={item.id}
+							label={item.label}
+							icon={item.icon}
+							selected={categoryId === item.id}
+							onClick={() => chooseCategory(item.id)}
+						/>
+					))}
+				</div>
+			</section>
 
-      <section className="mt-6">
-        <SectionTitle>Select Biller</SectionTitle>
-        {!categoryId ? (
-          <EmptyState>Select a bill category first</EmptyState>
-        ) : catalogue.isPending ? (
-          <EmptyState>Loading billers</EmptyState>
-        ) : billers.length === 0 ? (
-          <EmptyState>No billers in this category yet</EmptyState>
-        ) : (
-          <div className="space-y-2">
-            {billers.map((item) => (
-              <BillerCard
-                key={item.id}
-                biller={item}
-                icon={category?.icon ?? Zap}
-                selected={billerId === item.id}
-                onClick={() => setBillerId(item.id)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+			<section className="mt-6">
+				<SectionTitle>Select Biller</SectionTitle>
+				{!categoryId ? (
+					<EmptyState>Select a bill category first</EmptyState>
+				) : catalogue.isPending ? (
+					<EmptyState>Loading billers</EmptyState>
+				) : billers.length === 0 ? (
+					<EmptyState>No billers in this category yet</EmptyState>
+				) : (
+					<div className="space-y-2">
+						{billers.map((item) => (
+							<BillerCard
+								key={item.id}
+								biller={item}
+								icon={category?.icon ?? Zap}
+								selected={billerId === item.id}
+								onClick={() => setBillerId(item.id)}
+							/>
+						))}
+					</div>
+				)}
+			</section>
 
-      <section className="mt-6">
-        <SectionTitle>Payment Details</SectionTitle>
-        <div className="space-y-4">
-          <PaymentField
-            label="Account Number"
-            value={accountNumber}
-            placeholder="Enter your account number"
-            maxLength={ACCOUNT_DIGITS}
-            hint={`4 to ${ACCOUNT_DIGITS} digits.`}
-            onChange={(event) =>
-              setAccountNumber(digitsOnly(event.target.value, ACCOUNT_DIGITS))
-            }
-          />
-          <PaymentField
-            label="Amount to Pay"
-            value={amount}
-            placeholder="Enter amount"
-            maxLength={AMOUNT_DIGITS}
-            hint={`Maximum of ${AMOUNT_DIGITS} digits.`}
-            prefix="₱"
-            onChange={(event) =>
-              setAmount(digitsOnly(event.target.value, AMOUNT_DIGITS))
-            }
-          />
-        </div>
-      </section>
+			<section className="mt-6">
+				<SectionTitle>Payment Details</SectionTitle>
+				<div className="space-y-4">
+					<PaymentField
+						label="Account Number"
+						value={accountNumber}
+						placeholder="Enter your account number"
+						maxLength={ACCOUNT_DIGITS}
+						hint={`4 to ${ACCOUNT_DIGITS} digits.`}
+						onChange={(event) =>
+							setAccountNumber(digitsOnly(event.target.value, ACCOUNT_DIGITS))
+						}
+					/>
+					<PaymentField
+						label="Amount to Pay"
+						value={amount}
+						placeholder="Enter amount"
+						maxLength={AMOUNT_DIGITS}
+						hint={`Maximum of ${AMOUNT_DIGITS} digits.`}
+						prefix="₱"
+						onChange={(event) =>
+							setAmount(digitsOnly(event.target.value, AMOUNT_DIGITS))
+						}
+					/>
+				</div>
+			</section>
 
-      <PaymentSummary
-        category={category?.label}
-        biller={biller?.name}
-        total={peso(centavos)}
-      />
+			<PaymentSummary
+				category={category?.label}
+				biller={biller?.name}
+				total={peso(centavos)}
+			/>
 
-      {pay.error ? (
-        <p
-          role="alert"
-          className="bg-danger-soft text-danger mt-5 rounded-xl px-4 py-3 text-[12px]"
-        >
-          {errorMessage(pay.error)}
-        </p>
-      ) : null}
+			{pay.error ? (
+				<p
+					role="alert"
+					className="bg-danger-soft text-danger mt-5 rounded-xl px-4 py-3 text-[12px]"
+				>
+					{errorMessage(pay.error)}
+				</p>
+			) : null}
 
-      <button
-        type="button"
-        disabled={!canPay}
-        onClick={payNow}
-        className={cn(
-          "mt-5 h-12 w-full rounded-xl text-[13px] font-semibold transition-all",
-          canPay
-            ? "bg-brand hover:bg-brand-hover text-white shadow-[0_8px_20px_-10px_rgba(5,150,105,0.8)] active:scale-[0.99]"
-            : "bg-surface-sunken text-ink-soft/50 cursor-not-allowed",
-        )}
-      >
-        {pay.isPending
-          ? "Processing payment"
-          : canPay
-            ? "Pay Now"
-            : "Enter Payment Details"}
-      </button>
+			<button
+				type="button"
+				disabled={!canPay}
+				onClick={payNow}
+				className={cn(
+					"mt-5 h-12 w-full rounded-xl text-[13px] font-semibold transition-all",
+					canPay
+						? "bg-brand hover:bg-brand-hover text-white shadow-[0_8px_20px_-10px_rgba(5,150,105,0.8)] active:scale-[0.99]"
+						: "bg-surface-sunken text-ink-soft/50 cursor-not-allowed",
+				)}
+			>
+				{pay.isPending
+					? "Processing payment"
+					: canPay
+						? "Pay Now"
+						: "Enter Payment Details"}
+			</button>
 
-      <p className="text-ink-soft/60 mt-3 text-center text-[9.5px]">
-        Please review your payment details before continuing.
-      </p>
+			<p className="text-ink-soft/60 mt-3 text-center text-[9.5px]">
+				Please review your payment details before continuing.
+			</p>
 
-      {pay.data ? (
-        <ReceiptModal
-          amount={peso(Math.abs(pay.data.amount))}
-          biller={biller?.name ?? ""}
-          category={category?.label ?? ""}
-          accountNumber={maskDigits(accountNumber)}
-          referenceNumber={pay.data.reference}
-          transactionDate={dateTime(pay.data.createdAt)}
-          points={pay.data.points}
-          balance={peso(pay.data.balanceAfter)}
-          onClose={() => pay.reset()}
-          onDone={done}
-        />
-      ) : null}
-    </div>
-  );
+			{pay.data ? (
+				<ReceiptModal
+					amount={peso(Math.abs(pay.data.amount))}
+					biller={biller?.name ?? ""}
+					category={category?.label ?? ""}
+					accountNumber={maskDigits(accountNumber)}
+					referenceNumber={pay.data.reference}
+					transactionDate={dateTime(pay.data.createdAt)}
+					points={pay.data.points}
+					balance={peso(pay.data.balanceAfter)}
+					onClose={() => pay.reset()}
+					onDone={done}
+				/>
+			) : null}
+		</div>
+	);
 }
 
 function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-3 text-[13px] font-semibold">{children}</h2>;
+	return <h2 className="mb-3 text-[13px] font-semibold">{children}</h2>;
 }
 
 function EmptyState({ children }: { children: ReactNode }) {
-  return (
-    <div className="bg-surface-raised flex min-h-[74px] items-center justify-center rounded-2xl px-4">
-      <p className="text-ink-soft text-center text-[11px]">{children}</p>
-    </div>
-  );
+	return (
+		<div className="bg-surface-raised flex min-h-[74px] items-center justify-center rounded-2xl px-4">
+			<p className="text-ink-soft text-center text-[11px]">{children}</p>
+		</div>
+	);
 }

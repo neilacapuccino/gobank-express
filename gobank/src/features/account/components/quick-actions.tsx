@@ -1,10 +1,10 @@
 import { Download, HandCoins, Send, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 const actions: {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  tone: string;
+	href: string;
+	label: string;
+	icon: LucideIcon;
+	tone: string;
 }[] = [
   {
     href: "/transfer",
@@ -26,22 +26,22 @@ const actions: {
   },
 ];
 export function QuickActions() {
-  return (
-    <div className="grid grid-cols-3 gap-3">
-      {actions.map(({ href, label, icon: Icon, tone }) => (
-        <Link
-          key={href}
-          href={href}
-          className="text-ink group flex flex-col items-center gap-2.5 rounded-2xl py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6debbd]"
-        >
-          <span
-            className={`grid h-[60px] w-[60px] place-items-center rounded-[20px] border bg-linear-to-br shadow-[0_6px_16px_-8px_#000000,inset_0_1px_0_#ffffff08] transition-all duration-200 group-hover:-translate-y-0.5 group-active:scale-95 ${tone}`}
-          >
-            <Icon size={25} strokeWidth={1.8} aria-hidden />
-          </span>
-          <span className="text-[11px] font-semibold">{label}</span>
-        </Link>
-      ))}
-    </div>
-  );
+	return (
+		<div className="grid grid-cols-3 gap-3">
+			{actions.map(({ href, label, icon: Icon, tone }) => (
+				<Link
+					key={href}
+					href={href}
+					className="text-ink group flex flex-col items-center gap-2.5 rounded-2xl py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6debbd]"
+				>
+					<span
+						className={`grid h-[60px] w-[60px] place-items-center rounded-[20px] border bg-linear-to-br shadow-[0_6px_16px_-8px_#000000,inset_0_1px_0_#ffffff08] transition-all duration-200 group-hover:-translate-y-0.5 group-active:scale-95 ${tone}`}
+					>
+						<Icon size={25} strokeWidth={1.8} aria-hidden />
+					</span>
+					<span className="text-[11px] font-semibold">{label}</span>
+				</Link>
+			))}
+		</div>
+	);
 }

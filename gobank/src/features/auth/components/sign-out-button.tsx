@@ -6,23 +6,22 @@ import { Button } from "~/shared/ui/button";
 import { api } from "~/trpc/react";
 
 export function SignOutButton() {
-  const router = useRouter();
-  const signOut = api.auth.signOut.useMutation({
-    onSuccess: () => {
-      router.replace("/signin");
-      router.refresh();
-    },
-  });
+	const router = useRouter();
+	const signOut = api.auth.signOut.useMutation({
+		onSuccess: () => {
+			router.replace("/signin");
+			router.refresh();
+		},
+	});
 
-  return (
-    <Button
-      variant="outline"
-      disabled={signOut.isPending || signOut.isSuccess}
-      onClick={() => signOut.mutate()}
-      className="text-danger! hover:bg-danger-soft!"
-    >
-      <LogOut size={17} strokeWidth={1.9} aria-hidden />
-      {signOut.isPending || signOut.isSuccess ? "Signing out" : "Sign out"}
-    </Button>
-  );
+	return (
+		<Button
+			disabled={signOut.isPending || signOut.isSuccess}
+			onClick={() => signOut.mutate()}
+			className="bg-danger! focus-visible:ring-danger/40! enabled:hover:bg-red-700! disabled:opacity-45"
+		>
+			<LogOut size={17} strokeWidth={1.9} aria-hidden />
+			{signOut.isPending || signOut.isSuccess ? "Signing out" : "Sign out"}
+		</Button>
+	);
 }

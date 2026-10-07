@@ -18,7 +18,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "postinstall": "prisma generate",
-    "predev": "prisma generate",
+    "predev": "node --import tsx scripts/prepare-dev.ts",
     "preview": "next build && next start",
     "start": "next start -p 3001",
     "typecheck": "tsc --noEmit --incremental false",

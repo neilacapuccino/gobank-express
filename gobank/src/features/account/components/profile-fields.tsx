@@ -4,39 +4,39 @@ import { TextField } from "~/shared/ui/text-field";
 export type ProfileValues = { fullName: string; mobile: string };
 
 export const profileIsValid = ({ fullName, mobile }: ProfileValues) =>
-  !validateFullName(fullName) && !validateMobile(mobile);
+	!validateFullName(fullName) && !validateMobile(mobile);
 
 type ProfileFieldsProps = {
-  value: ProfileValues;
-  onChange: (patch: Partial<ProfileValues>) => void;
+	value: ProfileValues;
+	onChange: (patch: Partial<ProfileValues>) => void;
 };
 
 export function ProfileFields({ value, onChange }: ProfileFieldsProps) {
-  return (
-    <>
-      <TextField
-        label="Full name"
-        required
-        minLength={2}
-        maxLength={80}
-        placeholder="Your full name"
-        autoComplete="name"
-        value={value.fullName}
-        onChange={(event) => onChange({ fullName: event.target.value })}
-        hint="Printed on your card."
-      />
-      <TextField
-        label="Mobile number"
-        optional
-        type="tel"
-        inputMode="numeric"
-        placeholder="09XX XXX XXXX"
-        autoComplete="tel"
-        value={value.mobile}
-        onChange={(event) => onChange({ mobile: event.target.value })}
-        error={validateMobile(value.mobile)}
-        hint="Lets friends pay you by number."
-      />
-    </>
-  );
+	return (
+		<>
+			<TextField
+				label="Full name"
+				required
+				minLength={2}
+				maxLength={80}
+				placeholder="Your full name"
+				autoComplete="name"
+				value={value.fullName}
+				onChange={(event) => onChange({ fullName: event.target.value })}
+				hint="Printed on your card."
+			/>
+			<TextField
+				label="Mobile number"
+				optional
+				type="tel"
+				inputMode="numeric"
+				placeholder="09XX XXX XXXX"
+				autoComplete="tel"
+				value={value.mobile}
+				onChange={(event) => onChange({ mobile: event.target.value })}
+				error={validateMobile(value.mobile)}
+				hint="Lets friends pay you by number."
+			/>
+		</>
+	);
 }

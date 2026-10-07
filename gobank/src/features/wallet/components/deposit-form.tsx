@@ -14,16 +14,16 @@ const MAX_AMOUNT = 50_000;
 const MAX_AMOUNT_INTEGER_DIGITS = String(MAX_AMOUNT).length;
 
 const amountInput = (value: string) => {
-  const sanitized = value.replace(/[^\d.]/g, "");
-  const [wholePart = "", ...fractionParts] = sanitized.split(".");
-  const whole = wholePart
-    .replace(/^0+(?=\d)/, "")
-    .slice(0, MAX_AMOUNT_INTEGER_DIGITS);
-  const fraction = fractionParts.join("").slice(0, 2);
+	const sanitized = value.replace(/[^\d.]/g, "");
+	const [wholePart = "", ...fractionParts] = sanitized.split(".");
+	const whole = wholePart
+		.replace(/^0+(?=\d)/, "")
+		.slice(0, MAX_AMOUNT_INTEGER_DIGITS);
+	const fraction = fractionParts.join("").slice(0, 2);
 
-  if (!sanitized.includes(".")) return whole;
+	if (!sanitized.includes(".")) return whole;
 
-  return `${whole || "0"}.${fraction}`;
+	return `${whole || "0"}.${fraction}`;
 };
 
 export function DepositForm() {
