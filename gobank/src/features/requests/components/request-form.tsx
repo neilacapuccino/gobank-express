@@ -12,7 +12,8 @@ import { api } from "~/trpc/react";
 
 type Step = "recipient" | "amount" | "review";
 
-const AMOUNT_DIGITS = 6;
+const AMOUNT_DIGITS = 5;
+const MAX_REQUEST_AMOUNT = 20_000;
 
 export function RequestForm() {
 	const router = useRouter();
@@ -30,16 +31,30 @@ export function RequestForm() {
 
 	const continueToAmount = () => {
 		if (!canContinueRecipient) return;
+
 		setStep("amount");
 	};
 
 	const continueToReview = () => {
-		if (amountInCentavos <= 0) return;
+		const amountValue = Number(amount);
+
+		if (amountInCentavos <= 0 || amountValue > MAX_REQUEST_AMOUNT) {
+			return;
+		}
+
 		setStep("review");
 	};
 
 	const createRequest = () => {
-		if (!recipient.trim() || amountInCentavos <= 0) return;
+		const amountValue = Number(amount);
+
+		if (
+			!recipient.trim() ||
+			amountInCentavos <= 0 ||
+			amountValue > MAX_REQUEST_AMOUNT
+		) {
+			return;
+		}
 
 		request.mutate({
 			from: recipient.trim(),
@@ -261,7 +276,9 @@ function AmountStep({
 	onNoteChange: (value: string) => void;
 	onContinue: () => void;
 }) {
-	const amountInCentavos = toCentavos(Number(amount));
+	const amountValue = Number(amount);
+	const amountInCentavos = toCentavos(amountValue);
+	const exceedsLimit = amountValue > MAX_REQUEST_AMOUNT;
 
 	return (
 		<div className="flex flex-1 flex-col">
@@ -270,14 +287,19 @@ function AmountStep({
 					Amount
 				</label>
 
-				<div className="border-line-strong bg-surface focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-2xl border px-5 py-2 transition-colors focus-within:ring-2">
+				<div
+					className={cn(
+						"border-line-strong bg-surface focus-within:border-brand focus-within:ring-brand/15 flex items-center rounded-2xl border px-5 py-2 transition-colors focus-within:ring-2",
+						exceedsLimit ? "border-danger" : null,
+					)}
+				>
 					<span className="text-ink-muted text-[25px]">₱</span>
 
 					<input
 						type="text"
-						inputMode="decimal"
+						inputMode="numeric"
 						value={amount}
-						placeholder="0.00"
+						placeholder="0"
 						onChange={(event) =>
 							onAmountChange(digitsOnly(event.target.value, AMOUNT_DIGITS))
 						}
@@ -285,9 +307,15 @@ function AmountStep({
 					/>
 				</div>
 
-				<p className="text-ink-muted mt-2 text-[11px]">
-					Enter the amount you want to request.
-				</p>
+				{exceedsLimit ? (
+					<p className="text-danger mt-2 text-[11px]">
+						Maximum request amount is ₱20,000.00.
+					</p>
+				) : (
+					<p className="text-ink-muted mt-2 text-[11px]">
+						You can request up to ₱20,000.00.
+					</p>
+				)}
 			</section>
 
 			<section className="mt-6">
@@ -313,11 +341,11 @@ function AmountStep({
 			<div className="mt-auto pt-8">
 				<button
 					type="button"
-					disabled={amountInCentavos <= 0}
+					disabled={amountInCentavos <= 0 || exceedsLimit}
 					onClick={onContinue}
 					className={cn(
 						"h-13 w-full rounded-xl text-[15px] font-semibold transition-all",
-						amountInCentavos > 0
+						amountInCentavos > 0 && !exceedsLimit
 							? "bg-brand hover:bg-brand-hover text-white"
 							: "bg-surface-sunken text-ink-soft/50 cursor-not-allowed",
 					)}

@@ -22,49 +22,49 @@ const actions: {
 	icon: LucideIcon;
 	tone: string;
 }[] = [
-	{
-		href: "/transfer",
-		label: "Send money",
-		icon: Send,
-		tone: "text-[#6debbd]",
-	},
-	{
-		href: "/deposit",
-		label: "Add money",
-		icon: Download,
-		tone: "text-[#71d5f3]",
-	},
-	{
-		href: "/request",
-		label: "Request",
-		icon: HandCoins,
-		tone: "text-[#bda0fa]",
-	},
-	{
-		href: "/stashes",
-		label: "GoalSave",
-		icon: PiggyBank,
-		tone: "text-[#e6c17a]",
-	},
-	{
-		href: "/bills",
-		label: "Pay bills",
-		icon: ReceiptText,
-		tone: "text-[#8dc8ee]",
-	},
-	{
-		href: "/load",
-		label: "Buy load",
-		icon: Smartphone,
-		tone: "text-[#96a8f5]",
-	},
-	{ href: "/stocks", label: "Bitcoin", icon: Bitcoin, tone: "text-[#f7b163]" },
-	{
-		href: "/settings",
-		label: "Profile",
-		icon: UserRound,
-		tone: "text-[#c4c4cc]",
-	},
+  {
+    href: "/transfer",
+    label: "Send money",
+    icon: Send,
+    tone: "text-[#6debbd]",
+  },
+  {
+    href: "/deposit",
+    label: "Deposit",
+    icon: Download,
+    tone: "text-[#71d5f3]",
+  },
+  {
+    href: "/request",
+    label: "Request",
+    icon: HandCoins,
+    tone: "text-[#bda0fa]",
+  },
+  {
+    href: "/stashes",
+    label: "GoalSave",
+    icon: PiggyBank,
+    tone: "text-[#e6c17a]",
+  },
+  {
+    href: "/bills",
+    label: "Pay bills",
+    icon: ReceiptText,
+    tone: "text-[#8dc8ee]",
+  },
+  {
+    href: "/load",
+    label: "Buy load",
+    icon: Smartphone,
+    tone: "text-[#96a8f5]",
+  },
+  { href: "/stocks", label: "Bitcoin", icon: Bitcoin, tone: "text-[#f7b163]" },
+  {
+    href: "/settings",
+    label: "Profile",
+    icon: UserRound,
+    tone: "text-[#c4c4cc]",
+  },
 ];
 
 export function GoMenu() {

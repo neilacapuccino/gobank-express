@@ -82,7 +82,10 @@ export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
 		},
 		_sum: { amount: true },
 	});
-	if (entry.amount - (today._sum.amount ?? 0) > card.dailyLimit) {
+	if (
+		entry.kind !== "transfer" &&
+		entry.amount - (today._sum.amount ?? 0) > card.dailyLimit
+	) {
 		fail("BAD_REQUEST", MESSAGES.overDailyLimit);
 	}
 

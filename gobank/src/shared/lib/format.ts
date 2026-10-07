@@ -33,8 +33,10 @@ export const maskDigits = (value: string) =>
 		? value
 		: `${"*".repeat(value.length - 4)}${value.slice(-4)}`;
 
-export const digitsOnly = (value: string, maxLength: number) =>
-	value.replace(/\D/g, "").slice(0, maxLength);
+export const digitsOnly = (value: string, maxLength?: number) => {
+	const digits = value.replace(/\D/g, "");
+	return maxLength === undefined ? digits : digits.slice(0, maxLength);
+};
 
 export const shortDate = (date: Date | string) =>
 	SHORT_DATE.format(new Date(date));

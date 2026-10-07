@@ -70,7 +70,7 @@ export function DepositForm() {
 					</h2>
 
 					<p className="text-ink-soft mt-2 text-[13px]">
-						Your money has been added to your account.
+						Your money has been added to your Main Spending Account.
 					</p>
 
 					<section className="bg-surface-sunken mt-8 w-full rounded-2xl p-5 text-left">
@@ -83,6 +83,8 @@ export function DepositForm() {
 						</div>
 
 						<div className="border-line mt-6 space-y-4 border-t pt-4">
+							<Detail label="Deposit to" value="Main Spending Account" />
+
 							<Detail label="Transaction" value="Cash in" />
 
 							<Detail label="Reference" value={deposit.data.reference} />
@@ -151,30 +153,6 @@ export function DepositForm() {
 				<p className="text-ink-muted mt-2 text-[11px]">
 					Enter the amount you want to add to your GoBank account.
 				</p>
-			</section>
-
-			<section className="mt-8">
-				<h2 className="mb-3 text-[13px] font-semibold">Deposit to</h2>
-
-				<div className="border-brand bg-brand-soft flex items-center gap-3 rounded-2xl border p-4">
-					<div className="bg-brand grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[16px] font-semibold text-white">
-						₱
-					</div>
-
-					<div className="min-w-0 flex-1">
-						<p className="text-ink text-[13px] font-semibold">
-							Main Spending Account
-						</p>
-
-						<p className="text-ink-muted mt-0.5 text-[11px]">
-							Your GoBank spending balance
-						</p>
-					</div>
-
-					<div className="bg-brand grid h-6 w-6 place-items-center rounded-full text-[12px] font-bold text-white">
-						✓
-					</div>
-				</div>
 			</section>
 
 			{deposit.error ? (
