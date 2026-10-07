@@ -68,32 +68,32 @@ export async function post(
 }
 
 export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
-  const card = await tx.card.findUniqueOrThrow({
-    where: { userId: entry.userId },
-  });
-  if (card.locked) fail("BAD_REQUEST", MESSAGES.cardLocked);
+	const card = await tx.card.findUniqueOrThrow({
+		where: { userId: entry.userId },
+	});
+	if (card.locked) fail("BAD_REQUEST", MESSAGES.cardLocked);
 
-  const today = await tx.transaction.aggregate({
-    where: {
-      userId: entry.userId,
-      kind: { in: SPENDING },
-      amount: { lt: 0 },
-      createdAt: { gte: startOfManilaDay(new Date()) },
-    },
-    _sum: { amount: true },
-  });
-  if (
-    entry.kind !== "transfer" &&
-    entry.amount - (today._sum.amount ?? 0) > card.dailyLimit
-  ) {
-    fail("BAD_REQUEST", MESSAGES.overDailyLimit);
-  }
+	const today = await tx.transaction.aggregate({
+		where: {
+			userId: entry.userId,
+			kind: { in: SPENDING },
+			amount: { lt: 0 },
+			createdAt: { gte: startOfManilaDay(new Date()) },
+		},
+		_sum: { amount: true },
+	});
+	if (
+		entry.kind !== "transfer" &&
+		entry.amount - (today._sum.amount ?? 0) > card.dailyLimit
+	) {
+		fail("BAD_REQUEST", MESSAGES.overDailyLimit);
+	}
 
-  return post(tx, {
-    ...entry,
-    amount: -entry.amount,
-    points: pointsEarned(entry.amount),
-  });
+	return post(tx, {
+		...entry,
+		amount: -entry.amount,
+		points: pointsEarned(entry.amount),
+	});
 }
 
 export async function transfer(
