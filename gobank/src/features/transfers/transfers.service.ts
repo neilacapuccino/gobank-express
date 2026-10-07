@@ -78,7 +78,11 @@ export async function sendMoney(
     select: PARTY,
   });
 
+<<<<<<< Updated upstream
   return db.$transaction((tx) =>
     transfer(tx, sender, receiver, amount, note),
   );
+=======
+  return db.$transaction((tx) => transfer(tx, sender, receiver, amount, note));
+>>>>>>> Stashed changes
 }

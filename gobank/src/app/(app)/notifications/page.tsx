@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, CheckCircle2, UserRound, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { cn } from "~/shared/lib/cn";
 import { dateTime, peso } from "~/shared/lib/format";
 import { PageHeader } from "~/shared/ui/page-header";
@@ -40,7 +40,7 @@ export default function NotificationsPage() {
 					<div className="bg-danger-soft text-danger rounded-2xl px-4 py-4 text-[12px]">
 						{errorMessage(requests.error)}
 					</div>
-				) : requests.data.length === 0 ? (
+				) : !requests.data || requests.data.length === 0 ? (
 					<div className="bg-surface-sunken flex flex-col items-center rounded-2xl px-5 py-10 text-center">
 						<div className="bg-surface text-ink-muted grid h-14 w-14 place-items-center rounded-full">
 							<Bell size={24} strokeWidth={1.7} />
@@ -105,13 +105,16 @@ function RequestCard({
 		<div className="bg-surface border-line rounded-2xl border p-4">
 			<div className="flex items-start gap-3">
 				{request.requester.profilePhoto ? (
-					<div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
-						<img
-							src={request.requester.profilePhoto}
-							alt={`${request.requester.fullName}'s profile`}
-							className="h-full w-full object-cover"
-						/>
-					</div>
+					<div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full">
+            <Image
+              src={request.requester.profilePhoto}
+              alt={`${request.requester.fullName}'s profile`}
+              fill
+              sizes="44px"
+              unoptimized
+              className="object-cover"
+            />
+          </div>
 				) : (
 					<div className="bg-brand-soft text-brand grid h-11 w-11 shrink-0 place-items-center rounded-full">
 						<UserRound size={20} strokeWidth={1.8} />

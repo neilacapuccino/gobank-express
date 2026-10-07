@@ -77,7 +77,7 @@ export function CardScreen() {
         </header>
 
         <div className="bg-danger-soft text-danger mt-8 rounded-xl px-4 py-3 text-[12px]">
-          We couldn't load your card. Please try again.
+          We couldn&apos;t load your card. Please try again.
         </div>
       </div>
     );
@@ -357,8 +357,8 @@ export function CardScreen() {
             </p>
 
             <p className="text-ink-muted mt-1 text-[10px] leading-relaxed">
-              Lock your card immediately if you notice suspicious activity.
-              You can unlock it whenever you are ready to use it again.
+              Lock your card immediately if you notice suspicious activity. You
+              can unlock it whenever you are ready to use it again.
             </p>
           </div>
         </div>

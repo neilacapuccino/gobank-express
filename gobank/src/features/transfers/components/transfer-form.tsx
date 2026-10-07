@@ -25,8 +25,9 @@ export function TransferForm() {
 
   const [step, setStep] = useState<Step>("recipient");
   const [recipientInput, setRecipientInput] = useState("");
-  const [selectedRecipient, setSelectedRecipient] =
-    useState<Recipient | null>(null);
+  const [selectedRecipient, setSelectedRecipient] = useState<Recipient | null>(
+    null,
+  );
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
 
@@ -270,8 +271,7 @@ function RecipientStep({
           </h2>
 
           <p className="text-ink-soft mt-2 text-[12px] leading-relaxed">
-            Search for a recipient or choose someone you recently sent money
-            to.
+            Search for a recipient or choose someone you recently sent money to.
           </p>
         </div>
       </section>
@@ -520,7 +520,7 @@ function ReviewStep({
   return (
     <div className="flex flex-1 flex-col">
       <section className="mt-6">
-        <p className="text-ink-muted text-[11px]">You're sending to</p>
+        <p className="text-ink-muted text-[11px]">You&apos;re sending to</p>
 
         <div className="mt-2 flex items-center gap-3">
           {recipient.profilePhoto ? (

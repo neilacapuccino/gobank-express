@@ -57,9 +57,7 @@ export function DepositForm() {
     return (
       <div className="flex flex-1 flex-col pb-10">
         <header className="relative flex h-16 items-center justify-center">
-          <h1 className="text-[16px] font-semibold tracking-tight">
-            Deposit
-          </h1>
+          <h1 className="text-[16px] font-semibold tracking-tight">Deposit</h1>
         </header>
 
         <div className="flex flex-1 flex-col items-center pt-10 text-center">
@@ -122,9 +120,7 @@ export function DepositForm() {
         />
 
         <div className="text-center">
-          <h1 className="text-[16px] font-semibold tracking-tight">
-            Deposit
-          </h1>
+          <h1 className="text-[16px] font-semibold tracking-tight">Deposit</h1>
 
           <p className="text-ink-soft mt-0.5 text-[11px]">
             Add money to your account
