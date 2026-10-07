@@ -10,7 +10,7 @@ type VirtualCardProps = {
   first4?: string;
   last4?: string;
   number?: string;
-  expiresAt?: string;
+  expiresAt?: Date | string;
   compact?: boolean;
 };
 
@@ -25,7 +25,11 @@ export function VirtualCard({
 }: VirtualCardProps) {
   const brand = getBrand(brandId);
   const prefix = first4 ?? brand.numberPrefix;
-  const expiry = expiresAt ? new Date(expiresAt) : null;
+  const expiry = expiresAt
+    ? expiresAt instanceof Date
+      ? expiresAt
+      : new Date(expiresAt)
+    : null;
   const expiryLabel = expiry
     ? `${String(expiry.getUTCMonth() + 1).padStart(2, "0")}/${String(expiry.getUTCFullYear()).slice(-2)}`
     : "••/••";

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PlaceholderPage } from "~/shared/ui/placeholder-page";
+import { CardScreen } from "~/features/card/components/card-screen";
 
 export const metadata: Metadata = {
-  title: "Card",
+  title: "My Card",
 };
 
 export default function CardPage() {
-  return <PlaceholderPage screen="S10" title="Card" />;
+  return <CardScreen />;
 }
