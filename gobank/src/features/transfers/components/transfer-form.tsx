@@ -449,10 +449,11 @@ function AmountStep({
           <input
             type="text"
             inputMode="decimal"
+            maxLength={6}
             value={amount}
             placeholder="0.00"
             onChange={(event) =>
-              onAmountChange(digitsOnly(event.target.value))
+              onAmountChange(digitsOnly(event.target.value, 6))
             }
             className="text-ink placeholder:text-ink-faint h-16 w-full bg-transparent px-3 text-[30px] font-semibold tracking-tight outline-none"
           />
