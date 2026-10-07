@@ -30,7 +30,7 @@ const actions: {
   },
   {
     href: "/deposit",
-    label: "Add money",
+    label: "Deposit",
     icon: Download,
     tone: "text-[#71d5f3]",
   },

@@ -14,7 +14,7 @@ const actions: {
   },
   {
     href: "/deposit",
-    label: "Add money",
+    label: "Deposit",
     icon: Download,
     tone: "border-[#71d5f3]/20 from-[#222c31] to-[#151a1e] text-[#71d5f3] group-hover:border-[#71d5f3]/40 group-hover:shadow-[0_8px_24px_-8px_#71d5f335]",
   },

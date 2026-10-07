@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { centavos, optionalText } from "~/shared/lib/schemas";
+import { optionalText } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import {
   findRecipient,
@@ -20,7 +20,7 @@ export const transfersRouter = createTRPCRouter({
     .input(
       z.object({
         to: z.string().min(1),
-        amount: centavos,
+        amount: z.number().int().positive().max(2_147_483_647),
         note: optionalText(120),
       }),
     )

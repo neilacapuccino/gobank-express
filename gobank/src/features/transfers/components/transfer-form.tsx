@@ -13,8 +13,6 @@ import { api } from "~/trpc/react";
 
 type Step = "recipient" | "amount" | "review";
 
-const AMOUNT_DIGITS = 6;
-
 type Recipient = {
   id: string;
   username: string;
@@ -454,7 +452,7 @@ function AmountStep({
             value={amount}
             placeholder="0.00"
             onChange={(event) =>
-              onAmountChange(digitsOnly(event.target.value, AMOUNT_DIGITS))
+              onAmountChange(digitsOnly(event.target.value))
             }
             className="text-ink placeholder:text-ink-faint h-16 w-full bg-transparent px-3 text-[30px] font-semibold tracking-tight outline-none"
           />
