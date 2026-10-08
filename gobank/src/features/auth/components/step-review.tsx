@@ -7,7 +7,7 @@ import { getBrand } from "~/features/card/card-brands";
 import type { RegistrationDraft } from "../auth.rules";
 import { formatMobile } from "~/shared/lib/contact";
 import { cn } from "~/shared/lib/cn";
-import { VirtualCard } from "~/features/card/components/virtual-card";
+import { BankCard } from "~/features/card/components/bank-card";
 import type { RouterOutputs } from "~/trpc/react";
 import { AuthHeading } from "./auth-heading";
 
@@ -31,13 +31,18 @@ export function StepReview({
 	onRefreshCard,
 }: StepReviewProps) {
 	const [accepted, setAccepted] = useState(false);
-	const [showCard, setShowCard] = useState(false);
-	const [showPin, setShowPin] = useState(false);
+	const [showNumber, setShowNumber] = useState(true);
 	const rows = [
 		{ label: "Username", value: "@" + draft.username },
-		{ label: "PIN", value: showPin ? draft.pin : "••••••" },
-		{ label: "Card", value: getBrand(draft.brand).name },
-		{ label: "CVV", value: showCard ? card.cvv : "•••" },
+		{
+			label: "PIN",
+			value: <SecretValue label="PIN" value={draft.pin} disabled={pending} />,
+		},
+		{ label: "Card", value: getBrand(card.brand).name },
+		{
+			label: "CVV",
+			value: <SecretValue label="CVV" value={card.cvv} disabled={pending} />,
+		},
 		{ label: "Full name", value: draft.fullName.trim() },
 		{
 			label: "Mobile",
@@ -51,28 +56,27 @@ export function StepReview({
 				subtitle="Check your details before confirming."
 			/>
 			<div className="mt-7">
-				<VirtualCard
-					brandId={draft.brand}
-					holder={draft.fullName.trim().toUpperCase()}
-					first4={card.number.slice(0, 4)}
-					last4={card.number.slice(-4)}
-					number={showCard ? card.number : undefined}
+				<BankCard
+					brand={card.brand}
+					fullName={draft.fullName.trim()}
+					number={card.number}
+					hideNumber={!showNumber}
 					expiresAt={card.expiresAt}
 					compact
 				/>
 				<button
 					type="button"
 					disabled={pending}
-					onClick={() => setShowCard((current) => !current)}
-					aria-pressed={showCard}
-					className="text-ink-soft enabled:hover:text-ink focus-visible:outline-brand mx-auto mt-3 flex min-h-10 items-center justify-center gap-2 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-45"
+					onClick={() => setShowNumber((current) => !current)}
+					aria-pressed={showNumber}
+					className="text-ink-soft enabled:hover:text-ink focus-visible:outline-brand mt-2 ml-auto flex min-h-10 items-center justify-center gap-2 rounded-lg px-1 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-45"
 				>
-					{showCard ? (
+					{showNumber ? (
 						<EyeOff size={16} aria-hidden />
 					) : (
 						<Eye size={16} aria-hidden />
 					)}
-					{showCard ? "Hide card details" : "Show card details"}
+					{showNumber ? "Hide number" : "Show number"}
 				</button>
 			</div>
 			<dl className="divide-line border-line mt-4 divide-y rounded-xl border">
@@ -88,24 +92,12 @@ export function StepReview({
 								row.value ? "text-ink font-medium" : "text-ink-faint",
 							)}
 						>
-							<span className="truncate tabular-nums">
-								{row.value || "Not set"}
-							</span>
-							{row.label === "PIN" && (
-								<button
-									type="button"
-									disabled={pending}
-									onClick={() => setShowPin((current) => !current)}
-									aria-label={showPin ? "Hide PIN" : "Show PIN"}
-									aria-pressed={showPin}
-									className="text-ink-muted enabled:hover:text-ink focus-visible:outline-brand flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 disabled:opacity-45"
-								>
-									{showPin ? (
-										<EyeOff size={16} aria-hidden />
-									) : (
-										<Eye size={16} aria-hidden />
-									)}
-								</button>
+							{typeof row.value === "string" ? (
+								<span className="truncate tabular-nums">
+									{row.value || "Not set"}
+								</span>
+							) : (
+								row.value
 							)}
 						</dd>
 					</div>
@@ -117,11 +109,11 @@ export function StepReview({
 					checked={accepted}
 					disabled={pending}
 					onChange={(event) => setAccepted(event.target.checked)}
-					className="sr-only"
+					className="peer sr-only"
 				/>
 				<span
 					className={cn(
-						"mt-px grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-colors duration-150",
+						"peer-focus-visible:ring-brand/40 mt-px grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-colors duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2",
 						accepted ? "border-brand bg-brand" : "border-line-strong",
 					)}
 				>
@@ -177,5 +169,38 @@ export function StepReview({
 				</Button>
 			</div>
 		</div>
+	);
+}
+
+function SecretValue({
+	label,
+	value,
+	disabled,
+}: {
+	label: "PIN" | "CVV";
+	value: string;
+	disabled: boolean;
+}) {
+	const [visible, setVisible] = useState(false);
+	return (
+		<>
+			<span className="tabular-nums">
+				{visible ? value : "•".repeat(value.length)}
+			</span>
+			<button
+				type="button"
+				disabled={disabled}
+				onClick={() => setVisible((current) => !current)}
+				aria-label={visible ? `Hide ${label}` : `Show ${label}`}
+				aria-pressed={visible}
+				className="text-ink-muted enabled:hover:text-ink focus-visible:outline-brand flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 disabled:opacity-45"
+			>
+				{visible ? (
+					<EyeOff size={16} aria-hidden />
+				) : (
+					<Eye size={16} aria-hidden />
+				)}
+			</button>
+		</>
 	);
 }

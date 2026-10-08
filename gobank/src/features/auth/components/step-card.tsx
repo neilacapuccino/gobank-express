@@ -4,14 +4,15 @@ import { Button } from "~/shared/ui/button";
 import { CARD_BRANDS, type CardBrandId } from "~/features/card/card-brands";
 import { cn } from "~/shared/lib/cn";
 import { CardBrandLogo } from "~/features/card/components/card-brand-logo";
-import { VirtualCard } from "~/features/card/components/virtual-card";
+import { BankCard } from "~/features/card/components/bank-card";
+import type { RouterOutputs } from "~/trpc/react";
 import { AuthHeading } from "./auth-heading";
 
 type StepCardProps = {
 	brand: CardBrandId;
-	holder: string;
+	fullName: string;
+	card: RouterOutputs["auth"]["prepareCard"] | null;
 	preparing: boolean;
-	ready: boolean;
 	onBrandChange: (brand: CardBrandId) => void;
 	onNext: () => void;
 	onBack: () => void;
@@ -19,9 +20,9 @@ type StepCardProps = {
 
 export function StepCard({
 	brand,
-	holder,
+	fullName,
+	card,
 	preparing,
-	ready,
 	onBrandChange,
 	onNext,
 	onBack,
@@ -30,11 +31,29 @@ export function StepCard({
 		<div className="flex flex-1 flex-col">
 			<AuthHeading
 				title="Choose your card"
-				subtitle="Your card details will appear during review."
+				subtitle="Select your card network."
 			/>
 
 			<div className="mt-7">
-				<VirtualCard brandId={brand} holder={holder} />
+				{card?.brand === brand ? (
+					<BankCard
+						brand={card.brand}
+						fullName={fullName}
+						number={card.number}
+						expiresAt={card.expiresAt}
+					/>
+				) : (
+					<div
+						className="border-line bg-surface-sunken flex aspect-[1.586/1] items-center justify-center rounded-2xl border"
+						aria-busy={preparing}
+					>
+						{preparing ? (
+							<p role="status" className="text-ink-muted text-[13px]">
+								Preparing card…
+							</p>
+						) : null}
+					</div>
+				)}
 			</div>
 
 			<div className="mt-6 grid grid-cols-2 gap-2.5">
@@ -70,8 +89,8 @@ export function StepCard({
 			<div className="flex-1" />
 
 			<div className="mt-8 flex flex-col gap-1.5">
-				<Button onClick={onNext} disabled={!ready || preparing}>
-					{preparing ? "Preparing card…" : "Continue"}
+				<Button onClick={onNext} disabled={card?.brand !== brand || preparing}>
+					Continue
 				</Button>
 				<Button variant="ghost" onClick={onBack}>
 					Back

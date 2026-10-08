@@ -1,0 +1,1 @@
+export const MAX_DAILY_LIMIT_CENTAVOS = 10_000_000;

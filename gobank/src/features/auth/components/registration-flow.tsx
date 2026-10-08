@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StepBar } from "~/shared/ui/step-bar";
@@ -18,12 +19,14 @@ type CardPreview = RouterOutputs["auth"]["prepareCard"];
 
 export function RegistrationFlow() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [draft, setDraft] = useState<RegistrationDraft>(EMPTY_DRAFT);
 	const [step, setStep] = useState(1);
 	const [card, setCard] = useState<CardPreview | null>(null);
 	const prepare = api.auth.prepareCard.useMutation();
 	const register = api.auth.register.useMutation({
 		onSuccess: () => {
+			queryClient.clear();
 			router.replace("/dashboard");
 			router.refresh();
 		},
@@ -68,9 +71,9 @@ export function RegistrationFlow() {
 				{step === 2 && (
 					<StepCard
 						brand={draft.brand}
-						holder={draft.fullName.trim().toUpperCase() || "YOUR NAME"}
+						fullName={draft.fullName.trim()}
+						card={card}
 						preparing={prepare.isPending}
-						ready={card?.brand === draft.brand}
 						onBrandChange={(brand) => {
 							patch({ brand });
 							prepareCard(brand);

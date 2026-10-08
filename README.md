@@ -1,339 +1,101 @@
 # GoBank Express
 
-A student-friendly digital banking application inspired by modern neobanks such
-as GoTyme. GoBank Express reduces core financial operations to an approachable,
-mobile-first model: a main spending account, high-interest goal-based savings
-called **Stashes**, instant peer-to-peer transfers, and cash-convertible reward
-points earned on everyday spending. Banking amounts are in Philippine Pesos (₱).
-
-> **Status:** early development. The database schema covers every feature
-> below; several screens are still scaffolded placeholders.
+A mobile banking project built with Next.js, TypeScript, tRPC and Prisma. Amounts are in Philippine pesos; database money values are whole centavos.
 
 ## Features
 
-### Main account, virtual card & Stashes
+- Main account, deposits, transfers, money requests, bills and mobile load.
+- One issued card with physical and virtual views, a shared main balance, lock controls and a daily spending limit.
+- Up to five named GoalSave savings pockets. Settings let users rename, change the target or close a goal and return its savings to the main account.
+- Savings earn 4% annually, compounded daily using server system time: `A = P × (1 + r / 365)^d`. Fractional centavos carry forward, and moving the clock backward cannot credit the same time twice.
+- Required full name and optional profile photo. Gmail linking is reserved for the member implementing Google authentication; there is no separate Email field.
+- Registration previews the issued card number, expiry and CVV, then opens the dashboard directly.
+- Dashboard activity shows signed amounts and receipts. Rewards and Activity links remain available, with blank destination pages reserved for another member.
 
-- A primary account number and spending balance for daily transactions.
-- Up to **5** goal-based sub-accounts ("Stashes") with custom names such as
-  *Emergency Fund* or *Japan Trip*, each earning interest separately from the
-  main balance.
-- Goal settings support renaming and closing a goal. Closing returns its whole
-  remaining balance, including settled interest, to the main account atomically.
-- Savings use the existing **4% annual rate**, compounded daily from local server
-  system time: `A = P × (1 + r / 365)^d`. Fractional centavos carry forward.
-  Opening a goal or changing its balance settles elapsed interest; a clock moving
-  backward never credits the same time twice. No online time or interest API is used.
-- A virtual debit card that can be toggled between `LOCKED` and `UNLOCKED`
-  in-app, with adjustable daily spending limits.
+Eligible transfers and bills earn one point per ₱50; the existing reward service converts 100 points to ₱1.
 
-### Peer-to-peer transfers & bill payments
+### Bitcoin
 
-- Instant transfers to other registered users by account number or mobile
-  number.
-- Payments to pre-registered billers such as electricity, water, internet and
-  credit cards.
-- Every movement of money produces a unique transaction reference number, a
-  timestamp, and a balance snapshot.
+At `/stocks`, users can view live Bitcoin prices and buy or sell through their main PHP balance, with a fixed ₱10 fee per trade. A single `BitcoinTrade` table keeps the trade history, while server checks prevent overspending and repeated transactions.
 
-### Loyalty rewards & cash back
+## Setup
 
-- Earn **1 point per ₱50.00** on eligible outward transfers and bill payments.
-- Convert points to cash back credited to the main balance at
-  **100 points = ₱1.00**.
+Run application commands inside `gobank/`. Use Node.js 20 or later and a PostgreSQL database.
 
-### Profile and GO shortcuts
-
-- Profile uses a default person icon. In Edit profile, add, replace or remove a
-  PNG, JPG or WebP photo up to 5 MB. Uploaded photos are cropped and saved as
-  256-pixel WebP avatars, with server validation and source metadata removed.
-- Full name is required. Gmail linking is optional and reserved for the member
-  implementing Google authentication. A linked, verified Gmail address can be
-  displayed in Profile and used to find a recipient; there is no generic Email field.
-- Registration reserves the card shown during review, with number/CVV/PIN reveal
-  controls. PIN and CVV are stored as salted hashes. Confirmation goes directly
-  to the dashboard. Visa, Mastercard, JCB and Discover share a black card face.
-- The dark GO menu links to Send money, Add money, Request, GoalSave, Pay bills,
-  Buy load, Bitcoin and Profile. Its orb transitions to two rotating petal
-  layers with a clear close button; reduced-motion preferences are respected.
-- Run `npm run test:profile` for upload validation tests and
-  `npm run test:profile:integration` for persistence and account isolation checks.
-
-### Bitcoin portfolio
-
-At `/stocks`, users can view live Bitcoin prices and buy or sell through their
-main PHP balance, with a fixed ₱10 fee per trade. A single `BitcoinTrade` table
-keeps the trade history, while server checks prevent overspending and repeated
-transactions.
-
-## Tech stack
-
-Built on the [T3 Stack](https://create.t3.gg/) (`create-t3-app` v7.40.0).
-
-### Frameworks & libraries
-
-| Package | Version | Purpose |
-| ------- | ------- | ------- |
-| [Next.js](https://nextjs.org) | 15.5.23 | React framework, App Router, Turbopack |
-| [React](https://react.dev) | 19.2.8 | UI library |
-| [TypeScript](https://www.typescriptlang.org) | 5.9.3 | Language, strict mode |
-| [tRPC](https://trpc.io) | 11.18.0 | End-to-end typesafe API layer |
-| [TanStack Query](https://tanstack.com/query) | 5.102.0 | Server-state caching for tRPC |
-| [Prisma](https://prisma.io) | 6.19.3 | ORM and migrations |
-| [Tailwind CSS](https://tailwindcss.com) | 4.3.3 | Utility-first styling |
-| [Zod](https://zod.dev) | 3.25.76 | Runtime schema validation |
-| [@t3-oss/env-nextjs](https://env.t3.gg) | 0.12.0 | Typesafe environment variables |
-| [SuperJSON](https://github.com/flightcontrolhq/superjson) | 2.2.6 | Rich serialisation across the tRPC boundary |
-
-### Tooling
-
-| Package | Version | Purpose |
-| ------- | ------- | ------- |
-| [ESLint](https://eslint.org) | 9.39.5 | Linting, flat config |
-| [typescript-eslint](https://typescript-eslint.io) | 8.67.0 | TypeScript lint rules |
-| [eslint-config-next](https://nextjs.org/docs/app/api-reference/config/eslint) | 15.5.23 | Next.js lint preset |
-| [Prettier](https://prettier.io) | 3.9.6 | Formatting |
-| [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss) | 0.6.14 | Tailwind class sorting |
-| [PostCSS](https://postcss.org) | 8.5.26 | CSS pipeline for Tailwind |
-
-### Infrastructure
-
-- **[Neon](https://neon.tech)** — serverless PostgreSQL, reached through
-  Prisma. Any PostgreSQL 14+ server works the same way.
-- **GitHub Actions** — CI running format, lint, typecheck and build on every
-  push and pull request to `main`, `staging` and `develop`.
-
-## Getting started
-
-> **Every command below runs from the `gobank/` subdirectory, not the
-> repository root.** `package.json` lives in `gobank/`. Running npm from the
-> root fails with `ENOENT: no such file or directory, open 'package.json'`.
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org) 20 or later
-- npm 10 or later (the project pins `npm@10.9.2`)
-- A [Neon](https://neon.tech) project (the free tier is enough)
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/neilacapuccino/gobank-express.git
+```sh
+cd gobank
+npm ci
 ```
 
-### 2. Change into the application directory
+Copy `.env.example` to `.env` and configure `DATABASE_URL` and `DIRECT_URL`. Keep `.env` out of Git.
 
-```bash
-cd gobank-express/gobank
-```
-
-This step is easy to miss. The repository root holds only `README.md` and
-`.github/` — the application itself lives one level down
-in `gobank/`. If you already have the repository, `cd` into the `gobank` folder
-inside it. Stay in this directory for every remaining step.
-
-### 3. Install dependencies
-
-```bash
-npm install
-```
-
-The `postinstall` hook runs `prisma generate` automatically, emitting the client
-to `generated/prisma`.
-
-### 4. Configure environment variables
-
-Copy the example file, then fill in the values.
-
-```bash
-cp .env.example .env
-```
-
-`.env` is gitignored and must never be committed. Both values come from the
-**Connect** dialog in the Neon console.
-
-| Variable | Neon connection string |
-| -------- | ---------------------- |
-| `DATABASE_URL` | **Pooled** — host contains `-pooler`. Used by the app at runtime. |
-| `DIRECT_URL` | **Direct** — pooling switched off. Used by Prisma to run migrations. |
-
-Values are validated at build and dev time against the schema in `src/env.js`.
-Setting `SKIP_ENV_VALIDATION=1` bypasses the check, which is what CI does.
-
-### 5. Create the tables
-
-```bash
+```sh
+npm run card:setup-key
 npm run db:migrate
-```
-
-Applies every migration in `prisma/migrations` to the Neon database.
-
-### 6. Seed reference data
-
-```bash
 npm run db:seed
-```
-
-Adds the biller catalogue and two demo accounts, `@maricel` and `@dante`, each
-holding ₱5,000.00 with PIN `135790`, so transfers have somewhere to go.
-
-### 7. Run the development server
-
-```bash
 npm run dev
 ```
 
-The app is served at [http://localhost:3001](http://localhost:3001) with
-Turbopack and hot reload.
+The app opens at `http://localhost:3001`. Seeding adds billers and demo accounts `@maricel` and `@dante` with PIN `135790`.
 
-### After pulling new changes
+Card CVVs are encrypted with `CARD_ENCRYPTION_KEY`; PINs and CVV verification values are salted hashes. **Every app using the same database must use the same private encryption key.** Generate a key only for a new environment, or configure the existing team's key privately; never commit it. Older cards without an encrypted CVV offer an explicit Create CVV action.
 
-The Prisma client in `generated/prisma` is built on each machine and is not
-in git, and new commits can add packages or migrations. After every
-`git pull`, from `gobank/`:
+After pulling changes, stop the dev server before `npm ci` and `npm run db:migrate`. The dev helper rebuilds Prisma only when needed and checks whether port 3001 is already occupied; a running Windows server can otherwise lock Prisma's engine DLL.
 
-```bash
-npm install
+## Code and naming
+
+The request flow is **typed React component → Zod-validated tRPC router → service → Prisma**. Routes render feature screens; routers validate inputs; services handle database work; pure helpers calculate and format values.
+
+```text
+gobank/
+  prisma/                Schema, migrations and seed
+  scripts/               Development helpers and integration checks
+  src/
+    app/                 Routes and session-protected layouts
+    features/            Components, routers, services and rules per feature
+    shared/              Reusable controls, hooks and value helpers
+    server/              Database, sessions, ledger and error handling
+    trpc/                Typed client and server callers
 ```
 
-```bash
-npm run db:migrate
-```
+GoalSave is the interface name for the `Stash` entity. Each card view refers to the same `Card` record, so switching views does not create another account or balance. TypeScript files use tabs with a displayed width of two spaces.
 
-`npm install` also rebuilds the Prisma client, and `db:migrate` applies any
-new migrations (it does nothing if the database is already up to date).
-`npm run dev` generates the Prisma client only when it is missing or the schema
-has changed. It checks port 3001 first and reports an existing server; on Windows,
-stop the server before regenerating Prisma so its engine DLL is not locked.
-
-## Available scripts
-
-Run from the `gobank/` directory.
-
-| Script | Action |
-| ------ | ------ |
-| `npm run dev` | Check port 3001, generate Prisma when needed, then start the dev server |
-| `npm run build` | Production build |
-| `npm run start` | Serve an existing production build |
-| `npm run preview` | Build, then serve the result |
-| `npm run check` | Lint and typecheck together |
-| `npm run lint` | ESLint |
-| `npm run lint:fix` | ESLint with autofix |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run format:check` | Verify formatting |
-| `npm run format:write` | Apply formatting |
-| `npm run db:generate` | Create and apply a migration after editing the schema |
-| `npm run db:migrate` | Apply pending migrations |
-| `npm run db:seed` | Seed billers and demo accounts |
-| `npm run db:reset` | Drop everything, re-migrate and re-seed |
-| `npm run db:push` | Push the schema without a migration, for quick experiments |
-| `npm run db:studio` | Open Prisma Studio |
+Money moves through `src/server/ledger.ts`: balance changes and matching transaction records commit together. Transfers share a reference between the sender's debit and recipient's credit. Card locks, daily limits, insufficient funds and database constraints are checked before spending commits.
 
 ## Database
 
-| Model | Holds |
-| ----- | ----- |
-| `User` | Credentials, profile, main account number, balance and points |
-| `Session` | Signed-in devices, stored as a hash of the cookie token |
-| `Card` | The virtual debit card: brand, number, lock state, daily limit |
-| `RegistrationCard` | A temporary, browser-bound card reservation, expiring after 30 minutes |
-| `BitcoinTrade` | One Bitcoin buy/sell per row, belonging directly to a user |
-| `Stash` | Up to five goal savings pockets per user |
-| `Biller` | The pre-registered biller catalogue |
-| `Transaction` | The ledger. One row per money movement per user, with a reference, signed amount and balance snapshot |
-| `MoneyRequest` | Requests for money between users |
+| Model              | Purpose                                                        |
+| ------------------ | -------------------------------------------------------------- |
+| `User`             | Credentials, profile, account number, main balance and points  |
+| `Session`          | Hashed tokens for signed-in sessions                           |
+| `Card`             | Issued number, brand, encrypted CVV, lock and daily limit      |
+| `RegistrationCard` | A browser-bound card reservation that expires after 30 minutes |
+| `Stash`            | Named savings, target and interest state                       |
+| `Transaction`      | Reference, timestamp, signed amount and resulting balance      |
+| `MoneyRequest`     | Requests between users and their status                        |
+| `Biller`           | Biller catalogue                                               |
+| `BitcoinTrade`     | Bitcoin buy and sell history                                   |
 
-Savings retain `interestUpdatedAt` to measure elapsed time and `interestCarry` to
-preserve fractions of a centavo. These fields prevent repeated credits and rounding
-losses; they are needed by the compound-interest calculation.
+`Stash.interestUpdatedAt` records the last settled time; `interestCarry` preserves fractions of a centavo. Both are needed for accurate daily compounding.
 
-For the defense, trace the code as **typed React component → validated tRPC procedure
-→ service transaction → Prisma table**. Pure functions in `bitcoin.rules.ts` and
-`savings-interest.ts` handle the calculations; database effects stay in services
-and the ledger.
+## Checks
 
-Before pushing, run `npm run check:ci`. The repository's `.githooks/pre-push` runs
-the same format, lint, fresh typecheck, unit tests and build checks when installed
-with `git config core.hooksPath .githooks`. GitHub Actions repeats those checks.
-
-- **Money is stored as whole centavos** in integer columns. `₱1,250.50` is
-  `125050`. Conversion happens only at the edges, in `src/shared/lib/money.ts`.
-- **Balances only change through the ledger** (`src/server/ledger.ts`).
-  `post` moves money and writes the matching `Transaction` in one step; `spend`
-  adds the card lock, the daily limit and points; `transfer` and `moveStash`
-  build on those two.
-- **Check constraints** stop any balance, point total or daily limit from going
-  negative, even if application code has a bug.
-- A P2P transfer writes two rows that share one reference: a negative amount for
-  the sender and a positive amount for the receiver.
-
-## Architecture
-
-The code is organised by feature. Each layer has one job, and
-dependencies only point downward.
-
-```
-app/                 Routes. A page loads data and renders a feature screen.
-  │
-features/<name>/     One folder per feature.
-  ├─ components/     The feature's UI.
-  ├─ <name>.router   API layer: validates input with Zod, calls the service.
-  ├─ <name>.service  Business logic and queries. Knows nothing about tRPC.
-  └─ <name>.rules    Pure functions: no database, no cookies, no clock.
-  │
-shared/              Used by several features: ui/, lib/, hooks/.
-server/              Infrastructure: db, tRPC setup, ledger, errors, session.
+```sh
+npm run check:ci
 ```
 
-- **Routers stay thin.** A procedure parses its input and makes one service
-  call. The same services could sit behind a REST route or a script.
-- **Pure code is separate from effects.** Money maths, validation and
-  formatting live in `*.rules.ts` and `shared/lib`, and take no database or
-  request. Services handle the effects.
-- **Money moves only through the ledger.** `server/ledger.ts` is the single
-  writer of balances.
-- **Errors are domain errors.** Services throw `AppError` with a code and a
-  message from the `MESSAGES` table in `server/errors.ts`. The tRPC middleware
-  turns them, and known database errors, into HTTP responses.
-- **Imports are relative within a feature** and use `~/` across features and
-  into `shared/`.
+This checks the generated Prisma client, formatting, lint, fresh TypeScript types, unit tests and production build. GitHub Actions runs the same checks; install the local push hook from the repository root with `git config core.hooksPath .githooks`.
 
-## Project structure
+Integration checks create temporary accounts and remove their fixtures afterward:
 
+```sh
+npm run test:auth:integration
+npm run test:card:integration
+npm run test:transfers:integration
+npm run test:payments:integration
+npm run test:enrollment:savings
+npm run test:bitcoin:integration
+npm run test:profile:integration
 ```
-.
-├── .github/                      CI workflow and code owners
-└── gobank/
-    ├── prisma/                   Schema, migrations and seed
-    ├── prisma.config.ts          Prisma CLI config (loads .env, seed command)
-    ├── public/                   Static assets
-    └── src/
-        ├── app/                  Routes only
-        │   ├── (auth)/           Register and sign in, for signed-out users
-        │   ├── (app)/            Screens behind the session guard
-        │   └── api/trpc/         tRPC HTTP handler
-        ├── features/
-        │   ├── account/          Dashboard, profile, activity history
-        │   ├── auth/             Register, sign in and out, PIN hashing
-        │   ├── bills/            Biller catalogue and bill payment
-        │   ├── card/             Virtual card, lock and daily limit
-        │   ├── requests/         Requesting money from other users
-        │   ├── rewards/          Redeeming points
-        │   ├── stashes/          Savings goals
-        │   ├── transfers/        Sending money, recipient lookup
-        │   └── wallet/           Cash in and mobile load
-        ├── shared/
-        │   ├── ui/               Button, text field, PIN pad, screen shell
-        │   ├── lib/              Money, formatting, contact and Zod helpers
-        │   └── hooks/            Reusable React hooks
-        ├── server/
-        │   ├── db.ts             Prisma client singleton
-        │   ├── trpc.ts           Procedures and error mapping
-        │   ├── root.ts           Combines the feature routers
-        │   ├── ledger.ts         The only code that changes a balance
-        │   ├── errors.ts         AppError and the message table
-        │   ├── session.ts        Cookie sessions
-        │   └── codes.ts          Reference, account and card numbers
-        ├── trpc/                 Client and server-side API callers
-        ├── styles/               Global stylesheet and design tokens
-        └── env.js                Environment variable schema
-```
+
+Use `npm run format:write` to format source files, `npm run db:generate` to create a migration during development, and `npm run db:migrate` to apply committed migrations.

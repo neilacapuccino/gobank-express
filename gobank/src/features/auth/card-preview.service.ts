@@ -2,6 +2,8 @@ import { createHash, randomBytes, randomInt } from "node:crypto";
 import { cookies } from "next/headers";
 import type { CardBrand, Prisma } from "../../../generated/prisma";
 import { cardExpiry, newCardNumber } from "~/server/codes";
+import { encryptCvv } from "~/server/card-cvv";
+import { env } from "~/env";
 import { db } from "~/server/db";
 import { fail } from "~/server/errors";
 import { hashPin } from "./pin";
@@ -15,6 +17,7 @@ export async function createCardPreview(brand: CardBrand) {
 	const token = randomBytes(32).toString("base64url");
 	const number = newCardNumber(brand);
 	const cvv = randomInt(1000).toString().padStart(3, "0");
+	const cvvEncrypted = encryptCvv(cvv, number, env.CARD_ENCRYPTION_KEY);
 	const expiresAt = cardExpiry();
 	const validUntil = new Date(Date.now() + MAX_AGE * 1000);
 	await db.registrationCard.deleteMany({
@@ -26,6 +29,7 @@ export async function createCardPreview(brand: CardBrand) {
 			brand,
 			number,
 			cvvHash: await hashPin(cvv),
+			cvvEncrypted,
 			expiresAt,
 			validUntil,
 		},
@@ -89,6 +93,7 @@ export async function consumeRegistrationCard(
 		brand: card.brand,
 		number: card.number,
 		cvvHash: card.cvvHash,
+		cvvEncrypted: card.cvvEncrypted,
 		expiresAt: card.expiresAt,
 	};
 }
