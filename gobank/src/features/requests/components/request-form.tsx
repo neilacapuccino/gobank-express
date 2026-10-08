@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
 import {
 	AmountFields,
 	FormError,
 	MoneyFormHeader,
-	MoneyReceipt,
 	MoneySummary,
 	RecipientPicker,
 	type MoneyStep,
@@ -44,7 +44,7 @@ export function RequestForm() {
 
 	if (request.data && search.recipient) {
 		return (
-			<MoneyReceipt title="Request sent" onDone={done}>
+			<TransactionReceipt title="Request sent" onDone={done}>
 				<MoneySummary
 					recipient={search.recipient}
 					amount={request.data.amount}
@@ -54,7 +54,7 @@ export function RequestForm() {
 						{ label: "Date", value: dateTime(request.data.createdAt) },
 					]}
 				/>
-			</MoneyReceipt>
+			</TransactionReceipt>
 		);
 	}
 

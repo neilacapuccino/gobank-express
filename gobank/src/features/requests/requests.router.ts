@@ -10,7 +10,22 @@ import {
 import { MAX_REQUEST_CENTAVOS } from "./requests.rules";
 
 export const requestsRouter = createTRPCRouter({
-	list: protectedProcedure.query(({ ctx }) => listRequests(ctx.userId)),
+	list: protectedProcedure
+		.input(
+			z.object({
+				requestDirection: z.enum(["received", "sent"]),
+				cursor: z.string().min(1).nullish(),
+				limit: z.number().int().min(1).max(50).default(20),
+			}),
+		)
+		.query(({ ctx, input }) =>
+			listRequests(
+				ctx.userId,
+				input.requestDirection,
+				input.cursor,
+				input.limit,
+			),
+		),
 
 	create: protectedProcedure
 		.input(

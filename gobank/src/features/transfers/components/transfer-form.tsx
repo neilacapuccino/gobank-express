@@ -2,6 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
 import { dateTime, peso } from "~/shared/lib/format";
 import { MAX_TRANSACTION_CENTAVOS, toCentavos } from "~/shared/lib/money";
@@ -12,7 +13,6 @@ import {
 	AmountFields,
 	FormError,
 	MoneyFormHeader,
-	MoneyReceipt,
 	MoneySummary,
 	RecipientIdentity,
 	RecipientPicker,
@@ -51,7 +51,7 @@ export function TransferForm() {
 
 	if (send.data && search.recipient) {
 		return (
-			<MoneyReceipt title="Money sent" onDone={done}>
+			<TransactionReceipt title="Money sent" onDone={done}>
 				<MoneySummary
 					recipient={search.recipient}
 					amount={Math.abs(send.data.amount)}
@@ -62,7 +62,7 @@ export function TransferForm() {
 						{ label: "Balance", value: peso(send.data.balanceAfter) },
 					]}
 				/>
-			</MoneyReceipt>
+			</TransactionReceipt>
 		);
 	}
 
@@ -127,7 +127,6 @@ export function TransferForm() {
 						recipient={search.recipient}
 						amount={amountCentavos}
 						note={note.trim()}
-						details={[{ label: "Fee", value: peso(0) }]}
 					/>
 					<FormError error={send.error ? errorMessage(send.error) : null} />
 					<div className="mt-auto pt-8">

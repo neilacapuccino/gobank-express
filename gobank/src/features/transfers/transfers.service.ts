@@ -1,4 +1,4 @@
-import { normaliseGmail, normaliseMobile } from "~/shared/lib/contact";
+import { normalizeGmail, normalizeMobile } from "~/shared/lib/contact";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { transfer } from "~/server/ledger";
@@ -13,8 +13,8 @@ export const PARTY = {
 export async function findRecipient(handle: string, self: string) {
 	const input = handle.trim().toLowerCase();
 	const value = input.replace(/^@/, "");
-	const mobile = /^[+()\d\s-]+$/.test(value) ? normaliseMobile(value) : null;
-	const gmail = normaliseGmail(value);
+	const mobile = /^[+()\d\s-]+$/.test(value) ? normalizeMobile(value) : null;
+	const gmail = normalizeGmail(value);
 	const where = input.startsWith("@")
 		? { username: value }
 		: {

@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -14,12 +15,14 @@ import { AuthHeading } from "./auth-heading";
 
 export function SignInFlow() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [phase, setPhase] = useState<"username" | "pin">("username");
 	const [username, setUsername] = useState("");
 	const [pin, setPin] = useState("");
 
 	const signIn = api.auth.signIn.useMutation({
 		onSuccess: () => {
+			queryClient.clear();
 			router.replace("/dashboard");
 			router.refresh();
 		},

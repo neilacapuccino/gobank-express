@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { ActivityScreen } from "~/features/account/components/activity-screen";
-import { api } from "~/trpc/server";
+import { PageHeader } from "~/shared/ui/page-header";
 
 export const metadata: Metadata = {
 	title: "Activity",
 };
 
-export default async function TransactionsPage() {
-	return (
-		<ActivityScreen initialPage={await api.account.activity({ limit: 20 })} />
-	);
+export default function TransactionsPage() {
+	return <PageHeader title="Activity" back="/dashboard" />;
 }

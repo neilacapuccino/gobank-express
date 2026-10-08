@@ -25,9 +25,6 @@ export const peso = (centavos: number) => PESO.format(toPesos(centavos));
 export const formatAccount = (accountNumber: string) =>
 	accountNumber.replace(/(\d{4})(?=\d)/g, "$1 ");
 
-export const maskAccount = (accountNumber: string) =>
-	`•••• ${accountNumber.slice(-4)}`;
-
 export const maskDigits = (value: string) =>
 	value.length <= 4
 		? value

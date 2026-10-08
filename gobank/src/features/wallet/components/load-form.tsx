@@ -1,15 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
-import {
-	FormError,
-	MoneyReceipt,
-} from "~/features/transfers/components/money-form-ui";
+import { FormError } from "~/features/transfers/components/money-form-ui";
 import { isPesoInput } from "~/shared/lib/amount-input";
 import {
 	formatMobile,
-	normaliseMobile,
+	normalizeMobile,
 	validateMobile,
 } from "~/shared/lib/contact";
 import { cn } from "~/shared/lib/cn";
@@ -52,7 +50,7 @@ export function LoadForm() {
 
 	if (load.data) {
 		return (
-			<MoneyReceipt title="Load purchased" onDone={done}>
+			<TransactionReceipt title="Load purchased" onDone={done}>
 				<TransactionSummary
 					amount={Math.abs(load.data.amount)}
 					details={[
@@ -63,7 +61,7 @@ export function LoadForm() {
 						{ label: "Balance", value: peso(load.data.balanceAfter) },
 					]}
 				/>
-			</MoneyReceipt>
+			</TransactionReceipt>
 		);
 	}
 
@@ -121,7 +119,7 @@ export function LoadForm() {
 						value={mobile}
 						placeholder="09XXXXXXXXX"
 						onChange={(event) =>
-							setMobile(digitsOnly(normaliseMobile(event.target.value), 11))
+							setMobile(digitsOnly(normalizeMobile(event.target.value), 11))
 						}
 					/>
 					<section>

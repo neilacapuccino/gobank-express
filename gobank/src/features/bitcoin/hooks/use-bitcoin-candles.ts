@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 import {
 	mergeCandleHistory,
@@ -17,8 +17,8 @@ export function useBitcoinCandles(range: BitcoinRange) {
 	const chart = api.bitcoin.chart.useQuery(
 		{ range },
 		{
-			staleTime: range === "1MIN" ? 2_000 : 5_000,
-			refetchInterval: range === "1MIN" ? 2_000 : 5_000,
+			staleTime: 15_000,
+			refetchInterval: 15_000,
 			retry: 1,
 		},
 	);
@@ -81,10 +81,14 @@ export function useBitcoinCandles(range: BitcoinRange) {
 		};
 	}, [range, interval, limit]);
 
-	const points = mergeCandleHistory(
-		chart.data ?? [],
-		updates?.range === range ? updates.points : [],
-		limit,
+	const points = useMemo(
+		() =>
+			mergeCandleHistory(
+				chart.data ?? [],
+				updates?.range === range ? updates.points : [],
+				limit,
+			),
+		[chart.data, updates, range, limit],
 	);
 	const updatedAt = Math.max(
 		chart.dataUpdatedAt,

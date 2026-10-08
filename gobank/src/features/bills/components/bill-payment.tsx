@@ -1,11 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
-import {
-	FormError,
-	MoneyReceipt,
-} from "~/features/transfers/components/money-form-ui";
+import { FormError } from "~/features/transfers/components/money-form-ui";
 import { isPesoInput } from "~/shared/lib/amount-input";
 import { dateTime, digitsOnly, maskDigits, peso } from "~/shared/lib/format";
 import { MAX_TRANSACTION_CENTAVOS, toCentavos } from "~/shared/lib/money";
@@ -50,7 +48,7 @@ export function BillPayment() {
 
 	if (pay.data) {
 		return (
-			<MoneyReceipt title="Bill paid" onDone={done}>
+			<TransactionReceipt title="Bill paid" onDone={done}>
 				<TransactionSummary
 					amount={Math.abs(pay.data.amount)}
 					details={[
@@ -63,7 +61,7 @@ export function BillPayment() {
 				>
 					<p className="text-ink text-[14px] font-medium">{biller?.name}</p>
 				</TransactionSummary>
-			</MoneyReceipt>
+			</TransactionReceipt>
 		);
 	}
 

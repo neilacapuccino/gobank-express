@@ -13,17 +13,16 @@ import { Button } from "~/shared/ui/button";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 
-type MoneyRequest = RouterOutputs["requests"]["list"][number];
+type MoneyRequest = RouterOutputs["requests"]["list"]["items"][number];
 type Direction = "received" | "sent";
 
-export function RequestNotifications({ userId }: { userId: string }) {
+export function RequestNotifications() {
 	const [direction, setDirection] = useState<Direction>("received");
-	const requests = api.requests.list.useQuery();
-	const visible = requests.data?.filter((request) =>
-		direction === "received"
-			? request.payerId === userId
-			: request.requesterId === userId,
+	const requests = api.requests.list.useInfiniteQuery(
+		{ requestDirection: direction, limit: 20 },
+		{ getNextPageParam: (page) => page.next ?? undefined },
 	);
+	const items = requests.data?.pages.flatMap((page) => page.items) ?? [];
 
 	return (
 		<div className="pt-7">
@@ -55,21 +54,14 @@ export function RequestNotifications({ userId }: { userId: string }) {
 				>
 					Loading requests…
 				</p>
-			) : requests.error ? (
-				<div>
-					<FormError error={errorMessage(requests.error)} />
-					<Button variant="ghost" onClick={() => void requests.refetch()}>
-						Retry
-					</Button>
-				</div>
-			) : !visible?.length ? (
+			) : !items.length && !requests.error ? (
 				<div className="border-line flex flex-col items-center gap-4 rounded-2xl border px-5 py-10">
 					<Bell size={28} className="text-ink-muted" aria-hidden />
 					<p className="text-ink-muted text-[14px]">No {direction} requests</p>
 				</div>
-			) : (
+			) : items.length ? (
 				<ul className="space-y-4">
-					{visible.map((request) => (
+					{items.map((request) => (
 						<li key={request.id}>
 							<RequestCard
 								request={request}
@@ -78,7 +70,31 @@ export function RequestNotifications({ userId }: { userId: string }) {
 						</li>
 					))}
 				</ul>
-			)}
+			) : null}
+			{requests.error ? (
+				<div className="mt-5">
+					<FormError error={errorMessage(requests.error)} />
+					<Button
+						variant="ghost"
+						disabled={requests.isFetching}
+						onClick={() => {
+							if (requests.isFetchNextPageError) void requests.fetchNextPage();
+							else void requests.refetch();
+						}}
+					>
+						{requests.isFetching ? "Retrying…" : "Retry"}
+					</Button>
+				</div>
+			) : requests.hasNextPage ? (
+				<Button
+					variant="outline"
+					className="mt-5"
+					disabled={requests.isFetching}
+					onClick={() => void requests.fetchNextPage()}
+				>
+					{requests.isFetchingNextPage ? "Loading…" : "Load more"}
+				</Button>
+			) : null}
 		</div>
 	);
 }

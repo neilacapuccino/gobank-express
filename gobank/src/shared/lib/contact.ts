@@ -1,4 +1,4 @@
-export function normaliseMobile(raw: string) {
+export function normalizeMobile(raw: string) {
 	const digits = raw.replace(/\D/g, "");
 	if (digits.startsWith("63")) return `0${digits.slice(2)}`;
 	return digits;
@@ -6,7 +6,7 @@ export function normaliseMobile(raw: string) {
 
 export function validateMobile(raw: string): string | null {
 	if (raw.trim().length === 0) return null;
-	const value = normaliseMobile(raw);
+	const value = normalizeMobile(raw);
 	if (!/^09\d{9}$/.test(value)) {
 		return "Use the format 09XXXXXXXXX";
 	}
@@ -20,7 +20,7 @@ export function validateFullName(raw: string): string | null {
 	return null;
 }
 
-export function normaliseGmail(raw: string): string | null {
+export function normalizeGmail(raw: string): string | null {
 	const value = raw.trim().toLowerCase();
 	return /^[a-z0-9][a-z0-9._+-]*@(gmail|googlemail)\.com$/.test(value)
 		? value
@@ -28,7 +28,7 @@ export function normaliseGmail(raw: string): string | null {
 }
 
 export function formatMobile(raw: string) {
-	const value = normaliseMobile(raw);
+	const value = normalizeMobile(raw);
 	if (value.length !== 11) return raw;
 	return `${value.slice(0, 4)} ${value.slice(4, 7)} ${value.slice(7)}`;
 }

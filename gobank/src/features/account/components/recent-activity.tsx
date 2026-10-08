@@ -28,18 +28,10 @@ const ICONS: Record<Entry["kind"], LucideIcon> = {
 	exchange: ArrowLeftRight,
 };
 
-export function RecentActivity({
-	entries,
-	showHeader = true,
-}: {
-	entries: Entry[];
-	showHeader?: boolean;
-}) {
+export function RecentActivity({ entries }: { entries: Entry[] }) {
 	return (
 		<section>
-			{showHeader ? (
-				<SectionHeader title="Activity" href="/transactions" />
-			) : null}
+			<SectionHeader title="Activity" href="/transactions" />
 
 			{entries.length === 0 ? (
 				<div className="bg-surface-sunken flex flex-col items-center gap-1 rounded-2xl px-6 py-8 text-center">

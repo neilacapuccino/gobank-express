@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normaliseMobile, validateMobile } from "./contact";
+import { normalizeMobile, validateMobile } from "./contact";
 import { MAX_TRANSACTION_CENTAVOS } from "./money";
 
 const blankToNull = (value: string) => value || null;
@@ -14,7 +14,7 @@ export const mobile = z
 	.string()
 	.trim()
 	.refine((value) => !validateMobile(value), "Use the format 09XXXXXXXXX")
-	.transform((value) => blankToNull(normaliseMobile(value)));
+	.transform((value) => blankToNull(normalizeMobile(value)));
 
 export const optionalText = (max: number) =>
 	z.string().trim().max(max).transform(blankToNull);

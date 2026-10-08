@@ -1,14 +1,17 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "~/shared/ui/button";
 import { api } from "~/trpc/react";
 
 export function SignOutButton() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const signOut = api.auth.signOut.useMutation({
 		onSuccess: () => {
+			queryClient.clear();
 			router.replace("/signin");
 			router.refresh();
 		},

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { centavos } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
+import { STASH_NAME_MAX } from "./stashes.rules";
 import {
 	createStash,
 	getStash,
@@ -11,7 +12,7 @@ import {
 } from "./stashes.service";
 
 const id = z.object({ id: z.string() });
-const name = z.string().trim().min(1).max(40);
+const name = z.string().trim().min(1).max(STASH_NAME_MAX);
 
 export const stashesRouter = createTRPCRouter({
 	list: protectedProcedure.query(({ ctx }) => listStashes(ctx.userId)),

@@ -2,7 +2,10 @@
 import { useState } from "react";
 import { BackButton } from "~/shared/ui/back-button";
 import { TextField } from "~/shared/ui/text-field";
-import { toCentavos } from "~/shared/lib/money";
+import { MAX_TRANSACTION_CENTAVOS, toCentavos } from "~/shared/lib/money";
+import { isPesoInput } from "~/shared/lib/amount-input";
+import { Button } from "~/shared/ui/button";
+import { STASH_NAME_MAX } from "../stashes.rules";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { GoalIconPicker } from "./goal-icon-picker";
@@ -27,11 +30,14 @@ export function CreateGoalForm({
 		},
 	});
 	const amount = target.trim();
-	const goal = amount ? toCentavos(Number(amount)) : null;
+	const targetCentavos = amount ? toCentavos(Number(amount)) : null;
 	const validTarget =
-		goal === null ||
-		(/^\d+(\.\d{1,2})?$/.test(amount) && goal > 0 && goal <= 100_000_000);
-	const validName = name.trim().length > 0 && name.trim().length <= 40;
+		targetCentavos === null ||
+		(isPesoInput(amount) &&
+			targetCentavos > 0 &&
+			targetCentavos <= MAX_TRANSACTION_CENTAVOS);
+	const validName =
+		name.trim().length > 0 && name.trim().length <= STASH_NAME_MAX;
 	return (
 		<form
 			className="bg-surface-sunken text-ink -mx-6 -mt-8 -mb-10 flex min-h-[calc(100dvh-1px)] flex-1 flex-col px-5 pt-7 pb-8"
@@ -42,7 +48,8 @@ export function CreateGoalForm({
 					setStep("target");
 					return;
 				}
-				if (validTarget) create.mutate({ name: name.trim(), goal });
+				if (validTarget)
+					create.mutate({ name: name.trim(), goal: targetCentavos });
 			}}
 		>
 			<header className="relative flex min-h-11 items-center justify-center">
@@ -69,11 +76,11 @@ export function CreateGoalForm({
 						value={name}
 						onChange={(event) => setName(event.target.value)}
 						required
-						maxLength={40}
+						maxLength={STASH_NAME_MAX}
 						disabled={create.isPending}
 						autoFocus
 						placeholder="e.g. Emergency fund"
-						hint={`${name.length}/40`}
+						hint={`${name.length}/${STASH_NAME_MAX}`}
 					/>
 				</div>
 			) : (
@@ -89,8 +96,10 @@ export function CreateGoalForm({
 						inputMode="decimal"
 						placeholder="0.00"
 						value={target}
-						onChange={(event) => setTarget(event.target.value)}
-						maxLength={12}
+						onChange={(event) => {
+							if (isPesoInput(event.target.value))
+								setTarget(event.target.value);
+						}}
 						disabled={create.isPending}
 						autoFocus
 						aria-invalid={!validTarget}
@@ -112,21 +121,20 @@ export function CreateGoalForm({
 				</p>
 			)}
 			<div className="mt-auto pt-10">
-				<button
+				<Button
 					type="submit"
 					disabled={
 						!validName ||
 						(step === "target" && !validTarget) ||
 						create.isPending
 					}
-					className="h-13 w-full rounded-2xl bg-[#71d5f3] text-[15px] font-semibold text-[#121214] transition-colors hover:bg-[#9ae1f7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d5f3] disabled:bg-[#29292d] disabled:text-[#878792]"
 				>
 					{create.isPending
 						? "Creating…"
 						: step === "name"
 							? "Continue"
 							: "Create goal"}
-				</button>
+				</Button>
 			</div>
 		</form>
 	);

@@ -44,8 +44,8 @@ const funding = (userId: string, amount: number) =>
 	);
 
 const pendingRequests = async (userId: string) =>
-	(await listRequests(userId)).filter(
-		(request) => request.payerId === userId && request.status === "pending",
+	(await listRequests(userId, "received")).items.filter(
+		(request) => request.status === "pending",
 	);
 
 try {
@@ -150,7 +150,10 @@ try {
 		"Fixture request",
 	);
 	assert.equal((await pendingRequests(payer.id))[0]?.id, request.id);
-	assert.equal((await listRequests(requester.id))[0]?.id, request.id);
+	assert.equal(
+		(await listRequests(requester.id, "sent")).items[0]?.id,
+		request.id,
+	);
 	await assert.rejects(
 		respondToRequest(outsider.id, request.id, true),
 		rejection(MESSAGES.requestClosed),
@@ -286,8 +289,109 @@ try {
 		[await balance(left.id), await balance(right.id)],
 		balancesBefore,
 	);
+
+	const outgoingRequest = await requestMoney(
+		payer.id,
+		`@${requester.username}`,
+		100,
+		null,
+	);
+	await respondToRequest(requester.id, outgoingRequest.id, true);
+	const fixturePhoto =
+		"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/6i5xyoAAAAASUVORK5CYII=";
+	await db.user.updateMany({
+		where: { id: { in: [payer.id, requester.id] } },
+		data: { profilePhoto: fixturePhoto },
+	});
+	const directions = ["received", "sent"] as const;
+	const statuses = ["pending", "declined", "cancelled"] as const;
+	const historyStart = Date.now();
+	for (const direction of directions) {
+		await db.moneyRequest.createMany({
+			data: Array.from({ length: 26 }, (_, index) => ({
+				requesterId: direction === "received" ? requester.id : payer.id,
+				payerId: direction === "received" ? payer.id : requester.id,
+				amount: 100,
+				note: "Request history fixture",
+				status: statuses[index % statuses.length]!,
+				createdAt: new Date(historyStart + Math.floor(index / 3)),
+			})),
+		});
+	}
+	const foreign = await db.moneyRequest.create({
+		data: {
+			requesterId: fixtures[3]!.id,
+			payerId: fixtures[4]!.id,
+			amount: 100,
+			createdAt: new Date(historyStart + 100),
+		},
+	});
+	for (const direction of directions) {
+		const where =
+			direction === "received"
+				? { payerId: payer.id }
+				: { requesterId: payer.id };
+		const expected = await db.moneyRequest.findMany({
+			where,
+			select: { id: true },
+			orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+		});
+		const ids: string[] = [];
+		const seenCursors = new Set<string>();
+		const seenStatuses = new Set<string>();
+		let cursor: string | null = null;
+		do {
+			const page = await listRequests(payer.id, direction, cursor, 5);
+			assert.ok(page.items.length <= 5);
+			for (const item of page.items) {
+				ids.push(item.id);
+				seenStatuses.add(item.status);
+				const self = direction === "received" ? item.payer : item.requester;
+				const opposite = direction === "received" ? item.requester : item.payer;
+				assert.equal(self.id, payer.id);
+				assert.equal(self.profilePhoto, null);
+				assert.equal(opposite.id, requester.id);
+				assert.equal(opposite.profilePhoto, fixturePhoto);
+			}
+			cursor = page.next;
+			if (cursor) {
+				assert.ok(!seenCursors.has(cursor), "Request cursor must advance");
+				seenCursors.add(cursor);
+			}
+		} while (cursor);
+		assert.deepEqual(
+			ids,
+			expected.map((item) => item.id),
+		);
+		assert.equal(new Set(ids).size, expected.length);
+		assert.deepEqual([...seenStatuses].sort(), [
+			"cancelled",
+			"declined",
+			"paid",
+			"pending",
+		]);
+		assert.ok(!ids.includes(foreign.id));
+		assert.deepEqual(await listRequests(payer.id, direction, foreign.id, 5), {
+			items: [],
+			next: null,
+		});
+		const otherDirection = direction === "received" ? "sent" : "received";
+		const otherPage = await listRequests(payer.id, otherDirection, null, 1);
+		assert.deepEqual(
+			await listRequests(payer.id, direction, otherPage.items[0]!.id, 5),
+			{ items: [], next: null },
+		);
+	}
+	assert.deepEqual(await listRequests(outsider.id, "received"), {
+		items: [],
+		next: null,
+	});
+	assert.deepEqual(await listRequests(outsider.id, "sent"), {
+		items: [],
+		next: null,
+	});
 	console.log(
-		"Transfer/request integration passed: recipient aliases, verified Gmail, balanced ledger, recent recipients, ownership, concurrent request actions, failed-payment rollback, locked cards, concurrent daily limits, and opposite transfers.",
+		"Transfer/request integration passed: recipient aliases, balanced ledger, ownership, concurrent request actions, debit rollback, daily limits, opposite transfers, both paginated request directions without skips, all statuses, bounded photos, and foreign-cursor isolation.",
 	);
 } finally {
 	if (fixtures.length)

@@ -19,8 +19,8 @@ import { useBitcoinFeed } from "../hooks/use-bitcoin-feed";
 import { BitcoinChart } from "./bitcoin-chart";
 import { BitcoinTradeForm } from "./bitcoin-trade-form";
 
-const signed = (cents: number) =>
-	`${cents >= 0 ? "+" : "−"}${money(Math.abs(cents))}`;
+const signed = (centavos: number) =>
+	`${centavos >= 0 ? "+" : "−"}${money(Math.abs(centavos))}`;
 
 export function BitcoinScreen() {
 	const { quote, fresh, status, refresh, isRefreshing } = useBitcoinFeed();

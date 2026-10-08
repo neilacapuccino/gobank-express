@@ -1,4 +1,3 @@
-import { CheckCircle2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { ProfileAvatar } from "~/features/account/components/profile-avatar";
 import { isPesoInput } from "~/shared/lib/amount-input";
@@ -238,28 +237,5 @@ export function MoneySummary({
 				<p className="text-ink-soft mt-4 text-[14px] break-words">{note}</p>
 			) : null}
 		</TransactionSummary>
-	);
-}
-
-export function MoneyReceipt({
-	title,
-	children,
-	onDone,
-}: {
-	title: string;
-	children: ReactNode;
-	onDone: () => void;
-}) {
-	return (
-		<div className="flex flex-1 flex-col gap-6 pt-5">
-			<header className="flex items-center gap-3">
-				<CheckCircle2 className="text-brand shrink-0" size={28} aria-hidden />
-				<h1 className="text-ink text-[20px] font-semibold">{title}</h1>
-			</header>
-			{children}
-			<div className="mt-auto pt-4">
-				<Button onClick={onDone}>Done</Button>
-			</div>
-		</div>
 	);
 }

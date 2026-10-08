@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { RewardsScreen } from "~/features/rewards/components/rewards-screen";
-import { api } from "~/trpc/server";
+import { PageHeader } from "~/shared/ui/page-header";
 
 export const metadata: Metadata = {
 	title: "Rewards",
 };
 
-export default async function RewardsPage() {
-	return <RewardsScreen initialOverview={await api.account.overview()} />;
+export default function RewardsPage() {
+	return <PageHeader title="Rewards" back="/dashboard" />;
 }

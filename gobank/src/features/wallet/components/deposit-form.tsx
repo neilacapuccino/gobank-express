@@ -1,11 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
-import {
-	FormError,
-	MoneyReceipt,
-} from "~/features/transfers/components/money-form-ui";
+import { FormError } from "~/features/transfers/components/money-form-ui";
 import { isPesoInput } from "~/shared/lib/amount-input";
 import { dateTime, peso } from "~/shared/lib/format";
 import { toCentavos } from "~/shared/lib/money";
@@ -30,7 +28,7 @@ export function DepositForm() {
 
 	if (deposit.data) {
 		return (
-			<MoneyReceipt
+			<TransactionReceipt
 				title="Deposit complete"
 				onDone={() => {
 					router.push("/dashboard");
@@ -45,7 +43,7 @@ export function DepositForm() {
 						{ label: "Balance after", value: peso(deposit.data.balanceAfter) },
 					]}
 				/>
-			</MoneyReceipt>
+			</TransactionReceipt>
 		);
 	}
 
