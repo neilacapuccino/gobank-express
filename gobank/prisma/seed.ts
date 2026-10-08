@@ -1,10 +1,10 @@
 import { PrismaClient, type BillerCategory } from "../generated/prisma";
 import { hashPin } from "../src/features/auth/pin";
+import { newCardCredentials } from "../src/server/card-credentials";
 import {
-	cardExpiry,
 	newAccountNumber,
-	newCardNumber,
 	newReference,
+	virtualCardBrand,
 } from "../src/server/codes";
 
 const db = new PrismaClient();
@@ -45,6 +45,11 @@ async function main() {
 			where: { username: person.username },
 		});
 		if (exists) continue;
+		const physical = await newCardCredentials("discover");
+		const virtual = await newCardCredentials(
+			virtualCardBrand(physical.card.brand),
+			physical.cvv,
+		);
 
 		await db.user.create({
 			data: {
@@ -52,12 +57,11 @@ async function main() {
 				pinHash,
 				accountNumber: newAccountNumber(),
 				balance: OPENING_BALANCE,
-				card: {
-					create: {
-						brand: "discover",
-						number: newCardNumber("discover"),
-						expiresAt: cardExpiry(),
-					},
+				cards: {
+					create: [
+						{ ...physical.card, kind: "physical" },
+						{ ...virtual.card, kind: "virtual" },
+					],
 				},
 				transactions: {
 					create: {

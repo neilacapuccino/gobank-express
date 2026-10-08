@@ -9,6 +9,8 @@ import {
 } from "../src/features/auth/card-preview.service";
 import { verifyPin } from "../src/features/auth/pin";
 import { CARD_BRANDS } from "../src/features/card/card-brands";
+import { getCard, revealCvv } from "../src/features/card/card.service";
+import { virtualCardBrand } from "../src/server/codes";
 import { getProfile } from "../src/features/account/account.service";
 import { findRecipient } from "../src/features/transfers/transfers.service";
 import {
@@ -58,13 +60,46 @@ try {
 		users.push(user.id);
 		const issued = await db.user.findUniqueOrThrow({
 			where: { id: user.id },
-			include: { card: true },
+			include: { cards: true },
 		});
-		assert.equal(issued.card?.number, preview.number);
-		assert.equal(issued.card?.expiresAt.toISOString(), preview.expiresAt);
-		assert.ok(await verifyPin(preview.cvv, issued.card!.cvvHash!));
+		assert.equal(issued.cards.length, 2);
+		const physical = issued.cards.find((card) => card.kind === "physical");
+		const virtual = issued.cards.find((card) => card.kind === "virtual");
+		assert.ok(physical);
+		assert.ok(virtual);
+		assert.equal(physical.brand, brand.id);
+		assert.equal(physical.number, preview.number);
+		assert.equal(physical.expiresAt.toISOString(), preview.expiresAt);
+		assert.ok(physical.cvvHash);
+		assert.ok(physical.cvvEncrypted);
+		assert.ok(await verifyPin(preview.cvv, physical.cvvHash));
+		assert.equal((await revealCvv(user.id, "physical")).cvv, preview.cvv);
 		assert.ok(await verifyPin("246802", issued.pinHash));
-		assert.match(issued.card!.cvvHash!, /^[a-f0-9]{32}:[a-f0-9]{128}$/);
+		assert.match(physical.cvvHash, /^[a-f0-9]{32}:[a-f0-9]{128}$/);
+		const virtualBrand = CARD_BRANDS.find(
+			(cardBrand) => cardBrand.id === virtualCardBrand(brand.id),
+		);
+		assert.ok(virtualBrand);
+		assert.equal(virtual.brand, virtualBrand.id);
+		assert.notEqual(virtual.brand, physical.brand);
+		assert.equal(virtual.number.slice(0, 4), virtualBrand.numberPrefix);
+		assert.equal(virtual.number.length, 16);
+		assert.notEqual(virtual.number, physical.number);
+		assert.ok(virtual.cvvHash);
+		assert.ok(virtual.cvvEncrypted);
+		assert.match(virtual.cvvHash, /^[a-f0-9]{32}:[a-f0-9]{128}$/);
+		assert.notEqual(virtual.cvvHash, physical.cvvHash);
+		assert.equal(await verifyPin(preview.cvv, virtual.cvvHash), false);
+		const virtualCvv = (await revealCvv(user.id, "virtual")).cvv;
+		assert.match(virtualCvv, /^\d{3}$/);
+		assert.notEqual(virtualCvv, preview.cvv);
+		assert.ok(await verifyPin(virtualCvv, virtual.cvvHash));
+		assert.equal(issued.balance, 0);
+		const cardDetails = await getCard(user.id);
+		assert.equal(cardDetails.physical.number, preview.number);
+		assert.equal(cardDetails.virtual.number, virtual.number);
+		assert.equal(cardDetails.cardLocked, false);
+		assert.equal(cardDetails.cardDailyLimit, 2_000_000);
 		assert.equal(
 			await db.registrationCard.findUnique({
 				where: { id: cardDraftId(token) },
@@ -211,7 +246,7 @@ try {
 		removeStash(owner, race.id),
 		moveMoney(owner, race.id, 1_000, "in"),
 	]);
-	assert.equal(outcomes[0]!.status, "fulfilled");
+	assert.equal(outcomes[0].status, "fulfilled");
 	assert.equal(await db.stash.findUnique({ where: { id: race.id } }), null);
 	assert.equal(
 		(await db.user.findUniqueOrThrow({ where: { id: owner } })).balance,
@@ -229,7 +264,7 @@ try {
 	);
 	assert.equal(await db.stash.count({ where: { userId: other } }), 5);
 	console.log(
-		"Passed: reserved card issuance, PIN/CVV hashes, replay/expiry/brand checks, rollback, required name, verified Gmail lookup, goal renaming, compound growth, repeat-credit prevention, atomic closure, concurrent deposit protection and the five-goal limit.",
+		"Passed: reserved physical and separate virtual cards, PIN/CVV hashes, replay/expiry/brand checks, rollback, required name, verified Gmail lookup, goal renaming, compound growth, repeat-credit prevention, atomic closure, concurrent deposit protection and the five-goal limit.",
 	);
 } finally {
 	if (drafts.length)

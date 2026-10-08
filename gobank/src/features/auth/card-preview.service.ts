@@ -1,12 +1,9 @@
-import { createHash, randomBytes, randomInt } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import type { CardBrand, Prisma } from "../../../generated/prisma";
-import { cardExpiry, newCardNumber } from "~/server/codes";
-import { encryptCvv } from "~/server/card-cvv";
-import { env } from "~/env";
+import { newCardCredentials } from "~/server/card-credentials";
 import { db } from "~/server/db";
 import { fail } from "~/server/errors";
-import { hashPin } from "./pin";
 
 const COOKIE = "gb_registration_card";
 const MAX_AGE = 30 * 60;
@@ -15,10 +12,7 @@ export const cardDraftId = (token: string) =>
 
 export async function createCardPreview(brand: CardBrand) {
 	const token = randomBytes(32).toString("base64url");
-	const number = newCardNumber(brand);
-	const cvv = randomInt(1000).toString().padStart(3, "0");
-	const cvvEncrypted = encryptCvv(cvv, number, env.CARD_ENCRYPTION_KEY);
-	const expiresAt = cardExpiry();
+	const { card, cvv } = await newCardCredentials(brand);
 	const validUntil = new Date(Date.now() + MAX_AGE * 1000);
 	await db.registrationCard.deleteMany({
 		where: { validUntil: { lte: new Date() } },
@@ -26,11 +20,7 @@ export async function createCardPreview(brand: CardBrand) {
 	await db.registrationCard.create({
 		data: {
 			id: cardDraftId(token),
-			brand,
-			number,
-			cvvHash: await hashPin(cvv),
-			cvvEncrypted,
-			expiresAt,
+			...card,
 			validUntil,
 		},
 	});
@@ -38,9 +28,9 @@ export async function createCardPreview(brand: CardBrand) {
 		token,
 		preview: {
 			brand,
-			number,
+			number: card.number,
 			cvv,
-			expiresAt: expiresAt.toISOString(),
+			expiresAt: card.expiresAt.toISOString(),
 			validUntil: validUntil.toISOString(),
 		},
 	};
@@ -80,7 +70,11 @@ export async function consumeRegistrationCard(
 ) {
 	const id = cardDraftId(token);
 	const card = await tx.registrationCard.findUnique({ where: { id } });
-	if (card?.brand !== brand || card.validUntil <= new Date()) {
+	if (
+		card?.brand !== brand ||
+		card.validUntil <= new Date() ||
+		card.cvvEncrypted === null
+	) {
 		return fail("BAD_REQUEST", "Refresh your card details before confirming.");
 	}
 	const consumed = await tx.registrationCard.deleteMany({

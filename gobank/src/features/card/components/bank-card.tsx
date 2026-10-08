@@ -1,17 +1,21 @@
-import { Smartphone } from "lucide-react";
+"use client";
+
+import { Check, CircleAlert, Copy, Smartphone } from "lucide-react";
+import { useState } from "react";
+import type { CardKind } from "../../../../generated/prisma";
 import type { IssuedCardBrandId } from "../card-brands";
 import { cn } from "~/shared/lib/cn";
 import { formatAccount } from "~/shared/lib/format";
 import { CardBrandLogo } from "./card-brand-logo";
 
-export type CardView = "physical" | "virtual";
+export type { CardKind } from "../../../../generated/prisma";
 
 type BankCardProps = {
 	brand: IssuedCardBrandId;
 	fullName: string;
 	number: string;
 	expiresAt: Date | string;
-	view?: CardView;
+	kind?: CardKind;
 	hideNumber?: boolean;
 	compact?: boolean;
 };
@@ -21,19 +25,31 @@ export function BankCard({
 	fullName,
 	number,
 	expiresAt,
-	view = "virtual",
+	kind = "virtual",
 	hideNumber = false,
 	compact = false,
 }: BankCardProps) {
+	const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
+		"idle",
+	);
 	const expiry = new Date(expiresAt);
 	const expiryLabel = `${String(expiry.getUTCMonth() + 1).padStart(2, "0")}/${String(expiry.getUTCFullYear()).slice(-2)}`;
 	const numberLabel = hideNumber
-		? `${number.slice(0, 4)} •••• •••• ${number.slice(-4)}`
+		? "•••• •••• •••• ••••"
 		: formatAccount(number);
+	const copyNumber = async () => {
+		if (hideNumber) return;
+		try {
+			await navigator.clipboard.writeText(number);
+			setCopyStatus("copied");
+		} catch {
+			setCopyStatus("error");
+		}
+	};
 
 	return (
 		<div
-			aria-label={`${view === "physical" ? "Physical" : "Virtual"} card`}
+			aria-label={`${kind === "physical" ? "Physical" : "Virtual"} card`}
 			className={cn(
 				"relative w-full overflow-hidden rounded-2xl bg-[#111113] p-5 ring-1 ring-white/10 ring-inset",
 				"shadow-[0_1px_2px_rgba(13,18,32,0.16),0_12px_28px_-12px_rgba(13,18,32,0.45)]",
@@ -42,7 +58,7 @@ export function BankCard({
 		>
 			<div className="relative flex h-full flex-col justify-between">
 				<div className="flex items-center justify-between gap-3">
-					{view === "physical" ? (
+					{kind === "physical" ? (
 						<div className="flex items-center gap-2.5">
 							<Chip className={compact ? "h-6 w-8" : "h-8 w-10"} />
 							<Contactless className="h-5 w-5 text-white/60" />
@@ -61,19 +77,51 @@ export function BankCard({
 				</div>
 
 				<div className="flex flex-col gap-3">
-					<p
-						aria-label={
-							hideNumber
-								? `Card starting with ${number.slice(0, 4)}, ending in ${number.slice(-4)}`
-								: `Card number ${number}`
-						}
-						className={cn(
-							"font-medium tracking-[0.16em] text-white/90 tabular-nums",
-							compact ? "text-[13px]" : "text-[clamp(13px,3.8vw,16px)]",
-						)}
-					>
-						<span aria-hidden>{numberLabel}</span>
-					</p>
+					<div className="flex items-center gap-1">
+						<p
+							aria-label={
+								hideNumber ? "Card number hidden" : `Card number ${number}`
+							}
+							className={cn(
+								"min-w-0 font-medium tracking-[0.12em] whitespace-nowrap text-white/90 tabular-nums",
+								compact ? "text-[12px]" : "text-[clamp(12px,3.4vw,16px)]",
+							)}
+						>
+							<span aria-hidden>{numberLabel}</span>
+						</p>
+						<button
+							type="button"
+							disabled={hideNumber}
+							onClick={copyNumber}
+							aria-label={
+								copyStatus === "copied"
+									? "Card number copied"
+									: copyStatus === "error"
+										? "Copy failed. Try again."
+										: "Copy card number"
+							}
+							className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 disabled:opacity-30"
+						>
+							{copyStatus === "copied" ? (
+								<Check size={14} aria-hidden />
+							) : copyStatus === "error" ? (
+								<CircleAlert size={14} className="text-danger" aria-hidden />
+							) : (
+								<Copy size={14} aria-hidden />
+							)}
+						</button>
+					</div>
+					{copyStatus === "error" && !hideNumber ? (
+						<p role="alert" className="text-danger -mt-2 text-[11px]">
+							Could not copy card number. Try again.
+						</p>
+					) : (
+						<span role="status" className="sr-only">
+							{copyStatus === "copied" && !hideNumber
+								? "Card number copied."
+								: ""}
+						</span>
+					)}
 					<div className="flex items-end justify-between gap-4">
 						<div className="min-w-0">
 							<p className="text-[9px] tracking-[0.18em] text-white/55 uppercase">

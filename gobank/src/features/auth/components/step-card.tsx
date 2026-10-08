@@ -30,7 +30,7 @@ export function StepCard({
 	return (
 		<div className="flex flex-1 flex-col">
 			<AuthHeading
-				title="Choose your card"
+				title="Choose your physical card"
 				subtitle="Select your card network."
 			/>
 
@@ -41,6 +41,7 @@ export function StepCard({
 						fullName={fullName}
 						number={card.number}
 						expiresAt={card.expiresAt}
+						kind="physical"
 					/>
 				) : (
 					<div

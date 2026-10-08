@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { Check, Copy, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/shared/ui/button";
 import { getBrand } from "~/features/card/card-brands";
@@ -62,6 +62,7 @@ export function StepReview({
 					number={card.number}
 					hideNumber={!showNumber}
 					expiresAt={card.expiresAt}
+					kind="physical"
 					compact
 				/>
 				<button
@@ -182,25 +183,66 @@ function SecretValue({
 	disabled: boolean;
 }) {
 	const [visible, setVisible] = useState(false);
+	const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
+		"idle",
+	);
+	const copyCvv = async () => {
+		if (!visible || label !== "CVV") return;
+		try {
+			await navigator.clipboard.writeText(value);
+			setCopyStatus("copied");
+		} catch {
+			setCopyStatus("error");
+		}
+	};
 	return (
-		<>
-			<span className="tabular-nums">
-				{visible ? value : "•".repeat(value.length)}
-			</span>
-			<button
-				type="button"
-				disabled={disabled}
-				onClick={() => setVisible((current) => !current)}
-				aria-label={visible ? `Hide ${label}` : `Show ${label}`}
-				aria-pressed={visible}
-				className="text-ink-muted enabled:hover:text-ink focus-visible:outline-brand flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 disabled:opacity-45"
-			>
-				{visible ? (
-					<EyeOff size={16} aria-hidden />
-				) : (
-					<Eye size={16} aria-hidden />
-				)}
-			</button>
-		</>
+		<div className="flex flex-col items-end">
+			<div className="flex items-center gap-1.5">
+				<span className="tabular-nums">
+					{visible ? value : "•".repeat(value.length)}
+				</span>
+				{label === "CVV" ? (
+					<button
+						type="button"
+						disabled={disabled || !visible}
+						onClick={copyCvv}
+						aria-label={copyStatus === "copied" ? "CVV copied" : "Copy CVV"}
+						className="text-ink-muted enabled:hover:text-ink focus-visible:outline-brand flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 disabled:opacity-45"
+					>
+						{copyStatus === "copied" ? (
+							<Check size={14} aria-hidden />
+						) : (
+							<Copy size={14} aria-hidden />
+						)}
+					</button>
+				) : null}
+				<button
+					type="button"
+					disabled={disabled}
+					onClick={() => {
+						setVisible((current) => !current);
+						setCopyStatus("idle");
+					}}
+					aria-label={visible ? `Hide ${label}` : `Show ${label}`}
+					aria-pressed={visible}
+					className="text-ink-muted enabled:hover:text-ink focus-visible:outline-brand flex min-h-8 min-w-8 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 disabled:opacity-45"
+				>
+					{visible ? (
+						<EyeOff size={16} aria-hidden />
+					) : (
+						<Eye size={16} aria-hidden />
+					)}
+				</button>
+			</div>
+			{copyStatus === "error" ? (
+				<p role="alert" className="text-danger text-right text-[12px]">
+					Could not copy CVV. Try again.
+				</p>
+			) : (
+				<span role="status" className="sr-only">
+					{copyStatus === "copied" ? "CVV copied." : ""}
+				</span>
+			)}
+		</div>
 	);
 }

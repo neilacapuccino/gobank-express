@@ -58,8 +58,9 @@ try {
 				accountNumber: `20${randomInt(1_000_000_000).toString().padStart(9, "0")}`,
 				mobile,
 				pinHash: "test-only-not-a-valid-pin",
-				card: {
+				cards: {
 					create: {
+						kind: "physical",
 						number: `fixture-${suffix}-${i}`,
 						expiresAt: new Date("2030-01-01"),
 					},
@@ -248,9 +249,9 @@ try {
 
 	const limited = fixtures[8]!;
 	await funding(limited.id, 10_000);
-	await db.card.update({
-		where: { userId: limited.id },
-		data: { dailyLimit: 3_000 },
+	await db.user.update({
+		where: { id: limited.id },
+		data: { cardDailyLimit: 3_000 },
 	});
 	const limitedBefore = await balance(limited.id);
 	const spends = await Promise.allSettled([
@@ -267,13 +268,58 @@ try {
 		failedSpend?.status === "rejected" &&
 			rejection(MESSAGES.overDailyLimit)(failedSpend.reason),
 	);
-	await db.card.update({
+	const overLimitRequest = await requestMoney(
+		requester.id,
+		`@${limited.username}`,
+		1_001,
+		null,
+	);
+	const requestBalance = await balance(limited.id);
+	const requestEntries = await db.transaction.count({
 		where: { userId: limited.id },
-		data: { locked: true },
+	});
+	await assert.rejects(
+		respondToRequest(limited.id, overLimitRequest.id, true),
+		rejection(MESSAGES.overDailyLimit),
+	);
+	assert.equal(
+		(
+			await db.moneyRequest.findUniqueOrThrow({
+				where: { id: overLimitRequest.id },
+			})
+		).status,
+		"pending",
+	);
+	await db.user.update({
+		where: { id: limited.id },
+		data: { cardLocked: true },
 	});
 	await assert.rejects(
 		sendMoney(limited.id, `@${requester.username}`, 1, null),
 		rejection(MESSAGES.cardLocked),
+	);
+	const lockedRequest = await requestMoney(
+		requester.id,
+		`@${limited.username}`,
+		1,
+		null,
+	);
+	await assert.rejects(
+		respondToRequest(limited.id, lockedRequest.id, true),
+		rejection(MESSAGES.cardLocked),
+	);
+	assert.equal(
+		(
+			await db.moneyRequest.findUniqueOrThrow({
+				where: { id: lockedRequest.id },
+			})
+		).status,
+		"pending",
+	);
+	assert.equal(await balance(limited.id), requestBalance);
+	assert.equal(
+		await db.transaction.count({ where: { userId: limited.id } }),
+		requestEntries,
 	);
 
 	const left = fixtures[6]!;

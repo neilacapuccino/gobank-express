@@ -5,11 +5,11 @@ A mobile banking project built with Next.js, TypeScript, tRPC and Prisma. Amount
 ## Features
 
 - Main account, deposits, transfers, money requests, bills and mobile load.
-- One issued card with physical and virtual views, a shared main balance, lock controls and a daily spending limit.
+- Physical and virtual cards with different networks, unique numbers and separate CVVs. Both use the main balance and shared spending controls.
 - Up to five named GoalSave savings pockets. Settings let users rename, change the target or close a goal and return its savings to the main account.
 - Savings earn 4% annually, compounded daily using server system time: `A = P × (1 + r / 365)^d`. Fractional centavos carry forward, and moving the clock backward cannot credit the same time twice.
 - Required full name and optional profile photo. Gmail linking is reserved for the member implementing Google authentication; there is no separate Email field.
-- Registration previews the issued card number, expiry and CVV, then opens the dashboard directly.
+- Registration previews the physical card number, expiry and CVV, then opens the dashboard directly.
 - Dashboard activity shows signed amounts and receipts. Rewards and Activity links remain available, with blank destination pages reserved for another member.
 
 Eligible transfers and bills earn one point per ₱50; the existing reward service converts 100 points to ₱1.
@@ -38,7 +38,7 @@ npm run dev
 
 The app opens at `http://localhost:3001`. Seeding adds billers and demo accounts `@maricel` and `@dante` with PIN `135790`.
 
-Card CVVs are encrypted with `CARD_ENCRYPTION_KEY`; PINs and CVV verification values are salted hashes. **Every app using the same database must use the same private encryption key.** Generate a key only for a new environment, or configure the existing team's key privately; never commit it. Older cards without an encrypted CVV offer an explicit Create CVV action.
+Card CVVs are generated when cards are issued and encrypted with `CARD_ENCRYPTION_KEY`; PINs and CVV verification values are salted hashes. **Every app using the same database must use the same private encryption key.** Generate a key only for a new environment, or configure the existing team's key privately; never commit it. Older accounts automatically receive missing card credentials when their cards load.
 
 After pulling changes, stop the dev server before `npm ci` and `npm run db:migrate`. The dev helper rebuilds Prisma only when needed and checks whether port 3001 is already occupied; a running Windows server can otherwise lock Prisma's engine DLL.
 
@@ -58,23 +58,23 @@ gobank/
     trpc/                Typed client and server callers
 ```
 
-GoalSave is the interface name for the `Stash` entity. Each card view refers to the same `Card` record, so switching views does not create another account or balance. TypeScript files use tabs with a displayed width of two spaces.
+GoalSave is the interface name for the `Stash` entity. A user has one physical and one virtual `Card` record, distinguished by `kind`; account balance and shared card controls belong to `User`. TypeScript files use tabs with a displayed width of two spaces.
 
 Money moves through `src/server/ledger.ts`: balance changes and matching transaction records commit together. Transfers share a reference between the sender's debit and recipient's credit. Card locks, daily limits, insufficient funds and database constraints are checked before spending commits.
 
 ## Database
 
-| Model              | Purpose                                                        |
-| ------------------ | -------------------------------------------------------------- |
-| `User`             | Credentials, profile, account number, main balance and points  |
-| `Session`          | Hashed tokens for signed-in sessions                           |
-| `Card`             | Issued number, brand, encrypted CVV, lock and daily limit      |
-| `RegistrationCard` | A browser-bound card reservation that expires after 30 minutes |
-| `Stash`            | Named savings, target and interest state                       |
-| `Transaction`      | Reference, timestamp, signed amount and resulting balance      |
-| `MoneyRequest`     | Requests between users and their status                        |
-| `Biller`           | Biller catalogue                                               |
-| `BitcoinTrade`     | Bitcoin buy and sell history                                   |
+| Model              | Purpose                                                                    |
+| ------------------ | -------------------------------------------------------------------------- |
+| `User`             | Profile, credentials, main balance, points and shared card controls        |
+| `Session`          | Hashed tokens for signed-in sessions                                       |
+| `Card`             | Physical or virtual kind, unique number, network, encrypted CVV and expiry |
+| `RegistrationCard` | A browser-bound card reservation that expires after 30 minutes             |
+| `Stash`            | Named savings, target and interest state                                   |
+| `Transaction`      | Reference, timestamp, signed amount and resulting balance                  |
+| `MoneyRequest`     | Requests between users and their status                                    |
+| `Biller`           | Biller catalogue                                                           |
+| `BitcoinTrade`     | Bitcoin buy and sell history                                               |
 
 `Stash.interestUpdatedAt` records the last settled time; `interestCarry` preserves fractions of a centavo. Both are needed for accurate daily compounding.
 

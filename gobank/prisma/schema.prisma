@@ -17,6 +17,11 @@ enum CardBrand {
   discover
 }
 
+enum CardKind {
+  physical
+  virtual
+}
+
 enum BillerCategory {
   electric
   water
@@ -52,6 +57,8 @@ model User {
   gmail             String?   @unique
   googleId          String?   @unique
   accountNumber     String    @unique
+  cardLocked        Boolean   @default(false)
+  cardDailyLimit    Int       @default(2000000)
   balance           Int       @default(0)
   points            Int       @default(0)
   failedPinAttempts Int       @default(0)
@@ -59,7 +66,7 @@ model User {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  card             Card?
+  cards            Card[]
   sessions         Session[]
   stashes          Stash[]
   transactions     Transaction[]
@@ -99,18 +106,19 @@ model Session {
 
 model Card {
   id           String    @id @default(cuid())
-  userId       String    @unique
+  userId       String
+  kind         CardKind  @default(physical)
   brand        CardBrand @default(discover)
   number       String    @unique
   cvvHash      String?
   cvvEncrypted String?
   expiresAt    DateTime
-  locked       Boolean   @default(false)
-  dailyLimit   Int       @default(2000000)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind])
 }
 
 model RegistrationCard {

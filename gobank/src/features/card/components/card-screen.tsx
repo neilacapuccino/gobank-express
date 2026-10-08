@@ -20,10 +20,11 @@ import { TextField } from "~/shared/ui/text-field";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { MAX_DAILY_LIMIT_CENTAVOS } from "../card.rules";
-import { BankCard, type CardView } from "./bank-card";
+import { BankCard, type CardKind } from "./bank-card";
 import styles from "./card-screen.module.css";
 
-type Card = RouterOutputs["card"]["get"];
+type CardOverview = RouterOutputs["card"]["get"];
+type Card = CardOverview["physical"];
 type CvvState =
 	| { status: "hidden" | "pending" }
 	| { status: "visible"; cvv: string }
@@ -31,6 +32,8 @@ type CvvState =
 
 const DETAIL_ACTION =
 	"text-ink-muted enabled:hover:text-ink focus-visible:outline-brand inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-1 text-[12.5px] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-45";
+const ICON_ACTION =
+	"text-ink-muted enabled:hover:text-ink focus-visible:outline-brand inline-flex h-9 w-8 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-30";
 
 export function CardScreen() {
 	const card = api.card.get.useQuery();
@@ -41,7 +44,7 @@ export function CardScreen() {
 			<PageHeader title="My card" back="/dashboard" />
 			{card.isPending ? (
 				<p role="status" className="text-ink-muted mt-10 text-center text-sm">
-					Loading your card…
+					Loading your cards…
 				</p>
 			) : card.data ? (
 				<div className="mt-7">
@@ -70,7 +73,7 @@ export function CardScreen() {
 			) : (
 				<div className="mt-8 space-y-4">
 					<p role="alert" className="text-danger text-sm">
-						{errorMessage(card.error) ?? "Could not load your card."}
+						{errorMessage(card.error) ?? "Could not load your cards."}
 					</p>
 					<Button
 						variant="outline"
@@ -85,30 +88,67 @@ export function CardScreen() {
 	);
 }
 
-function CardControls({ card }: { card: Card }) {
+function CardControls({ card }: { card: CardOverview }) {
+	const [selectedKind, setSelectedKind] = useState<CardKind>("physical");
+	const selectedCard = card[selectedKind];
+
+	return (
+		<>
+			<div
+				className="border-line bg-surface-sunken grid grid-cols-2 gap-1 rounded-xl border p-1"
+				role="group"
+				aria-label="Card kind"
+			>
+				{(["physical", "virtual"] as const).map((kind) => (
+					<button
+						key={kind}
+						type="button"
+						aria-pressed={selectedKind === kind}
+						onClick={() => setSelectedKind(kind)}
+						className={cn(
+							"focus-visible:outline-brand flex min-h-11 items-center justify-center gap-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-2",
+							selectedKind === kind
+								? "bg-surface-raised text-ink"
+								: "text-ink-muted hover:text-ink",
+						)}
+					>
+						{kind === "physical" ? (
+							<CreditCard size={16} aria-hidden />
+						) : (
+							<Smartphone size={16} aria-hidden />
+						)}
+						{kind === "physical" ? "Physical" : "Virtual"}
+					</button>
+				))}
+			</div>
+			<CardDetails key={selectedKind} card={selectedCard} />
+			<CardSettings
+				cardLocked={card.cardLocked}
+				cardDailyLimit={card.cardDailyLimit}
+			/>
+		</>
+	);
+}
+
+function CardDetails({ card }: { card: Card }) {
 	const utils = api.useUtils();
-	const [view, setView] = useState<CardView>("virtual");
 	const [showNumber, setShowNumber] = useState(true);
+	const [cvv, setCvv] = useState<CvvState>({ status: "hidden" });
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
 		"idle",
 	);
-	const [cvv, setCvv] = useState<CvvState>({ status: "hidden" });
 
 	const revealCvv = async () => {
+		setCopyStatus("idle");
 		if (cvv.status === "visible") {
 			setCvv({ status: "hidden" });
 			return;
 		}
 		setCvv({ status: "pending" });
 		try {
-			const details = card.hasCvv
-				? await utils.client.card.revealCvv.query()
-				: await utils.client.card.createCvv.mutate();
-			if (!card.hasCvv) {
-				utils.card.get.setData(undefined, (current) =>
-					current ? { ...current, hasCvv: true } : current,
-				);
-			}
+			const details = await utils.client.card.revealCvv.query({
+				kind: card.kind,
+			});
 			setCvv({ status: "visible", cvv: details.cvv });
 		} catch (error) {
 			setCvv({
@@ -119,9 +159,10 @@ function CardControls({ card }: { card: Card }) {
 		}
 	};
 
-	const copyNumber = async () => {
+	const copyCvv = async () => {
+		if (cvv.status !== "visible") return;
 		try {
-			await navigator.clipboard.writeText(card.number);
+			await navigator.clipboard.writeText(cvv.cvv);
 			setCopyStatus("copied");
 		} catch {
 			setCopyStatus("error");
@@ -129,123 +170,90 @@ function CardControls({ card }: { card: Card }) {
 	};
 
 	return (
-		<>
-			<div
-				className="border-line bg-surface-sunken grid grid-cols-2 gap-1 rounded-xl border p-1"
-				role="group"
-				aria-label="Card view"
-			>
-				{(["physical", "virtual"] as const).map((option) => (
-					<button
-						key={option}
-						type="button"
-						aria-pressed={view === option}
-						onClick={() => setView(option)}
-						className={cn(
-							"focus-visible:outline-brand flex min-h-11 items-center justify-center gap-2 rounded-lg text-[13px] font-medium transition-colors focus-visible:outline-2",
-							view === option
-								? "bg-surface-raised text-ink"
-								: "text-ink-muted hover:text-ink",
-						)}
-					>
-						{option === "physical" ? (
-							<CreditCard size={16} aria-hidden />
-						) : (
-							<Smartphone size={16} aria-hidden />
-						)}
-						{option === "physical" ? "Physical" : "Virtual"}
-					</button>
-				))}
-			</div>
-			<section aria-label="Card details" className="mt-4">
-				<div className={styles.cardStage}>
-					<div key={view} className={styles.switchCard}>
-						<BankCard
-							brand={card.brand}
-							fullName={card.user.fullName}
-							number={card.number}
-							hideNumber={!showNumber}
-							expiresAt={card.expiresAt}
-							view={view}
-						/>
-					</div>
+		<section aria-label="Card details" className="mt-4">
+			<div className={styles.cardStage}>
+				<div className={styles.switchCard}>
+					<BankCard
+						brand={card.brand}
+						fullName={card.user.fullName}
+						number={card.number}
+						hideNumber={!showNumber}
+						expiresAt={card.expiresAt}
+						kind={card.kind}
+					/>
 				</div>
-				<div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-1">
+			</div>
+			<div className="mt-2 flex items-center justify-between gap-2">
+				<button
+					type="button"
+					aria-pressed={showNumber}
+					className={DETAIL_ACTION}
+					onClick={() => setShowNumber((visible) => !visible)}
+				>
+					{showNumber ? (
+						<EyeOff size={15} aria-hidden />
+					) : (
+						<Eye size={15} aria-hidden />
+					)}
+					{showNumber ? "Hide number" : "Show number"}
+				</button>
+				<div className="flex items-center gap-1">
+					<span className="text-ink-muted text-[12px]">CVV</span>
+					<span className="text-ink min-w-6 text-[13px] font-medium tabular-nums">
+						{cvv.status === "visible" ? cvv.cvv : "•••"}
+					</span>
 					<button
 						type="button"
-						aria-pressed={showNumber}
-						className={DETAIL_ACTION}
-						onClick={() => {
-							setShowNumber((visible) => !visible);
-							setCopyStatus("idle");
-						}}
+						aria-label={copyStatus === "copied" ? "CVV copied" : "Copy CVV"}
+						disabled={cvv.status !== "visible"}
+						onClick={copyCvv}
+						className={ICON_ACTION}
 					>
-						{showNumber ? (
+						{copyStatus === "copied" ? (
+							<Check size={14} aria-hidden />
+						) : (
+							<Copy size={14} aria-hidden />
+						)}
+					</button>
+					<button
+						type="button"
+						aria-label={cvv.status === "visible" ? "Hide CVV" : "Show CVV"}
+						aria-pressed={cvv.status === "visible"}
+						disabled={cvv.status === "pending"}
+						onClick={revealCvv}
+						className={ICON_ACTION}
+					>
+						{cvv.status === "pending" ? (
+							<span
+								className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+								aria-hidden
+							/>
+						) : cvv.status === "visible" ? (
 							<EyeOff size={15} aria-hidden />
 						) : (
 							<Eye size={15} aria-hidden />
 						)}
-						{showNumber ? "Hide number" : "Show number"}
-					</button>
-					<button
-						type="button"
-						aria-label={
-							copyStatus === "copied"
-								? "Card number copied"
-								: "Copy card number"
-						}
-						disabled={!showNumber}
-						onClick={copyNumber}
-						className={cn(DETAIL_ACTION, "min-w-10")}
-					>
-						{copyStatus === "copied" ? (
-							<Check size={16} aria-hidden />
-						) : (
-							<Copy size={16} aria-hidden />
-						)}
-					</button>
-					<button
-						type="button"
-						aria-label={
-							cvv.status === "visible"
-								? "Hide CVV"
-								: card.hasCvv
-									? "Show CVV"
-									: "Create CVV"
-						}
-						aria-pressed={cvv.status === "visible"}
-						disabled={cvv.status === "pending"}
-						onClick={revealCvv}
-						className={DETAIL_ACTION}
-					>
-						{cvv.status === "visible" ? (
-							<>
-								<span className="tabular-nums">CVV {cvv.cvv}</span>
-								<EyeOff size={15} aria-hidden />
-							</>
-						) : cvv.status === "pending" ? (
-							"Loading…"
-						) : card.hasCvv ? (
-							"Show CVV"
-						) : (
-							"Create CVV"
-						)}
 					</button>
 				</div>
-				{copyStatus === "error" || cvv.status === "error" ? (
-					<p role="alert" className="text-danger mt-1 text-[13px]">
-						{cvv.status === "error"
-							? cvv.message
-							: "Could not copy. Select the card number to copy it."}
-					</p>
-				) : null}
-			</section>
-			<CardSettings card={card} />
-		</>
+			</div>
+			<span role="status" className="sr-only">
+				{copyStatus === "copied" ? "CVV copied." : ""}
+			</span>
+			{cvv.status === "error" || copyStatus === "error" ? (
+				<p role="alert" className="text-danger mt-1 text-[13px]">
+					{cvv.status === "error"
+						? cvv.message
+						: "Could not copy CVV. Try again."}
+				</p>
+			) : null}
+		</section>
 	);
 }
 
-function CardSettings({ card }: { card: Card }) {
+function CardSettings({
+	cardLocked,
+	cardDailyLimit,
+}: Pick<CardOverview, "cardLocked" | "cardDailyLimit">) {
 	const utils = api.useUtils();
 	const [limitDraft, setLimitDraft] = useState<string | null>(null);
 	const [message, setMessage] = useState("");
@@ -255,31 +263,32 @@ function CardSettings({ card }: { card: Card }) {
 		},
 		onSuccess: (updated, settings) => {
 			utils.card.get.setData(undefined, updated);
-			if (settings.dailyLimit !== undefined) setLimitDraft(null);
+			if (settings.cardDailyLimit !== undefined) setLimitDraft(null);
 			setMessage(
-				settings.dailyLimit !== undefined
+				settings.cardDailyLimit !== undefined
 					? "Daily limit saved."
-					: updated.locked
-						? "Card locked."
-						: "Card unlocked.",
+					: updated.cardLocked
+						? "Cards locked."
+						: "Cards unlocked.",
 			);
 		},
 	});
-	const limit = limitDraft ?? String(toPesos(card.dailyLimit));
+	const limit = limitDraft ?? String(toPesos(cardDailyLimit));
 	const limitInCentavos = toCentavos(Number(limit));
-	const savingLock = update.isPending && update.variables.locked !== undefined;
+	const savingLock =
+		update.isPending && update.variables.cardLocked !== undefined;
 	const canSaveLimit =
 		limit.trim() !== "" &&
 		Number.isFinite(limitInCentavos) &&
 		limitInCentavos >= 0 &&
 		limitInCentavos <= MAX_DAILY_LIMIT_CENTAVOS &&
-		limitInCentavos !== card.dailyLimit;
+		limitInCentavos !== cardDailyLimit;
 
 	const saveLimit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		if (!canSaveLimit || update.isPending) return;
 		setMessage("");
-		update.mutate({ dailyLimit: limitInCentavos });
+		update.mutate({ cardDailyLimit: limitInCentavos });
 	};
 
 	return (
@@ -292,10 +301,10 @@ function CardSettings({ card }: { card: Card }) {
 					<h2
 						className={cn(
 							"text-[14px] font-medium",
-							card.locked ? "text-ink-muted" : "text-brand",
+							cardLocked ? "text-ink-muted" : "text-brand",
 						)}
 					>
-						{card.locked ? "Locked" : "Unlocked"}
+						{cardLocked ? "Locked" : "Unlocked"}
 					</h2>
 					<p className="text-ink-muted mt-1 text-[12px]">
 						Transfers, bills and mobile load.
@@ -306,23 +315,23 @@ function CardSettings({ card }: { card: Card }) {
 					disabled={update.isPending}
 					onClick={() => {
 						setMessage("");
-						update.mutate({ locked: !card.locked });
+						update.mutate({ cardLocked: !cardLocked });
 					}}
 					className="border-line-strong text-ink bg-surface enabled:hover:bg-surface-raised focus-visible:outline-brand inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium focus-visible:outline-2 disabled:opacity-45"
 				>
-					{card.locked ? (
+					{cardLocked ? (
 						<LockKeyholeOpen size={15} aria-hidden />
 					) : (
 						<Lock size={15} aria-hidden />
 					)}
-					{savingLock ? "Saving…" : card.locked ? "Unlock" : "Lock"}
+					{savingLock ? "Saving…" : cardLocked ? "Unlock" : "Lock"}
 				</button>
 			</div>
 			<form onSubmit={saveLimit} className="border-line mt-4 border-t pt-4">
 				<TextField
 					label="Daily spending limit"
 					prefix="₱"
-					name="dailyLimit"
+					name="cardDailyLimit"
 					type="number"
 					inputMode="decimal"
 					min={0}

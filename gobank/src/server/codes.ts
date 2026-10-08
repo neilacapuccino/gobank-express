@@ -16,5 +16,8 @@ export function newCardNumber(brand: CardBrand) {
 	return prefix + pick("0123456789", 16 - prefix.length);
 }
 
+export const virtualCardBrand = (physical: CardBrand): CardBrand =>
+	physical === "visa" ? "mastercard" : "visa";
+
 export const cardExpiry = (from = new Date()) =>
 	new Date(Date.UTC(from.getUTCFullYear() + 5, from.getUTCMonth() + 1, 0));

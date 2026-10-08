@@ -1,5 +1,11 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import {
+	createCipheriv,
+	createDecipheriv,
+	randomBytes,
+	randomInt,
+} from "node:crypto";
+import { hashPin } from "~/features/auth/pin";
 import { fail } from "./errors";
 
 const UNAVAILABLE = "Your card security details are temporarily unavailable.";
@@ -8,6 +14,18 @@ const encryptionKey = (key: string | undefined) => {
 	if (!key || !/^[a-f0-9]{64}$/i.test(key)) fail("BAD_REQUEST", UNAVAILABLE);
 	return Buffer.from(key, "hex");
 };
+
+export async function newCvvCredentials(
+	cardNumber: string,
+	key: string | undefined,
+	excludedCvv?: string,
+) {
+	let cvv: string;
+	do cvv = randomInt(1000).toString().padStart(3, "0");
+	while (cvv === excludedCvv);
+	const cvvEncrypted = encryptCvv(cvv, cardNumber, key);
+	return { cvv, cvvEncrypted, cvvHash: await hashPin(cvv) };
+}
 
 export function encryptCvv(
 	cvv: string,

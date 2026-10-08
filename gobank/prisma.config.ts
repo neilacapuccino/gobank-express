@@ -5,6 +5,6 @@ config({ quiet: true });
 
 export default defineConfig({
 	migrations: {
-		seed: "tsx prisma/seed.ts",
+		seed: "node --conditions=react-server --import tsx prisma/seed.ts",
 	},
 });

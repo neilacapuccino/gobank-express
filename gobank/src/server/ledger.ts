@@ -95,10 +95,11 @@ export async function post(
 export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
 	// Serialize spending before reading today's total.
 	await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${entry.userId} FOR UPDATE`;
-	const card = await tx.card.findUniqueOrThrow({
-		where: { userId: entry.userId },
+	const user = await tx.user.findUniqueOrThrow({
+		where: { id: entry.userId },
+		select: { cardLocked: true, cardDailyLimit: true },
 	});
-	if (card.locked) fail("BAD_REQUEST", MESSAGES.cardLocked);
+	if (user.cardLocked) fail("BAD_REQUEST", MESSAGES.cardLocked);
 
 	const today = await tx.transaction.aggregate({
 		where: {
@@ -109,7 +110,7 @@ export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
 		},
 		_sum: { amount: true },
 	});
-	if (entry.amount - (today._sum.amount ?? 0) > card.dailyLimit) {
+	if (entry.amount - (today._sum.amount ?? 0) > user.cardDailyLimit) {
 		fail("BAD_REQUEST", MESSAGES.overDailyLimit);
 	}
 

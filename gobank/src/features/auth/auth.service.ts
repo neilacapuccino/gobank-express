@@ -1,4 +1,7 @@
-import { newAccountNumber } from "~/server/codes";
+import { newAccountNumber, virtualCardBrand } from "~/server/codes";
+import { newCardCredentials } from "~/server/card-credentials";
+import { decryptCvv } from "~/server/card-cvv";
+import { env } from "~/env";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { endOtherSessions, startSession } from "~/server/session";
@@ -43,18 +46,34 @@ export async function createRegisteredAccount(
 	token: string,
 ) {
 	const pinHash = await hashPin(pin);
-	return db.$transaction(async (tx) => {
-		const card = await consumeRegistrationCard(tx, token, brand);
-		return tx.user.create({
-			data: {
-				...profile,
-				pinHash,
-				accountNumber: newAccountNumber(),
-				card: { create: card },
-			},
-			select: { id: true },
-		});
-	});
+	return db.$transaction(
+		async (tx) => {
+			const card = await consumeRegistrationCard(tx, token, brand);
+			const physicalCvv = decryptCvv(
+				card.cvvEncrypted,
+				card.number,
+				env.CARD_ENCRYPTION_KEY,
+			);
+			const virtual = (
+				await newCardCredentials(virtualCardBrand(brand), physicalCvv)
+			).card;
+			return tx.user.create({
+				data: {
+					...profile,
+					pinHash,
+					accountNumber: newAccountNumber(),
+					cards: {
+						create: [
+							{ ...card, kind: "physical" },
+							{ ...virtual, kind: "virtual" },
+						],
+					},
+				},
+				select: { id: true },
+			});
+		},
+		{ maxWait: 30_000, timeout: 30_000 },
+	);
 }
 
 export async function register(profile: Registration) {

@@ -40,8 +40,9 @@ try {
 				pinHash: "test-only-not-a-valid-pin",
 				balance: i === 1 ? MAX_BALANCE_CENTAVOS - 5 : 0,
 				points: i === 2 ? MAX_REWARD_POINTS : 500,
-				card: {
+				cards: {
 					create: {
+						kind: "physical",
 						number: `payment-card-${suffix}-${i}`,
 						expiresAt: new Date("2030-01-01"),
 					},
@@ -116,16 +117,24 @@ try {
 		payBill(payer.id, inactiveBiller, "00112233", 5_000),
 		(error: unknown) => asDatabaseError(error)?.code === "P2025",
 	);
-	await db.card.update({ where: { userId: payer.id }, data: { locked: true } });
+	await db.user.update({ where: { id: payer.id }, data: { cardLocked: true } });
 	await assert.rejects(
 		payBill(payer.id, activeBiller, "00112233", 5_000),
 		rejection(MESSAGES.cardLocked),
 	);
+	await assert.rejects(
+		buyLoad(payer.id, "09123456789", 5_000),
+		rejection(MESSAGES.cardLocked),
+	);
+	await assert.rejects(
+		sendMoney(payer.id, `@${fullPoints.username}`, 1, null),
+		rejection(MESSAGES.cardLocked),
+	);
 	assert.deepEqual(await account(payer.id), payerBefore);
 	assert.equal(await transactionCount(payer.id), countBefore);
-	await db.card.update({
-		where: { userId: payer.id },
-		data: { locked: false },
+	await db.user.update({
+		where: { id: payer.id },
+		data: { cardLocked: false },
 	});
 
 	const credits = await Promise.allSettled([
@@ -226,8 +235,42 @@ try {
 		expected.map((entry) => entry.id),
 	);
 	assert.equal(new Set(activityIds).size, expected.length);
+
+	// Bills, load and transfers all consume the same account spending limit.
+	await db.user.update({
+		where: { id: payer.id },
+		data: { cardDailyLimit: 19_000 },
+	});
+	await sendMoney(payer.id, `@${fullPoints.username}`, 1_000, null);
+	await payBill(payer.id, activeBiller, "00112233", 1_000);
+	const sharedBudget = await Promise.allSettled([
+		payBill(payer.id, activeBiller, "00112233", 2_000),
+		buyLoad(payer.id, "09123456789", 2_000),
+	]);
+	assert.equal(
+		sharedBudget.filter((result) => result.status === "fulfilled").length,
+		1,
+	);
+	const budgetRejection = sharedBudget.find(
+		(result) => result.status === "rejected",
+	);
+	assert.ok(
+		budgetRejection?.status === "rejected" &&
+			rejection(MESSAGES.overDailyLimit)(budgetRejection.reason),
+	);
+	const limitBalance = await account(payer.id);
+	const limitTransactions = await transactionCount(payer.id);
+	for (const payment of [
+		() => payBill(payer.id, activeBiller, "00112233", 1),
+		() => buyLoad(payer.id, "09123456789", 1),
+		() => sendMoney(payer.id, `@${fullPoints.username}`, 1, null),
+	]) {
+		await assert.rejects(payment, rejection(MESSAGES.overDailyLimit));
+	}
+	assert.deepEqual(await account(payer.id), limitBalance);
+	assert.equal(await transactionCount(payer.id), limitTransactions);
 	console.log(
-		"Payment integration passed: bill/load ledger and points, concurrent redemption, locked cards, credit limits, incoming-transfer rollback, point overflow, paginated activity without skips or duplicates, and receipt ownership.",
+		"Payment integration passed: bill/load ledger and points, concurrent redemption, shared card lock and combined daily spending limit, credit limits, incoming-transfer rollback, point overflow, paginated activity without skips or duplicates, and receipt ownership.",
 	);
 } finally {
 	if (users.length)
