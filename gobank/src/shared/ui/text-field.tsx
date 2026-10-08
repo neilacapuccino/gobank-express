@@ -4,7 +4,10 @@ import type { InputHTMLAttributes, ReactNode } from "react";
 import { useId } from "react";
 import { cn } from "~/shared/lib/cn";
 
-type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "id"> & {
+type TextFieldProps = Omit<
+	InputHTMLAttributes<HTMLInputElement>,
+	"id" | "placeholder"
+> & {
 	label: string;
 	hint?: string;
 	error?: string | null;
@@ -58,7 +61,7 @@ export function TextField({
 					aria-invalid={Boolean(error)}
 					aria-describedby={error || hint ? descriptionId : undefined}
 					className={cn(
-						"text-ink placeholder:text-ink-faint h-13 min-w-0 flex-1 bg-transparent px-3.5 text-[16px] outline-none disabled:opacity-60",
+						"text-ink h-13 min-w-0 flex-1 bg-transparent px-3.5 text-[16px] outline-none disabled:opacity-60",
 						prefix ? "pl-1.5" : null,
 						className,
 					)}

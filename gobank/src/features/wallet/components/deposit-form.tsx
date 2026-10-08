@@ -60,7 +60,6 @@ export function DepositForm() {
 			<TextField
 				label="Amount (PHP)"
 				inputMode="decimal"
-				placeholder="0.00"
 				value={amount}
 				disabled={deposit.isPending}
 				aria-invalid={exceedsLimit}

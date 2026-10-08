@@ -117,7 +117,6 @@ export function LoadForm() {
 						inputMode="tel"
 						autoComplete="tel-national"
 						value={mobile}
-						placeholder="09XXXXXXXXX"
 						onChange={(event) =>
 							setMobile(digitsOnly(normalizeMobile(event.target.value), 11))
 						}
@@ -128,7 +127,6 @@ export function LoadForm() {
 							inputMode="decimal"
 							value={amount}
 							prefix="₱"
-							placeholder="0.00"
 							hint={amountRange}
 							error={amountError}
 							onChange={(event) => {

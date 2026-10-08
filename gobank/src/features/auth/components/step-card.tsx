@@ -5,13 +5,11 @@ import { CARD_BRANDS, type CardBrandId } from "~/features/card/card-brands";
 import { cn } from "~/shared/lib/cn";
 import { CardBrandLogo } from "~/features/card/components/card-brand-logo";
 import { BankCard } from "~/features/card/components/bank-card";
-import type { RouterOutputs } from "~/trpc/react";
 import { AuthHeading } from "./auth-heading";
 
 type StepCardProps = {
 	brand: CardBrandId;
 	fullName: string;
-	card: RouterOutputs["auth"]["prepareCard"] | null;
 	preparing: boolean;
 	onBrandChange: (brand: CardBrandId) => void;
 	onNext: () => void;
@@ -21,7 +19,6 @@ type StepCardProps = {
 export function StepCard({
 	brand,
 	fullName,
-	card,
 	preparing,
 	onBrandChange,
 	onNext,
@@ -35,26 +32,7 @@ export function StepCard({
 			/>
 
 			<div className="mt-7">
-				{card?.brand === brand ? (
-					<BankCard
-						brand={card.brand}
-						fullName={fullName}
-						number={card.number}
-						expiresAt={card.expiresAt}
-						kind="physical"
-					/>
-				) : (
-					<div
-						className="border-line bg-surface-sunken flex aspect-[1.586/1] items-center justify-center rounded-2xl border"
-						aria-busy={preparing}
-					>
-						{preparing ? (
-							<p role="status" className="text-ink-muted text-[13px]">
-								Preparing card…
-							</p>
-						) : null}
-					</div>
-				)}
+				<BankCard brand={brand} fullName={fullName} kind="physical" />
 			</div>
 
 			<div className="mt-6 grid grid-cols-2 gap-2.5">
@@ -90,10 +68,10 @@ export function StepCard({
 			<div className="flex-1" />
 
 			<div className="mt-8 flex flex-col gap-1.5">
-				<Button onClick={onNext} disabled={card?.brand !== brand || preparing}>
-					Continue
+				<Button onClick={onNext} disabled={preparing}>
+					{preparing ? "Preparing card…" : "Continue"}
 				</Button>
-				<Button variant="ghost" onClick={onBack}>
+				<Button variant="ghost" onClick={onBack} disabled={preparing}>
 					Back
 				</Button>
 			</div>

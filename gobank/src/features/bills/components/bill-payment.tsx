@@ -185,7 +185,6 @@ export function BillPayment() {
 								label="Biller account number"
 								value={accountNumber}
 								inputMode="numeric"
-								placeholder="4–20 digits"
 								maxLength={20}
 								onChange={(event) =>
 									setAccountNumber(digitsOnly(event.target.value, 20))
@@ -195,7 +194,6 @@ export function BillPayment() {
 								label="Amount"
 								value={amount}
 								inputMode="decimal"
-								placeholder="0.00"
 								prefix="₱"
 								hint={`Up to ${peso(MAX_TRANSACTION_CENTAVOS)}`}
 								error={

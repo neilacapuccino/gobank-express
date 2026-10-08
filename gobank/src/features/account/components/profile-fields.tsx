@@ -19,7 +19,6 @@ export function ProfileFields({ value, onChange }: ProfileFieldsProps) {
 				required
 				minLength={2}
 				maxLength={80}
-				placeholder="Your full name"
 				autoComplete="name"
 				value={value.fullName}
 				onChange={(event) => onChange({ fullName: event.target.value })}
@@ -30,7 +29,6 @@ export function ProfileFields({ value, onChange }: ProfileFieldsProps) {
 				optional
 				type="tel"
 				inputMode="numeric"
-				placeholder="09XX XXX XXXX"
 				autoComplete="tel"
 				value={value.mobile}
 				onChange={(event) => onChange({ mobile: event.target.value })}

@@ -86,7 +86,6 @@ export function SignInFlow() {
 							autoComplete="username"
 							spellCheck={false}
 							maxLength={USERNAME_MAX}
-							placeholder="yourusername"
 							value={username}
 							onChange={(event) =>
 								setUsername(

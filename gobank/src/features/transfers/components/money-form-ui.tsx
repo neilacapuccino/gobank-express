@@ -108,7 +108,6 @@ export function RecipientPicker({
 				autoComplete="off"
 				autoCapitalize="none"
 				spellCheck={false}
-				placeholder="@username"
 				aria-invalid={Boolean(error)}
 				aria-describedby="recipient-help"
 				onChange={(event) => onChange(event.target.value)}
@@ -177,7 +176,6 @@ export function AmountFields({
 						id="amount"
 						inputMode="decimal"
 						value={amount}
-						placeholder="0.00"
 						aria-invalid={exceedsLimit}
 						aria-describedby="amount-limit"
 						onChange={(event) => {

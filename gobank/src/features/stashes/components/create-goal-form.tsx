@@ -79,7 +79,6 @@ export function CreateGoalForm({
 						maxLength={STASH_NAME_MAX}
 						disabled={create.isPending}
 						autoFocus
-						placeholder="e.g. Emergency fund"
 						hint={`${name.length}/${STASH_NAME_MAX}`}
 					/>
 				</div>
@@ -94,7 +93,6 @@ export function CreateGoalForm({
 						optional
 						prefix="₱"
 						inputMode="decimal"
-						placeholder="0.00"
 						value={target}
 						onChange={(event) => {
 							if (isPesoInput(event.target.value))

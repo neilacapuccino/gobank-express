@@ -61,24 +61,11 @@ export function StepReview({
 					fullName={draft.fullName.trim()}
 					number={card.number}
 					hideNumber={!showNumber}
+					onToggleNumber={() => setShowNumber((current) => !current)}
 					expiresAt={card.expiresAt}
 					kind="physical"
 					compact
 				/>
-				<button
-					type="button"
-					disabled={pending}
-					onClick={() => setShowNumber((current) => !current)}
-					aria-pressed={showNumber}
-					className="text-ink-soft enabled:hover:text-ink focus-visible:outline-brand mt-2 ml-auto flex min-h-10 items-center justify-center gap-2 rounded-lg px-1 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-45"
-				>
-					{showNumber ? (
-						<EyeOff size={16} aria-hidden />
-					) : (
-						<Eye size={16} aria-hidden />
-					)}
-					{showNumber ? "Hide number" : "Show number"}
-				</button>
 			</div>
 			<dl className="divide-line border-line mt-4 divide-y rounded-xl border">
 				{rows.map((row) => (

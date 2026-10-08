@@ -155,9 +155,8 @@ export function BitcoinTradeForm({
 						value={amount}
 						disabled={!portfolio || mutation.isPending}
 						onChange={(event) => change(event.target.value)}
-						placeholder="0.00"
 						aria-describedby="bitcoin-amount-help"
-						className="min-w-0 flex-1 bg-transparent py-4 text-[25px] font-medium text-white tabular-nums outline-none placeholder:text-white/20"
+						className="min-w-0 flex-1 bg-transparent py-4 text-[25px] font-medium text-white tabular-nums outline-none"
 					/>
 					<span className="text-ink-muted text-[12px] font-semibold">
 						{side === "buy" ? "PHP" : "BTC"}

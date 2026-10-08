@@ -77,7 +77,6 @@ export function StepIdentity({
 						autoCorrect="off"
 						spellCheck={false}
 						maxLength={USERNAME_MAX}
-						placeholder="yourusername"
 						value={username}
 						onChange={(event) =>
 							onUsernameChange(

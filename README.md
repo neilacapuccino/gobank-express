@@ -9,7 +9,7 @@ A mobile banking project built with Next.js, TypeScript, tRPC and Prisma. Amount
 - Up to five named GoalSave savings pockets. Settings let users rename, change the target or close a goal and return its savings to the main account.
 - Savings earn 4% annually, compounded daily using server system time: `A = P × (1 + r / 365)^d`. Fractional centavos carry forward, and moving the clock backward cannot credit the same time twice.
 - Required full name and optional profile photo. Gmail linking is reserved for the member implementing Google authentication; there is no separate Email field.
-- Registration previews the physical card number, expiry and CVV, then opens the dashboard directly.
+- Registration generates the physical card number, expiry and CVV on Continue, preserves them at confirmation, then opens the dashboard directly.
 - Dashboard activity shows signed amounts and receipts. Rewards and Activity links remain available, with blank destination pages reserved for another member.
 
 Eligible transfers and bills earn one point per ₱50; the existing reward service converts 100 points to ₱1.
