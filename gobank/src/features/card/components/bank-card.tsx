@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, CircleAlert, Copy, Smartphone } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { CardKind } from "../../../../generated/prisma";
 import type { IssuedCardBrandId } from "../card-brands";
 import { cn } from "~/shared/lib/cn";
@@ -18,6 +18,7 @@ type BankCardProps = {
 	kind?: CardKind;
 	hideNumber?: boolean;
 	compact?: boolean;
+	securityDetails?: ReactNode;
 };
 
 export function BankCard({
@@ -28,6 +29,7 @@ export function BankCard({
 	kind = "virtual",
 	hideNumber = false,
 	compact = false,
+	securityDetails,
 }: BankCardProps) {
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
 		"idle",
@@ -57,7 +59,7 @@ export function BankCard({
 			)}
 		>
 			<div className="relative flex h-full flex-col justify-between">
-				<div className="flex items-center justify-between gap-3">
+				<div className="flex items-start justify-between gap-3">
 					{kind === "physical" ? (
 						<div className="flex items-center gap-2.5">
 							<Chip className={compact ? "h-6 w-8" : "h-8 w-10"} />
@@ -71,9 +73,12 @@ export function BankCard({
 							aria-hidden
 						/>
 					)}
-					<span className="text-[11px] font-medium tracking-wide text-white/60">
-						GoBank Express
-					</span>
+					<div className="flex flex-col items-end">
+						<span className="text-[11px] font-medium tracking-wide text-white/60">
+							GoBank Express
+						</span>
+						{securityDetails}
+					</div>
 				</div>
 
 				<div className="flex flex-col gap-3">

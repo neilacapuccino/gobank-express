@@ -33,7 +33,7 @@ type CvvState =
 const DETAIL_ACTION =
 	"text-ink-muted enabled:hover:text-ink focus-visible:outline-brand inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-1 text-[12.5px] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-45";
 const ICON_ACTION =
-	"text-ink-muted enabled:hover:text-ink focus-visible:outline-brand inline-flex h-9 w-8 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-30";
+	"inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 enabled:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 disabled:opacity-30";
 
 export function CardScreen() {
 	const card = api.card.get.useQuery();
@@ -180,62 +180,71 @@ function CardDetails({ card }: { card: Card }) {
 						hideNumber={!showNumber}
 						expiresAt={card.expiresAt}
 						kind={card.kind}
+						securityDetails={
+							<div
+								aria-label="Card security code"
+								className="flex items-center gap-1"
+							>
+								<span className="text-[9px] tracking-[0.18em] text-white/55">
+									CVV
+								</span>
+								<span className="min-w-6 text-[13px] font-medium text-white tabular-nums">
+									{cvv.status === "visible" ? cvv.cvv : "•••"}
+								</span>
+								<button
+									type="button"
+									aria-label={
+										copyStatus === "copied" ? "CVV copied" : "Copy CVV"
+									}
+									disabled={cvv.status !== "visible"}
+									onClick={copyCvv}
+									className={ICON_ACTION}
+								>
+									{copyStatus === "copied" ? (
+										<Check size={14} aria-hidden />
+									) : (
+										<Copy size={14} aria-hidden />
+									)}
+								</button>
+								<button
+									type="button"
+									aria-label={
+										cvv.status === "visible" ? "Hide CVV" : "Show CVV"
+									}
+									aria-pressed={cvv.status === "visible"}
+									disabled={cvv.status === "pending"}
+									onClick={revealCvv}
+									className={ICON_ACTION}
+								>
+									{cvv.status === "pending" ? (
+										<span
+											className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+											aria-hidden
+										/>
+									) : cvv.status === "visible" ? (
+										<EyeOff size={15} aria-hidden />
+									) : (
+										<Eye size={15} aria-hidden />
+									)}
+								</button>
+							</div>
+						}
 					/>
 				</div>
 			</div>
-			<div className="mt-2 flex items-center justify-between gap-2">
-				<button
-					type="button"
-					aria-pressed={showNumber}
-					className={DETAIL_ACTION}
-					onClick={() => setShowNumber((visible) => !visible)}
-				>
-					{showNumber ? (
-						<EyeOff size={15} aria-hidden />
-					) : (
-						<Eye size={15} aria-hidden />
-					)}
-					{showNumber ? "Hide number" : "Show number"}
-				</button>
-				<div className="flex items-center gap-1">
-					<span className="text-ink-muted text-[12px]">CVV</span>
-					<span className="text-ink min-w-6 text-[13px] font-medium tabular-nums">
-						{cvv.status === "visible" ? cvv.cvv : "•••"}
-					</span>
-					<button
-						type="button"
-						aria-label={copyStatus === "copied" ? "CVV copied" : "Copy CVV"}
-						disabled={cvv.status !== "visible"}
-						onClick={copyCvv}
-						className={ICON_ACTION}
-					>
-						{copyStatus === "copied" ? (
-							<Check size={14} aria-hidden />
-						) : (
-							<Copy size={14} aria-hidden />
-						)}
-					</button>
-					<button
-						type="button"
-						aria-label={cvv.status === "visible" ? "Hide CVV" : "Show CVV"}
-						aria-pressed={cvv.status === "visible"}
-						disabled={cvv.status === "pending"}
-						onClick={revealCvv}
-						className={ICON_ACTION}
-					>
-						{cvv.status === "pending" ? (
-							<span
-								className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
-								aria-hidden
-							/>
-						) : cvv.status === "visible" ? (
-							<EyeOff size={15} aria-hidden />
-						) : (
-							<Eye size={15} aria-hidden />
-						)}
-					</button>
-				</div>
-			</div>
+			<button
+				type="button"
+				aria-pressed={showNumber}
+				className={cn(DETAIL_ACTION, "mt-2")}
+				onClick={() => setShowNumber((visible) => !visible)}
+			>
+				{showNumber ? (
+					<EyeOff size={15} aria-hidden />
+				) : (
+					<Eye size={15} aria-hidden />
+				)}
+				{showNumber ? "Hide number" : "Show number"}
+			</button>
 			<span role="status" className="sr-only">
 				{copyStatus === "copied" ? "CVV copied." : ""}
 			</span>
