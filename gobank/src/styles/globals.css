@@ -67,25 +67,6 @@ html {
   color-scheme: dark;
 }
 
-@layer components {
-  /* Keep the existing control palette independent of the page theme. */
-  .theme-control {
-    --color-surface: #ffffff;
-    --color-surface-sunken: #f7f8fa;
-    --color-surface-raised: #f2f4f7;
-    --color-line: #e7e9ee;
-    --color-line-strong: #d3d7e0;
-    --color-ink: #0d1220;
-    --color-ink-soft: #475069;
-    --color-ink-muted: #7b8499;
-    --color-ink-faint: #a6adbd;
-    --color-brand-soft: #ecfdf5;
-    --color-brand-line: #a7f3d0;
-    --color-danger: #dc2626;
-    --color-danger-soft: #fef2f2;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

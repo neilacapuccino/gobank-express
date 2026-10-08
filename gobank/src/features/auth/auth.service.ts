@@ -16,14 +16,18 @@ import {
 	registrationCardToken,
 } from "./card-preview.service";
 
-type PinOwner = { id: string; pinHash: string; lockedUntil: Date | null };
-
 type Registration = {
 	username: string;
 	pin: string;
 	brand: CardBrand;
 	fullName: string;
 	mobile: string | null;
+};
+
+type PinAccount = {
+	pinHash: string;
+	failedPinAttempts: number;
+	lockedUntil: Date | null;
 };
 
 export async function isUsernameFree(username: string) {
@@ -46,11 +50,7 @@ export async function createRegisteredAccount(
 				...profile,
 				pinHash,
 				accountNumber: newAccountNumber(),
-				card: {
-					create: {
-						...card,
-					},
-				},
+				card: { create: card },
 			},
 			select: { id: true },
 		});
@@ -67,35 +67,55 @@ export async function register(profile: Registration) {
 	return { created: true };
 }
 
-async function checkPin(user: PinOwner, pin: string, wrongMessage: string) {
-	const now = new Date();
-	const minutesLeft = lockMinutesLeft(user.lockedUntil, now);
-	if (minutesLeft > 0) {
-		fail("TOO_MANY_REQUESTS", MESSAGES.pinLocked(minutesLeft));
+export async function verifyAccountPin(
+	userId: string,
+	pin: string,
+	wrongMessage: string,
+	pinHash?: string,
+) {
+	const outcome = await db.$transaction(
+		async (tx) => {
+			const [user] = await tx.$queryRaw<PinAccount[]>`
+			SELECT "pinHash", "failedPinAttempts", "lockedUntil"
+			FROM "User" WHERE "id" = ${userId} FOR UPDATE
+		`;
+			if (!user) return fail("NOT_FOUND", "This account no longer exists.");
+			const now = new Date();
+			const minutesLeft = lockMinutesLeft(user.lockedUntil, now);
+			if (minutesLeft > 0) return { correct: false, minutesLeft };
+
+			const correct = await verifyPin(pin, user.pinHash);
+			const attempts = correct ? 0 : user.failedPinAttempts + 1;
+			const locked = attempts >= MAX_PIN_ATTEMPTS;
+			await tx.user.update({
+				where: { id: userId },
+				data: {
+					failedPinAttempts: locked ? 0 : attempts,
+					lockedUntil: locked ? lockExpiry(now) : null,
+					...(correct && pinHash ? { pinHash } : {}),
+				},
+				select: { id: true },
+			});
+			return { correct, minutesLeft: locked ? PIN_LOCK_MINUTES : 0 };
+		},
+		{ maxWait: 30_000, timeout: 30_000 },
+	);
+
+	// Failed attempts must commit before an error is returned to the client.
+	if (outcome.correct) return;
+	if (outcome.minutesLeft > 0) {
+		fail("TOO_MANY_REQUESTS", MESSAGES.pinLocked(outcome.minutesLeft));
 	}
-
-	const correct = await verifyPin(pin, user.pinHash);
-	const { failedPinAttempts } = await db.user.update({
-		where: { id: user.id },
-		data: correct
-			? { failedPinAttempts: 0, lockedUntil: null }
-			: { failedPinAttempts: { increment: 1 } },
-		select: { failedPinAttempts: true },
-	});
-	if (correct) return;
-	if (failedPinAttempts < MAX_PIN_ATTEMPTS) fail("UNAUTHORIZED", wrongMessage);
-
-	await db.user.update({
-		where: { id: user.id },
-		data: { failedPinAttempts: 0, lockedUntil: lockExpiry(now) },
-	});
-	fail("TOO_MANY_REQUESTS", MESSAGES.pinLocked(PIN_LOCK_MINUTES));
+	fail("UNAUTHORIZED", wrongMessage);
 }
 
 export async function signIn(username: string, pin: string) {
-	const user = await db.user.findUnique({ where: { username } });
+	const user = await db.user.findUnique({
+		where: { username },
+		select: { id: true },
+	});
 	if (!user) return fail("UNAUTHORIZED", MESSAGES.wrongCredentials);
-	await checkPin(user, pin, MESSAGES.wrongCredentials);
+	await verifyAccountPin(user.id, pin, MESSAGES.wrongCredentials);
 	await startSession(user.id);
 }
 
@@ -104,11 +124,11 @@ export async function changePin(
 	currentPin: string,
 	newPin: string,
 ) {
-	const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
-	await checkPin(user, currentPin, MESSAGES.wrongPin);
-	await db.user.update({
-		where: { id: userId },
-		data: { pinHash: await hashPin(newPin) },
-	});
+	await verifyAccountPin(
+		userId,
+		currentPin,
+		MESSAGES.wrongPin,
+		await hashPin(newPin),
+	);
 	await endOtherSessions(userId);
 }

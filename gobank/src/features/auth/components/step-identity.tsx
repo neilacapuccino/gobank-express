@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "~/shared/ui/button";
 import { PinPad } from "~/shared/ui/pin-pad";
 import { TextField } from "~/shared/ui/text-field";
-import { PIN_LENGTH, validatePin, type UsernameCheck } from "../auth.rules";
+import {
+	PIN_LENGTH,
+	USERNAME_MAX,
+	validatePin,
+	type UsernameCheck,
+} from "../auth.rules";
 import { useUsernameCheck } from "../hooks/use-username-check";
+import { AuthHeading } from "./auth-heading";
 
 type Phase = "username" | "pin" | "confirm";
 
@@ -24,49 +30,40 @@ export function StepIdentity({
 	const [pin, setPin] = useState("");
 	const [confirm, setConfirm] = useState("");
 	const [pinError, setPinError] = useState<string | null>(null);
-	const [invalid, setInvalid] = useState(false);
+	const { check, retry } = useUsernameCheck(username);
 
-	const check = useUsernameCheck(username);
-
-	useEffect(() => {
-		if (phase !== "pin" || pin.length !== PIN_LENGTH) return;
-		const problem = validatePin(pin);
+	const enterPin = (value: string) => {
+		setPinError(null);
+		setPin(value);
+		if (value.length < PIN_LENGTH) return;
+		const problem = validatePin(value);
 		if (problem) {
 			setPinError(problem);
-			setInvalid(true);
-			const timer = setTimeout(() => {
-				setPin("");
-				setInvalid(false);
-			}, 420);
-			return () => clearTimeout(timer);
+			setPin("");
+			return;
 		}
-		setPinError(null);
-		const timer = setTimeout(() => setPhase("confirm"), 200);
-		return () => clearTimeout(timer);
-	}, [pin, phase]);
+		setConfirm("");
+		setPhase("confirm");
+	};
 
-	useEffect(() => {
-		if (phase !== "confirm" || confirm.length !== PIN_LENGTH) return;
-		if (confirm !== pin) {
-			setPinError("Those did not match. Start again.");
-			setInvalid(true);
-			const timer = setTimeout(() => {
-				setPin("");
-				setConfirm("");
-				setInvalid(false);
-				setPhase("pin");
-			}, 600);
-			return () => clearTimeout(timer);
-		}
+	const confirmPin = (value: string) => {
 		setPinError(null);
-		const timer = setTimeout(() => onComplete(pin), 220);
-		return () => clearTimeout(timer);
-	}, [confirm, pin, phase, onComplete]);
+		setConfirm(value);
+		if (value.length < PIN_LENGTH) return;
+		if (value !== pin) {
+			setPinError("Those did not match. Start again.");
+			setPin("");
+			setConfirm("");
+			setPhase("pin");
+			return;
+		}
+		onComplete(pin);
+	};
 
 	if (phase === "username") {
 		return (
 			<div className="flex flex-1 flex-col">
-				<Heading
+				<AuthHeading
 					title="Pick your username"
 					subtitle="This is how you sign in, and how friends find you."
 				/>
@@ -79,6 +76,7 @@ export function StepIdentity({
 						autoCapitalize="none"
 						autoCorrect="off"
 						spellCheck={false}
+						maxLength={USERNAME_MAX}
 						placeholder="yourusername"
 						value={username}
 						onChange={(event) =>
@@ -87,13 +85,24 @@ export function StepIdentity({
 							)
 						}
 						error={
-							check.state === "invalid" || check.state === "taken"
+							check.state === "invalid" ||
+							check.state === "taken" ||
+							check.state === "error"
 								? check.message
 								: null
 						}
 						hint="3 to 20 characters. Letters, numbers and underscore."
 						trailing={<CheckState check={check} />}
 					/>
+					{check.state === "error" ? (
+						<Button
+							variant="ghost"
+							className="mt-2"
+							onClick={() => void retry()}
+						>
+							Try again
+						</Button>
+					) : null}
 				</div>
 
 				<div className="flex-1" />
@@ -112,7 +121,7 @@ export function StepIdentity({
 
 	return (
 		<div key={phase} className="flex flex-1 flex-col">
-			<Heading
+			<AuthHeading
 				title={confirming ? "Confirm your PIN" : "Create your PIN"}
 				subtitle={
 					confirming
@@ -124,9 +133,9 @@ export function StepIdentity({
 			<div className="mt-12 flex flex-1 flex-col items-center justify-center">
 				<PinPad
 					value={confirming ? confirm : pin}
-					onChange={confirming ? setConfirm : setPin}
+					onChange={confirming ? confirmPin : enterPin}
 					length={PIN_LENGTH}
-					invalid={invalid}
+					invalid={Boolean(pinError)}
 				/>
 				<p className="text-danger mt-7 h-5 text-[13px]">{pinError}</p>
 			</div>
@@ -135,13 +144,9 @@ export function StepIdentity({
 				variant="ghost"
 				onClick={() => {
 					setPinError(null);
-					if (confirming) {
-						setConfirm("");
-						setPhase("pin");
-					} else {
-						setPin("");
-						setPhase("username");
-					}
+					setPin("");
+					setConfirm("");
+					setPhase(confirming ? "pin" : "username");
 				}}
 			>
 				Back
@@ -150,21 +155,13 @@ export function StepIdentity({
 	);
 }
 
-function Heading({ title, subtitle }: { title: string; subtitle: string }) {
-	return (
-		<div className="flex flex-col gap-2">
-			<h1 className="text-ink text-[24px] leading-tight font-semibold tracking-tight">
-				{title}
-			</h1>
-			<p className="text-ink-soft text-[14.5px] leading-relaxed">{subtitle}</p>
-		</div>
-	);
-}
-
 function CheckState({ check }: { check: UsernameCheck }) {
 	if (check.state === "checking") {
 		return (
-			<span className="border-line-strong block h-4 w-4 rounded-full border-2" />
+			<span
+				aria-label="Checking username"
+				className="border-line-strong border-t-brand block h-4 w-4 animate-spin rounded-full border-2"
+			/>
 		);
 	}
 	if (check.state === "available") {

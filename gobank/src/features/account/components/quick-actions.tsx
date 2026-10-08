@@ -6,24 +6,24 @@ const actions: {
 	icon: LucideIcon;
 	tone: string;
 }[] = [
-  {
-    href: "/transfer",
-    label: "Send money",
-    icon: Send,
-    tone: "border-[#6debbd]/20 from-[#222e29] to-[#151b18] text-[#6debbd] group-hover:border-[#6debbd]/40 group-hover:shadow-[0_8px_24px_-8px_#6debbd35]",
-  },
-  {
-    href: "/deposit",
-    label: "Deposit",
-    icon: Download,
-    tone: "border-[#71d5f3]/20 from-[#222c31] to-[#151a1e] text-[#71d5f3] group-hover:border-[#71d5f3]/40 group-hover:shadow-[0_8px_24px_-8px_#71d5f335]",
-  },
-  {
-    href: "/request",
-    label: "Request",
-    icon: HandCoins,
-    tone: "border-[#bda0fa]/20 from-[#2a2533] to-[#1a171f] text-[#bda0fa] group-hover:border-[#bda0fa]/40 group-hover:shadow-[0_8px_24px_-8px_#bda0fa35]",
-  },
+	{
+		href: "/transfer",
+		label: "Send money",
+		icon: Send,
+		tone: "border-[#6debbd]/20 from-[#222e29] to-[#151b18] text-[#6debbd] group-hover:border-[#6debbd]/40 group-hover:shadow-[0_8px_24px_-8px_#6debbd35]",
+	},
+	{
+		href: "/deposit",
+		label: "Deposit",
+		icon: Download,
+		tone: "border-[#71d5f3]/20 from-[#222c31] to-[#151a1e] text-[#71d5f3] group-hover:border-[#71d5f3]/40 group-hover:shadow-[0_8px_24px_-8px_#71d5f335]",
+	},
+	{
+		href: "/request",
+		label: "Request",
+		icon: HandCoins,
+		tone: "border-[#bda0fa]/20 from-[#2a2533] to-[#1a171f] text-[#bda0fa] group-hover:border-[#bda0fa]/40 group-hover:shadow-[0_8px_24px_-8px_#bda0fa35]",
+	},
 ];
 export function QuickActions() {
 	return (

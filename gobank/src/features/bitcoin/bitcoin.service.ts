@@ -23,7 +23,7 @@ export async function getBitcoinPortfolio(userId: string) {
 			});
 			return {
 				...summarizeTrades(trades),
-				cashCents: user.balance,
+				cashCentavos: user.balance,
 				trades: trades.slice(-20).reverse(),
 			};
 		},
@@ -67,10 +67,10 @@ export async function tradeBitcoin(
 						result = calculateTrade(
 							{
 								...summarizeTrades(history),
-								cashCents: user.balance,
+								cashCentavos: user.balance,
 							},
 							trade,
-							quote.priceCents,
+							quote.priceCentavos,
 						);
 					} catch (error) {
 						return fail(
@@ -85,12 +85,13 @@ export async function tradeBitcoin(
 						userId,
 						kind: "exchange",
 						title: trade.side === "buy" ? "Bought Bitcoin" : "Sold Bitcoin",
-						amount: trade.side === "buy" ? -result.cashCents : result.cashCents,
+						amount:
+							trade.side === "buy" ? -result.cashCentavos : result.cashCentavos,
 						reference,
 						details: {
 							satoshis: result.satoshis.toString(),
-							priceCentavos: quote.priceCents,
-							feeCentavos: result.feeCents,
+							priceCentavos: quote.priceCentavos,
+							feeCentavos: result.feeCentavos,
 						},
 					});
 					return tx.bitcoinTrade.create({
@@ -100,8 +101,8 @@ export async function tradeBitcoin(
 							reference,
 							side: trade.side,
 							satoshis: result.satoshis,
-							phpCentavos: result.cashCents,
-							priceCentavos: quote.priceCents,
+							phpCentavos: result.cashCentavos,
+							priceCentavos: quote.priceCentavos,
 						},
 					});
 				},

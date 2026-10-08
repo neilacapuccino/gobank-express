@@ -1,13 +1,17 @@
 import { z } from "zod";
-import { validatePin, validateUsername } from "./auth.rules";
+import { PIN_LENGTH, validatePin, validateUsername } from "./auth.rules";
 
-export const pin = z
+export const pinDigits = z
 	.string()
-	.regex(/^\d{6}$/, "Use 6 digits")
-	.refine((value) => !validatePin(value), "Choose a harder PIN");
+	.regex(/^\d{6}$/, `Use ${PIN_LENGTH} digits`);
+
+export const pin = pinDigits.superRefine((value, context) => {
+	const message = validatePin(value);
+	if (message) context.addIssue({ code: z.ZodIssueCode.custom, message });
+});
 
 export const pinChange = z
-	.object({ currentPin: z.string(), newPin: pin })
+	.object({ currentPin: pinDigits, newPin: pin })
 	.refine((input) => input.currentPin !== input.newPin, {
 		message: "Choose a different PIN",
 		path: ["newPin"],

@@ -14,7 +14,7 @@ import {
 } from "../src/features/bitcoin/bitcoin.market";
 import {
 	BITCOIN_RANGES,
-	BITCOIN_FEE_CENTS,
+	BITCOIN_FEE_CENTAVOS,
 	quoteIsFresh,
 	SATOSHIS,
 } from "../src/features/bitcoin/bitcoin.types";
@@ -22,7 +22,7 @@ const suffix = randomUUID().replaceAll("-", "");
 const ids: string[] = [];
 try {
 	const quote = await getBitcoinQuote();
-	assert.ok(quote.priceCents > 0 && quote.phpPerQuote > 1);
+	assert.ok(quote.priceCentavos > 0 && quote.phpPerQuote > 1);
 	assert.ok(quoteIsFresh(quote.asOf, Date.now()));
 	const response = await fetch(
 		"https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT",
@@ -31,7 +31,7 @@ try {
 	const source = (await response.json()) as { lastPrice: string };
 	const phpExpected = Number(source.lastPrice) * quote.phpPerQuote * 100;
 	assert.ok(
-		Math.abs(quote.priceCents - phpExpected) / phpExpected < 0.01,
+		Math.abs(quote.priceCentavos - phpExpected) / phpExpected < 0.01,
 		"PHP quote must convert USDT feed values",
 	);
 	for (const range of BITCOIN_RANGES) {
@@ -52,11 +52,11 @@ try {
 		});
 		ids.push(user.id);
 		const empty = await getBitcoinPortfolio(user.id);
-		assert.equal(empty.cashCents, 0);
+		assert.equal(empty.cashCentavos, 0);
 		assert.equal(empty.satoshis, 0n);
 		assert.equal(empty.trades.length, 0);
 		await assert.rejects(
-			tradeBitcoin(user.id, randomUUID(), { side: "buy", cashCents: 100 }),
+			tradeBitcoin(user.id, randomUUID(), { side: "buy", cashCentavos: 100 }),
 		);
 		await db.$transaction((tx) =>
 			post(tx, {
@@ -70,32 +70,35 @@ try {
 	const userId = ids[0]!;
 	const requestId = randomUUID();
 	const [first, repeated] = await Promise.all([
-		tradeBitcoin(userId, requestId, { side: "buy", cashCents: 10_000 }),
-		tradeBitcoin(userId, requestId, { side: "buy", cashCents: 10_000 }),
+		tradeBitcoin(userId, requestId, { side: "buy", cashCentavos: 10_000 }),
+		tradeBitcoin(userId, requestId, { side: "buy", cashCentavos: 10_000 }),
 	]);
 	assert.equal(first.id, repeated.id);
 	assert.equal(
 		first.phpCentavos,
 		Number(
 			(first.satoshis * BigInt(first.priceCentavos) + SATOSHIS - 1n) / SATOSHIS,
-		) + BITCOIN_FEE_CENTS,
+		) + BITCOIN_FEE_CENTAVOS,
 	);
 	assert.equal(await db.bitcoinTrade.count({ where: { userId: userId } }), 1);
 	const bought = await getBitcoinPortfolio(userId);
-	assert.equal(bought.cashCents, 1_000_000 - first.phpCentavos);
+	assert.equal(bought.cashCentavos, 1_000_000 - first.phpCentavos);
 	assert.ok(first.reference);
 	const debit = await db.transaction.findUniqueOrThrow({
 		where: { reference_userId: { reference: first.reference, userId } },
 	});
 	assert.equal(debit.amount, -first.phpCentavos);
-	assert.equal(debit.balanceAfter, bought.cashCents);
+	assert.equal(debit.balanceAfter, bought.cashCentavos);
 	assert.equal(debit.points, 0);
 	assert.equal(
 		(debit.details as { feeCentavos: number }).feeCentavos,
-		BITCOIN_FEE_CENTS,
+		BITCOIN_FEE_CENTAVOS,
 	);
 	await assert.rejects(
-		tradeBitcoin(userId, randomUUID(), { side: "buy", cashCents: 1_000_000 }),
+		tradeBitcoin(userId, randomUUID(), {
+			side: "buy",
+			cashCentavos: 1_000_000,
+		}),
 	);
 	await assert.rejects(
 		tradeBitcoin(ids[1]!, randomUUID(), {
@@ -111,11 +114,11 @@ try {
 	assert.equal(
 		sale.phpCentavos,
 		Number((sale.satoshis * BigInt(sale.priceCentavos)) / SATOSHIS) -
-			BITCOIN_FEE_CENTS,
+			BITCOIN_FEE_CENTAVOS,
 	);
-	assert.equal(sold.cashCents, bought.cashCents + sale.phpCentavos);
+	assert.equal(sold.cashCentavos, bought.cashCentavos + sale.phpCentavos);
 	assert.equal(sold.satoshis, 0n);
-	assert.equal(sold.costBasisCents, 0);
+	assert.equal(sold.costBasisCentavos, 0);
 	assert.equal(sold.trades.length, 2);
 	assert.ok(sale.reference);
 	assert.equal(
@@ -130,26 +133,38 @@ try {
 	await assert.rejects(
 		tradeBitcoin(userId, randomUUID(), {
 			side: "buy",
-			cashCents: sold.cashCents + 100,
+			cashCentavos: sold.cashCentavos + 100,
 		}),
 	);
-	assert.equal((await getBitcoinPortfolio(userId)).cashCents, sold.cashCents);
+	assert.equal(
+		(await getBitcoinPortfolio(userId)).cashCentavos,
+		sold.cashCentavos,
+	);
 	assert.equal(await db.transaction.count({ where: { userId } }), entryCount);
 	const raceId = ids[1]!;
-	const fullBudget = 1_000_000 - BITCOIN_FEE_CENTS;
+	const fullBudget = 1_000_000 - BITCOIN_FEE_CENTAVOS;
 	const race = await Promise.allSettled([
-		tradeBitcoin(raceId, randomUUID(), { side: "buy", cashCents: fullBudget }),
-		tradeBitcoin(raceId, randomUUID(), { side: "buy", cashCents: fullBudget }),
+		tradeBitcoin(raceId, randomUUID(), {
+			side: "buy",
+			cashCentavos: fullBudget,
+		}),
+		tradeBitcoin(raceId, randomUUID(), {
+			side: "buy",
+			cashCentavos: fullBudget,
+		}),
 	]);
 	assert.equal(
 		race.filter((result) => result.status === "fulfilled").length,
 		1,
 	);
-	assert.ok((await getBitcoinPortfolio(raceId)).cashCents >= 0);
+	assert.ok((await getBitcoinPortfolio(raceId)).cashCentavos >= 0);
 	assert.equal(await db.bitcoinTrade.count({ where: { userId: raceId } }), 1);
 	const mixedId = ids[2]!;
 	const mixed = await Promise.allSettled([
-		tradeBitcoin(mixedId, randomUUID(), { side: "buy", cashCents: fullBudget }),
+		tradeBitcoin(mixedId, randomUUID(), {
+			side: "buy",
+			cashCentavos: fullBudget,
+		}),
 		db.$transaction((tx) =>
 			post(tx, {
 				userId: mixedId,
@@ -163,7 +178,7 @@ try {
 		mixed.filter((result) => result.status === "fulfilled").length,
 		1,
 	);
-	assert.ok((await getBitcoinPortfolio(mixedId)).cashCents >= 0);
+	assert.ok((await getBitcoinPortfolio(mixedId)).cashCentavos >= 0);
 	console.log(
 		"Integration passed: converted PHP quotes, all five ranges, fixed buy/sell fees, direct bank debit/credit, trade persistence, matching activity references, idempotency, concurrent trades/account spending, rollback, user isolation, and no rewards.",
 	);

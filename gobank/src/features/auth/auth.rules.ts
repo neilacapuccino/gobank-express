@@ -4,7 +4,7 @@ export const PIN_LENGTH = 6;
 export const MAX_PIN_ATTEMPTS = 5;
 export const PIN_LOCK_MINUTES = 15;
 export const USERNAME_MIN = 3;
-const USERNAME_MAX = 20;
+export const USERNAME_MAX = 20;
 
 const RESERVED_USERNAMES = [
 	"admin",
@@ -24,6 +24,7 @@ export type UsernameCheck =
 	| { state: "checking" }
 	| { state: "invalid"; message: string }
 	| { state: "taken"; message: string }
+	| { state: "error"; message: string }
 	| { state: "available" };
 
 export function validateUsername(raw: string): UsernameCheck {
@@ -55,7 +56,7 @@ export function validateUsername(raw: string): UsernameCheck {
 }
 
 export function validatePin(pin: string): string | null {
-	if (pin.length !== PIN_LENGTH) return null;
+	if (!/^\d{6}$/.test(pin)) return `Use ${PIN_LENGTH} digits`;
 
 	if (/^(\d)\1+$/.test(pin)) {
 		return "Avoid repeating the same digit";
@@ -98,9 +99,3 @@ export const EMPTY_DRAFT: RegistrationDraft = {
 	fullName: "",
 	mobile: "",
 };
-
-export function cardholderName(draft: RegistrationDraft) {
-	const name = draft.fullName.trim();
-	if (name.length > 0) return name.toUpperCase();
-	return draft.username.toUpperCase();
-}

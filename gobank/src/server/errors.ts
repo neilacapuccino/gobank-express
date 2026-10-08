@@ -15,6 +15,7 @@ export const MESSAGES = {
 		`Too many wrong PINs. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
 	insufficientBalance: "Insufficient balance",
 	notEnoughPoints: "Not enough points",
+	accountLimit: "This transaction would exceed the account limit",
 	notEnoughInStash: "Not enough in this Stash",
 	cardLocked: "Unlock your card to spend",
 	overDailyLimit: "This goes over your daily limit",

@@ -11,21 +11,21 @@ export const PARTY = {
 } as const;
 
 export async function findRecipient(handle: string, self: string) {
-	const value = handle.trim().replace(/^@/, "").toLowerCase();
-	const mobile = normaliseMobile(value);
+	const input = handle.trim().toLowerCase();
+	const value = input.replace(/^@/, "");
+	const mobile = /^[+()\d\s-]+$/.test(value) ? normaliseMobile(value) : null;
 	const gmail = normaliseGmail(value);
-
-	const user = await db.user.findFirst({
-		where: {
-			OR: [
-				{ accountNumber: value },
-				{ username: value },
-				...(gmail ? [{ gmail, googleId: { not: null } }] : []),
-				...(mobile ? [{ mobile }] : []),
-			],
-		},
-		select: PARTY,
-	});
+	const where = input.startsWith("@")
+		? { username: value }
+		: {
+				OR: [
+					{ accountNumber: value },
+					{ username: value },
+					...(gmail ? [{ gmail, googleId: { not: null } }] : []),
+					...(mobile && /^09\d{9}$/.test(mobile) ? [{ mobile }] : []),
+				],
+			};
+	const user = await db.user.findFirst({ where, select: PARTY });
 
 	if (!user) return fail("NOT_FOUND", MESSAGES.recipientNotFound);
 	if (user.id === self) fail("BAD_REQUEST", MESSAGES.ownAccount);
@@ -34,35 +34,28 @@ export async function findRecipient(handle: string, self: string) {
 }
 
 export async function getRecentRecipients(userId: string) {
-	const transactions = await db.transaction.findMany({
+	const transactions = await db.transaction.groupBy({
+		by: ["counterpartyId"],
 		where: {
 			userId,
 			kind: "transfer",
 			amount: { lt: 0 },
 			counterpartyId: { not: null },
 		},
-		select: {
-			counterparty: {
-				select: PARTY,
-			},
-		},
-		orderBy: {
-			createdAt: "desc",
-		},
-		take: 50,
+		orderBy: { _max: { createdAt: "desc" } },
+		take: 6,
 	});
 
-	const seen = new Set<string>();
-
-	return transactions
-		.map((transaction) => transaction.counterparty)
-		.filter((user): user is NonNullable<typeof user> => {
-			if (!user || seen.has(user.id)) return false;
-
-			seen.add(user.id);
-			return true;
-		})
-		.slice(0, 6);
+	const ids = transactions.flatMap((entry) =>
+		entry.counterpartyId ? [entry.counterpartyId] : [],
+	);
+	const recipients = await db.user.findMany({
+		where: { id: { in: ids } },
+		select: PARTY,
+	});
+	return ids.flatMap((id) =>
+		recipients.filter((recipient) => recipient.id === id),
+	);
 }
 
 export async function sendMoney(
@@ -75,7 +68,7 @@ export async function sendMoney(
 
 	const sender = await db.user.findUniqueOrThrow({
 		where: { id: userId },
-		select: PARTY,
+		select: { id: true, username: true },
 	});
 
 	return db.$transaction((tx) => transfer(tx, sender, receiver, amount, note));

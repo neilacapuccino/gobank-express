@@ -1,9 +1,14 @@
 import { z } from "zod";
 import { normaliseMobile, validateMobile } from "./contact";
+import { MAX_TRANSACTION_CENTAVOS } from "./money";
 
 const blankToNull = (value: string) => value || null;
 
-export const centavos = z.number().int().positive().max(100_000_000);
+export const centavos = z
+	.number()
+	.int()
+	.positive()
+	.max(MAX_TRANSACTION_CENTAVOS);
 
 export const mobile = z
 	.string()

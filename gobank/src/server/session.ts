@@ -33,7 +33,10 @@ export async function startSession(userId: string) {
 export const currentUserId = cache(async () => {
 	const token = (await cookies()).get(COOKIE)?.value;
 	if (!token) return null;
-	const session = await db.session.findUnique({ where: { id: hash(token) } });
+	const session = await db.session.findUnique({
+		where: { id: hash(token) },
+		select: { userId: true, expiresAt: true },
+	});
 	if (!session || session.expiresAt < new Date()) return null;
 	return session.userId;
 });

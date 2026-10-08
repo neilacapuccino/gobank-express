@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import { calculateTrade } from "../bitcoin.rules";
 import {
 	btc,
-	BITCOIN_FEE_CENTS,
-	MAX_CENTS,
+	BITCOIN_FEE_CENTAVOS,
+	MAX_CENTAVOS,
 	parseUnits,
 	money,
 	type BitcoinQuote,
@@ -50,16 +50,16 @@ export function BitcoinTradeForm({
 	const trade =
 		parsed !== null &&
 		parsed > 0n &&
-		(side === "sell" || parsed <= BigInt(MAX_CENTS))
+		(side === "sell" || parsed <= BigInt(MAX_CENTAVOS))
 			? side === "buy"
-				? ({ side, cashCents: Number(parsed) } as const)
+				? ({ side, cashCentavos: Number(parsed) } as const)
 				: ({ side, satoshis: parsed } as const)
 			: null;
 	let preview: ReturnType<typeof calculateTrade> | null = null;
 	let problem = "";
 	if (portfolio && quote && trade) {
 		try {
-			preview = calculateTrade(portfolio, trade, quote.priceCents);
+			preview = calculateTrade(portfolio, trade, quote.priceCentavos);
 		} catch (error) {
 			if (attempted)
 				problem = error instanceof Error ? error.message : "Check this amount.";
@@ -142,7 +142,7 @@ export function BitcoinTradeForm({
 					</label>
 					<span className="text-ink-muted">
 						{portfolio
-							? `${side === "buy" ? money(portfolio.cashCents) + " PHP" : btc(portfolio.satoshis) + " BTC"} available`
+							? `${side === "buy" ? money(portfolio.cashCentavos) + " PHP" : btc(portfolio.satoshis) + " BTC"} available`
 							: "Loading balance…"}
 					</span>
 				</div>
@@ -177,7 +177,7 @@ export function BitcoinTradeForm({
 													Math.floor(
 														(Math.max(
 															0,
-															portfolio.cashCents - BITCOIN_FEE_CENTS,
+															portfolio.cashCentavos - BITCOIN_FEE_CENTAVOS,
 														) *
 															percent) /
 															100,
@@ -203,8 +203,8 @@ export function BitcoinTradeForm({
 					) : preview ? (
 						<span className="text-ink-muted">
 							{side === "buy"
-								? `You receive ≈ ${btc(preview.satoshis)} BTC · Total ${money(preview.cashCents)} PHP`
-								: "You receive ≈ " + money(preview.cashCents) + " PHP"}
+								? `You receive ≈ ${btc(preview.satoshis)} BTC · Total ${money(preview.cashCentavos)} PHP`
+								: "You receive ≈ " + money(preview.cashCentavos) + " PHP"}
 						</span>
 					) : (
 						<span className="text-ink-muted">
@@ -225,7 +225,7 @@ export function BitcoinTradeForm({
 				</button>
 			</form>
 			<p className="text-ink-faint mt-3 text-center text-[10px] leading-relaxed">
-				Fixed {money(BITCOIN_FEE_CENTS)} PHP fee per trade
+				Fixed {money(BITCOIN_FEE_CENTAVOS)} PHP fee per trade
 			</p>
 			{success && (
 				<div
@@ -302,19 +302,19 @@ export function BitcoinTradeForm({
 							<div className="flex justify-between">
 								<dt className="text-ink-muted">Estimated Bitcoin value</dt>
 								<dd className="font-semibold tabular-nums">
-									{preview ? money(preview.tradeCents) : "—"} PHP
+									{preview ? money(preview.tradeCentavos) : "—"} PHP
 								</dd>
 							</div>
 							<div className="flex justify-between">
 								<dt className="text-ink-muted">Trading fee</dt>
-								<dd>{money(BITCOIN_FEE_CENTS)} PHP</dd>
+								<dd>{money(BITCOIN_FEE_CENTAVOS)} PHP</dd>
 							</div>
 							<div className="flex justify-between border-t border-white/10 pt-4">
 								<dt className="text-ink-muted">
 									{side === "buy" ? "Total to pay" : "Net proceeds"}
 								</dt>
 								<dd className="font-semibold tabular-nums">
-									{preview ? money(preview.cashCents) : "—"} PHP
+									{preview ? money(preview.cashCentavos) : "—"} PHP
 								</dd>
 							</div>
 						</dl>

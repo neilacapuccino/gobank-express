@@ -8,9 +8,9 @@ const BASE =
 
 const VARIANTS: Record<Variant, string> = {
 	primary:
-		"theme-control h-13 text-[15px] bg-brand text-white enabled:hover:bg-brand-hover disabled:bg-brand/35 disabled:text-white/65",
+		"h-13 text-[15px] bg-brand text-white enabled:hover:bg-brand-hover disabled:bg-brand/35 disabled:text-white/65",
 	outline:
-		"theme-control h-13 text-[15px] border border-line-strong bg-surface text-ink hover:bg-surface-sunken disabled:opacity-45",
+		"h-13 text-[15px] border border-line-strong bg-surface text-ink enabled:hover:bg-surface-raised disabled:opacity-45",
 	ghost:
 		"h-11 text-[14px] text-ink-muted enabled:hover:text-ink disabled:opacity-45",
 };

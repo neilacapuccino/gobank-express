@@ -1,56 +1,31 @@
-import { Check, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "~/shared/lib/cn";
-
-type CategoryCardProps = {
-	label: string;
-	icon: LucideIcon;
-	selected: boolean;
-	onClick: () => void;
-};
 
 export function CategoryCard({
 	label,
 	icon: Icon,
 	selected,
 	onClick,
-}: CategoryCardProps) {
+}: {
+	label: string;
+	icon: LucideIcon;
+	selected: boolean;
+	onClick: () => void;
+}) {
 	return (
 		<button
 			type="button"
 			onClick={onClick}
 			aria-pressed={selected}
 			className={cn(
-				"relative flex min-h-[86px] flex-col items-center justify-center rounded-2xl border px-2 py-3 transition-all",
+				"flex min-h-13 items-center gap-2 rounded-xl border px-3 py-3 text-left text-[13px] font-medium transition-colors",
 				selected
-					? "border-brand-line bg-brand-soft"
-					: "bg-surface-raised hover:bg-surface-sunken border-transparent",
+					? "border-brand bg-brand-soft text-brand"
+					: "border-line text-ink hover:bg-surface-sunken",
 			)}
 		>
-			{selected ? (
-				<span className="bg-brand absolute top-1.5 right-1.5 grid h-5 w-5 place-items-center rounded-full text-white">
-					<Check size={11} strokeWidth={3} aria-hidden />
-				</span>
-			) : null}
-
-			<span
-				className={cn(
-					"grid h-10 w-10 place-items-center rounded-xl",
-					selected
-						? "bg-brand-line/60 text-brand"
-						: "bg-surface-sunken text-ink-soft",
-				)}
-			>
-				<Icon size={19} strokeWidth={1.9} aria-hidden />
-			</span>
-
-			<span
-				className={cn(
-					"mt-2 text-[10px] font-medium",
-					selected ? "text-brand-hover" : "text-ink-soft",
-				)}
-			>
-				{label}
-			</span>
+			<Icon size={18} className="shrink-0" aria-hidden />
+			<span>{label}</span>
 		</button>
 	);
 }

@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "~/trpc/react";
-import { MAX_CENTS, quoteIsFresh, type BitcoinQuote } from "../bitcoin.types";
+import {
+	MAX_CENTAVOS,
+	quoteIsFresh,
+	type BitcoinQuote,
+} from "../bitcoin.types";
 
 const positive = z.coerce.number().finite().positive();
 const tick = z.object({
@@ -49,8 +53,8 @@ export function useBitcoinFeed() {
 					if (!result.success || !quoteIsFresh(result.data.E, Date.now()))
 						return;
 					const value = result.data;
-					const priceCents = Math.round(value.c * phpPerQuote * 100);
-					if (priceCents <= 0 || priceCents > MAX_CENTS) return;
+					const priceCentavos = Math.round(value.c * phpPerQuote * 100);
+					if (priceCentavos <= 0 || priceCentavos > MAX_CENTAVOS) return;
 					received = Date.now();
 					delay = 1_000;
 					setConnected(true);
@@ -58,10 +62,10 @@ export function useBitcoinFeed() {
 						previous && previous.asOf > value.E
 							? previous
 							: {
-									priceCents,
-									openCents: Math.round(value.o * phpPerQuote * 100),
-									highCents: Math.round(value.h * phpPerQuote * 100),
-									lowCents: Math.round(value.l * phpPerQuote * 100),
+									priceCentavos,
+									openCentavos: Math.round(value.o * phpPerQuote * 100),
+									highCentavos: Math.round(value.h * phpPerQuote * 100),
+									lowCentavos: Math.round(value.l * phpPerQuote * 100),
 									volume: value.v,
 									asOf: value.E,
 									phpPerQuote,

@@ -5,13 +5,13 @@ import { cn } from "~/shared/lib/cn";
 import { CardBrandLogo } from "./card-brand-logo";
 
 type VirtualCardProps = {
-  brandId: IssuedCardBrandId;
-  holder: string;
-  first4?: string;
-  last4?: string;
-  number?: string;
-  expiresAt?: Date | string;
-  compact?: boolean;
+	brandId: IssuedCardBrandId;
+	holder: string;
+	first4?: string;
+	last4?: string;
+	number?: string;
+	expiresAt?: Date | string;
+	compact?: boolean;
 };
 
 export function VirtualCard({
@@ -23,16 +23,12 @@ export function VirtualCard({
 	expiresAt,
 	compact,
 }: VirtualCardProps) {
-  const brand = getBrand(brandId);
-  const prefix = first4 ?? brand.numberPrefix;
-  const expiry = expiresAt
-    ? expiresAt instanceof Date
-      ? expiresAt
-      : new Date(expiresAt)
-    : null;
-  const expiryLabel = expiry
-    ? `${String(expiry.getUTCMonth() + 1).padStart(2, "0")}/${String(expiry.getUTCFullYear()).slice(-2)}`
-    : "••/••";
+	const brand = getBrand(brandId);
+	const prefix = first4 ?? brand.numberPrefix;
+	const expiry = expiresAt ? new Date(expiresAt) : null;
+	const expiryLabel = expiry
+		? `${String(expiry.getUTCMonth() + 1).padStart(2, "0")}/${String(expiry.getUTCFullYear()).slice(-2)}`
+		: "••/••";
 
 	return (
 		<div
@@ -61,7 +57,7 @@ export function VirtualCard({
 						}
 						className={cn(
 							"font-medium tracking-[0.16em] text-white/90 tabular-nums",
-							compact ? "text-[13px]" : "text-[16px]",
+							compact ? "text-[13px]" : "text-[clamp(13px,3.8vw,16px)]",
 						)}
 					>
 						<span aria-hidden>

@@ -3,13 +3,14 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Button } from "~/shared/ui/button";
 import { PinPad } from "~/shared/ui/pin-pad";
 import { TextField } from "~/shared/ui/text-field";
-import { PIN_LENGTH, USERNAME_MIN } from "../auth.rules";
+import { PIN_LENGTH, USERNAME_MAX, USERNAME_MIN } from "../auth.rules";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
+import { AuthHeading } from "./auth-heading";
 
 export function SignInFlow() {
 	const router = useRouter();
@@ -22,7 +23,7 @@ export function SignInFlow() {
 			router.replace("/dashboard");
 			router.refresh();
 		},
-		onError: () => setTimeout(() => setPin(""), 420),
+		onError: () => setPin(""),
 	});
 
 	const ready = username.length >= USERNAME_MIN;
@@ -67,7 +68,7 @@ export function SignInFlow() {
 					}}
 					className="animate-step-in mt-10 flex flex-1 flex-col"
 				>
-					<Heading
+					<AuthHeading
 						title="Welcome back"
 						subtitle="Sign in with your username and six-digit PIN."
 					/>
@@ -81,6 +82,7 @@ export function SignInFlow() {
 							autoCorrect="off"
 							autoComplete="username"
 							spellCheck={false}
+							maxLength={USERNAME_MAX}
 							placeholder="yourusername"
 							value={username}
 							onChange={(event) =>
@@ -97,19 +99,10 @@ export function SignInFlow() {
 						Continue
 						<ArrowRight size={17} strokeWidth={2} aria-hidden />
 					</Button>
-					<p className="text-ink-muted mt-5 text-center text-[13px]">
-						New to GoBank?{" "}
-						<Link
-							href="/register"
-							className="text-brand hover:text-brand-hover font-medium transition-colors"
-						>
-							Open an account
-						</Link>
-					</p>
 				</form>
 			) : (
 				<div key="pin" className="animate-step-in mt-10 flex flex-1 flex-col">
-					<Heading
+					<AuthHeading
 						title="Enter your PIN"
 						subtitle={
 							<>
@@ -148,17 +141,6 @@ export function SignInFlow() {
 					</Button>
 				</div>
 			)}
-		</div>
-	);
-}
-
-function Heading({ title, subtitle }: { title: string; subtitle: ReactNode }) {
-	return (
-		<div className="flex flex-col gap-2">
-			<h1 className="text-ink text-[24px] leading-tight font-semibold tracking-tight">
-				{title}
-			</h1>
-			<p className="text-ink-soft text-[14.5px] leading-relaxed">{subtitle}</p>
 		</div>
 	);
 }

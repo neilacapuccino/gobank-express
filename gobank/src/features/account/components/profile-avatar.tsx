@@ -1,10 +1,23 @@
 import { UserRound } from "lucide-react";
 import Image from "next/image";
+import { cn } from "~/shared/lib/cn";
 
-export function ProfileAvatar({ photo }: { photo?: string | null }) {
+export function ProfileAvatar({
+	photo,
+	size = 80,
+	className,
+}: {
+	photo?: string | null;
+	size?: number;
+	className?: string;
+}) {
 	return (
 		<span
-			className="relative grid h-20 w-20 overflow-hidden rounded-full border border-white/10 bg-[#252529] text-[#c4c4cc]"
+			className={cn(
+				"relative grid shrink-0 overflow-hidden rounded-full border border-white/10 bg-[#252529] text-[#c4c4cc]",
+				className,
+			)}
+			style={{ width: size, height: size }}
 			role={photo ? undefined : "img"}
 			aria-label={photo ? undefined : "Default profile icon"}
 		>
@@ -13,12 +26,17 @@ export function ProfileAvatar({ photo }: { photo?: string | null }) {
 					src={photo}
 					alt="Profile photo"
 					fill
-					sizes="80px"
+					sizes={`${size}px`}
 					unoptimized
 					className="object-cover"
 				/>
 			) : (
-				<UserRound size={36} strokeWidth={1.6} className="m-auto" aria-hidden />
+				<UserRound
+					size={size * 0.45}
+					strokeWidth={1.6}
+					className="m-auto"
+					aria-hidden
+				/>
 			)}
 		</span>
 	);

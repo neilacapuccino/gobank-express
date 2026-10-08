@@ -26,24 +26,35 @@ async function savingsTransaction<T>(
 
 export const listStashes = (userId: string) =>
 	savingsTransaction(async (tx) => {
-		const goals = await tx.stash.findMany({
+		const stashes = await tx.stash.findMany({
 			where: { userId },
 			orderBy: { createdAt: "asc" },
 		});
-		for (const goal of goals) await settleStashInterest(tx, userId, goal.id);
-		return tx.stash.findMany({
-			where: { userId },
-			orderBy: { createdAt: "asc" },
-		});
+		const settled: typeof stashes = [];
+		for (const stash of stashes)
+			settled.push(await settleStashInterest(tx, stash));
+		return settled;
 	});
+
+const settleOwnedStash = async (
+	tx: Prisma.TransactionClient,
+	userId: string,
+	id: string,
+) =>
+	settleStashInterest(
+		tx,
+		await tx.stash.findUniqueOrThrow({ where: { id, userId } }),
+	);
 
 export const getStash = (userId: string, id: string) =>
 	savingsTransaction(async (tx) => {
-		await settleStashInterest(tx, userId, id);
-		return tx.stash.findUniqueOrThrow({
-			where: { id, userId },
-			include: { transactions: { orderBy: { createdAt: "desc" }, take: 20 } },
+		const stash = await settleOwnedStash(tx, userId, id);
+		const transactions = await tx.transaction.findMany({
+			where: { stashId: id, userId },
+			orderBy: { createdAt: "desc" },
+			take: 20,
 		});
+		return { ...stash, transactions };
 	});
 
 export const createStash = (
@@ -61,24 +72,29 @@ export const createStash = (
 
 export const updateStash = (userId: string, id: string, fields: StashFields) =>
 	savingsTransaction(async (tx) => {
-		await settleStashInterest(tx, userId, id);
+		await settleOwnedStash(tx, userId, id);
 		return tx.stash.update({ where: { id, userId }, data: fields });
 	});
 
 export const moveMoney = (
 	userId: string,
 	id: string,
-	amount: number,
+	amountCentavos: number,
 	direction: "in" | "out",
 ) =>
 	savingsTransaction(async (tx) => {
-		await settleStashInterest(tx, userId, id);
-		return moveStash(tx, userId, id, direction === "in" ? amount : -amount);
+		await settleOwnedStash(tx, userId, id);
+		return moveStash(
+			tx,
+			userId,
+			id,
+			direction === "in" ? amountCentavos : -amountCentavos,
+		);
 	});
 
 export const removeStash = (userId: string, id: string) =>
 	savingsTransaction(async (tx) => {
-		const stash = await settleStashInterest(tx, userId, id);
+		const stash = await settleOwnedStash(tx, userId, id);
 		if (stash.balance > 0)
 			await moveStash(tx, userId, stash.id, -stash.balance);
 		await tx.stash.delete({ where: { id, userId, balance: 0 } });

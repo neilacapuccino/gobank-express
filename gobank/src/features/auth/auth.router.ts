@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { profileFields } from "~/shared/lib/schemas";
-import { pin, pinChange, username } from "./auth.schemas";
+import { pin, pinChange, pinDigits, username } from "./auth.schemas";
+import { USERNAME_MAX, USERNAME_MIN } from "./auth.rules";
 import { endSession } from "~/server/session";
 import {
 	createTRPCRouter,
@@ -41,8 +42,15 @@ export const authRouter = createTRPCRouter({
 					.string()
 					.trim()
 					.toLowerCase()
-					.transform((value) => value.replace(/^@/, "")),
-				pin: z.string(),
+					.transform((value) => value.replace(/^@/, ""))
+					.pipe(
+						z
+							.string()
+							.min(USERNAME_MIN)
+							.max(USERNAME_MAX)
+							.regex(/^[a-z0-9_]+$/),
+					),
+				pin: pinDigits,
 			}),
 		)
 		.mutation(({ input }) => signIn(input.username, input.pin)),

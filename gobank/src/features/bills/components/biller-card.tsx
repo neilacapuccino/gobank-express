@@ -1,62 +1,44 @@
-import { Check, ChevronRight, type LucideIcon } from "lucide-react";
+import { Check, type LucideIcon } from "lucide-react";
 import { cn } from "~/shared/lib/cn";
 import type { Biller } from "../bill-categories";
-
-type BillerCardProps = {
-	biller: Biller;
-	icon: LucideIcon;
-	selected: boolean;
-	onClick: () => void;
-};
 
 export function BillerCard({
 	biller,
 	icon: Icon,
 	selected,
 	onClick,
-}: BillerCardProps) {
+}: {
+	biller: Biller;
+	icon: LucideIcon;
+	selected: boolean;
+	onClick: () => void;
+}) {
 	return (
 		<button
 			type="button"
 			onClick={onClick}
 			aria-pressed={selected}
 			className={cn(
-				"flex w-full items-center rounded-2xl border p-3.5 text-left transition-all",
+				"flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-colors",
 				selected
-					? "border-brand-line bg-brand-soft"
-					: "bg-surface-raised hover:bg-surface-sunken border-transparent",
+					? "border-brand bg-brand-soft"
+					: "border-line hover:bg-surface-sunken",
 			)}
 		>
-			<span
-				className={cn(
-					"grid h-11 w-11 shrink-0 place-items-center rounded-xl",
-					selected
-						? "bg-brand-line/60 text-brand"
-						: "bg-surface-sunken text-ink-soft",
-				)}
-			>
-				<Icon size={21} strokeWidth={1.9} aria-hidden />
-			</span>
-
-			<span className="ml-3 min-w-0 flex-1">
-				<span className="block text-[13px] font-semibold">{biller.name}</span>
-				<span className="text-ink-soft mt-0.5 block text-[10.5px]">
-					{biller.description}
+			<Icon size={20} className="text-ink-muted shrink-0" aria-hidden />
+			<span className="min-w-0 flex-1">
+				<span className="text-ink block text-[14px] font-medium break-words">
+					{biller.name}
 				</span>
+				{biller.description ? (
+					<span className="text-ink-muted mt-1 block text-[12px] break-words">
+						{biller.description}
+					</span>
+				) : null}
 			</span>
-
 			{selected ? (
-				<span className="bg-brand grid h-6 w-6 place-items-center rounded-full text-white">
-					<Check size={13} strokeWidth={3} aria-hidden />
-				</span>
-			) : (
-				<ChevronRight
-					size={17}
-					strokeWidth={1.8}
-					className="text-ink-soft"
-					aria-hidden
-				/>
-			)}
+				<Check size={18} className="text-brand shrink-0" aria-hidden />
+			) : null}
 		</button>
 	);
 }

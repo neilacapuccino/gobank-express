@@ -28,17 +28,22 @@ const ICONS: Record<Entry["kind"], LucideIcon> = {
 	exchange: ArrowLeftRight,
 };
 
-export function RecentActivity({ entries }: { entries: Entry[] }) {
+export function RecentActivity({
+	entries,
+	showHeader = true,
+}: {
+	entries: Entry[];
+	showHeader?: boolean;
+}) {
 	return (
 		<section>
-			<SectionHeader title="Activity" href="/transactions" />
+			{showHeader ? (
+				<SectionHeader title="Activity" href="/transactions" />
+			) : null}
 
 			{entries.length === 0 ? (
 				<div className="bg-surface-sunken flex flex-col items-center gap-1 rounded-2xl px-6 py-8 text-center">
 					<p className="text-ink text-[14px] font-medium">No activity yet</p>
-					<p className="text-ink-muted text-[13px]">
-						Cash in or receive money and it will show up here.
-					</p>
 					<Link
 						href="/deposit"
 						className="text-brand hover:text-brand-hover mt-2 text-[13px] font-medium transition-colors"

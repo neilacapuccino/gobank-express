@@ -54,14 +54,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Bitcoin calculation tests
-        run: npm run test:bitcoin
-
-      - name: Profile photo tests
-        run: npm run test:profile
-
-      - name: Savings compound interest tests
-        run: npm run test:savings
+      - name: Unit tests
+        run: npm test
 
       - name: Build
         run: npm run build

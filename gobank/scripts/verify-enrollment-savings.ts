@@ -14,6 +14,7 @@ import { findRecipient } from "../src/features/transfers/transfers.service";
 import {
 	createStash,
 	getStash,
+	listStashes,
 	moveMoney,
 	removeStash,
 	updateStash,
@@ -163,7 +164,12 @@ try {
 			interestUpdatedAt: new Date(Date.now() - 365 * 86_400_000),
 		},
 	});
+	const listed = await listStashes(owner);
+	assert.equal(listed.length, 1);
+	assert.equal(listed[0]!.id, goal.id);
+	assert.ok(listed[0]!.balance > 104_000 && listed[0]!.balance < 104_100);
 	const earned = await getStash(owner, goal.id);
+	assert.equal(earned.balance, listed[0]!.balance);
 	assert.ok(earned.balance > 104_000 && earned.balance < 104_100);
 	assert.equal(
 		(await db.user.findUniqueOrThrow({ where: { id: owner } })).balance,

@@ -9,7 +9,12 @@ import {
 } from "lucide-react";
 import { BackButton } from "~/shared/ui/back-button";
 import { api } from "~/trpc/react";
-import { BITCOIN_FEE_CENTS, btc, holdingValue, money } from "../bitcoin.types";
+import {
+	BITCOIN_FEE_CENTAVOS,
+	btc,
+	holdingValue,
+	money,
+} from "../bitcoin.types";
 import { useBitcoinFeed } from "../hooks/use-bitcoin-feed";
 import { BitcoinChart } from "./bitcoin-chart";
 import { BitcoinTradeForm } from "./bitcoin-trade-form";
@@ -26,10 +31,13 @@ export function BitcoinScreen() {
 	});
 	const account = portfolio.data;
 	const value =
-		account && quote ? holdingValue(account.satoshis, quote.priceCents) : null;
-	const pnl = account && value !== null ? value - account.costBasisCents : null;
+		account && quote
+			? holdingValue(account.satoshis, quote.priceCentavos)
+			: null;
+	const pnl =
+		account && value !== null ? value - account.costBasisCentavos : null;
 	const change = quote
-		? ((quote.priceCents - quote.openCents) / quote.openCents) * 100
+		? ((quote.priceCentavos - quote.openCentavos) / quote.openCentavos) * 100
 		: null;
 	const gain = change !== null && change >= 0;
 
@@ -80,7 +88,7 @@ export function BitcoinScreen() {
 				</div>
 				<div className="mt-5 flex items-baseline gap-2">
 					<p className="text-[clamp(1.8rem,8vw,2.5rem)] font-semibold tracking-[-.06em] tabular-nums">
-						{quote ? money(quote.priceCents) : "—"}
+						{quote ? money(quote.priceCentavos) : "—"}
 					</p>
 					<span className="text-ink-muted text-[11px] font-medium">PHP</span>
 				</div>
@@ -127,8 +135,8 @@ export function BitcoinScreen() {
 			<BitcoinChart quote={quote} />
 			<dl className="grid grid-cols-3 gap-2 px-1 text-[10px]">
 				{[
-					{ title: "24h high", text: quote ? money(quote.highCents) : "—" },
-					{ title: "24h low", text: quote ? money(quote.lowCents) : "—" },
+					{ title: "24h high", text: quote ? money(quote.highCentavos) : "—" },
+					{ title: "24h low", text: quote ? money(quote.lowCentavos) : "—" },
 					{
 						title: "24h volume · BTC",
 						text: quote
@@ -173,8 +181,8 @@ export function BitcoinScreen() {
 					{pnl !== null && (
 						<span className={pnl >= 0 ? "text-[#56e3b1]" : "text-rose-300"}>
 							{signed(pnl)}
-							{account && account.costBasisCents > 0
-								? ` (${((pnl / account.costBasisCents) * 100).toFixed(2)}%)`
+							{account && account.costBasisCentavos > 0
+								? ` (${((pnl / account.costBasisCentavos) * 100).toFixed(2)}%)`
 								: ""}
 						</span>
 					)}
@@ -183,7 +191,7 @@ export function BitcoinScreen() {
 					<div>
 						<dt className="text-[#8da99b]">PHP account balance</dt>
 						<dd className="mt-1 text-[13px] font-semibold">
-							{account ? money(account.cashCents) : "—"}
+							{account ? money(account.cashCentavos) : "—"}
 							<span className="ml-1 text-[9px] font-normal text-[#8da99b]">
 								PHP
 							</span>
@@ -192,7 +200,7 @@ export function BitcoinScreen() {
 					<div>
 						<dt className="text-[#8da99b]">Fee</dt>
 						<dd className="mt-1 text-[13px] font-semibold">
-							{money(BITCOIN_FEE_CENTS)}
+							{money(BITCOIN_FEE_CENTAVOS)}
 							<span className="ml-1 text-[9px] font-normal text-[#8da99b]">
 								PHP
 							</span>
@@ -202,16 +210,16 @@ export function BitcoinScreen() {
 						<dt className="text-[#8da99b]">Total portfolio value</dt>
 						<dd className="mt-1 text-[12px] font-semibold">
 							{account && value !== null
-								? `${money(account.cashCents + value)} PHP`
+								? `${money(account.cashCentavos + value)} PHP`
 								: "—"}
 						</dd>
 					</div>
 					<div>
 						<dt className="text-[#8da99b]">Realized profit / loss</dt>
 						<dd
-							className={`mt-1 text-[12px] font-semibold ${account && account.realizedCents < 0 ? "text-rose-300" : "text-[#56e3b1]"}`}
+							className={`mt-1 text-[12px] font-semibold ${account && account.realizedCentavos < 0 ? "text-rose-300" : "text-[#56e3b1]"}`}
 						>
-							{account ? `${signed(account.realizedCents)} PHP` : "—"}
+							{account ? `${signed(account.realizedCentavos)} PHP` : "—"}
 						</dd>
 					</div>
 				</dl>

@@ -15,10 +15,10 @@ export const BITCOIN_CANDLES: Record<
 	"1Y": { interval: "1d", limit: 365, label: "1-day candles" },
 };
 export type BitcoinQuote = {
-	priceCents: number;
-	openCents: number;
-	highCents: number;
-	lowCents: number;
+	priceCentavos: number;
+	openCentavos: number;
+	highCentavos: number;
+	lowCentavos: number;
 	volume: number;
 	asOf: number;
 	phpPerQuote: number;
@@ -34,23 +34,24 @@ export type BitcoinCandle = {
 };
 export const SATOSHIS = 100_000_000n;
 
-export const MAX_CENTS = 2_000_000_000;
-export const BITCOIN_FEE_CENTS = 1_000;
+export const MAX_CENTAVOS = 2_000_000_000;
+export const BITCOIN_FEE_CENTAVOS = 1_000;
 
 export const quoteIsFresh = (asOf: number, now: number) =>
 	Number.isFinite(asOf) && now - asOf < 60_000 && asOf - now < 10_000;
 
-export const money = (cents: number) =>
-	new Intl.NumberFormat("en-US", {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2,
-	}).format(cents / 100);
+const PHP_AMOUNT = new Intl.NumberFormat("en-PH", {
+	minimumFractionDigits: 2,
+	maximumFractionDigits: 2,
+});
+
+export const money = (centavos: number) => PHP_AMOUNT.format(centavos / 100);
 
 export const btc = (satoshis: bigint) =>
 	`${satoshis / SATOSHIS}.${(satoshis % SATOSHIS).toString().padStart(8, "0")}`;
 
-export const holdingValue = (satoshis: bigint, priceCents: number) =>
-	Number((satoshis * BigInt(priceCents)) / SATOSHIS);
+export const holdingValue = (satoshis: bigint, priceCentavos: number) =>
+	Number((satoshis * BigInt(priceCentavos)) / SATOSHIS);
 
 export function parseUnits(value: string, decimals: number): bigint | null {
 	const match = /^(\d+)(?:\.(\d*))?$/.exec(value.trim());

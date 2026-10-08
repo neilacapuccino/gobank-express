@@ -14,8 +14,9 @@ export async function hashPin(pin: string) {
 }
 
 export async function verifyPin(pin: string, stored: string) {
+	if (!/^[a-f0-9]{32}:[a-f0-9]{128}$/i.test(stored)) return false;
 	const [salt = "", hash = ""] = stored.split(":");
 	const key = await derive(pin, salt, 64);
 	const expected = Buffer.from(hash, "hex");
-	return expected.length === key.length && timingSafeEqual(key, expected);
+	return timingSafeEqual(key, expected);
 }

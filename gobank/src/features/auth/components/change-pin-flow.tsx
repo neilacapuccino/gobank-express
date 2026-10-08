@@ -16,7 +16,7 @@ type Step = "current" | "next" | "confirm";
 const COPY: Record<Step, { title: string; subtitle: string }> = {
 	current: {
 		title: "Enter your current PIN",
-		subtitle: "We check it before you set a new one.",
+		subtitle: "The PIN you use to sign in.",
 	},
 	next: {
 		title: "Choose a new PIN",
@@ -37,12 +37,10 @@ export function ChangePinFlow() {
 
 	const restart = (message: string | null, from: Step) => {
 		setProblem(message);
-		setTimeout(() => {
-			setPins((kept) =>
-				from === "current" ? EMPTY : { ...kept, next: "", confirm: "" },
-			);
-			setStep(from);
-		}, 420);
+		setPins((kept) =>
+			from === "current" ? EMPTY : { ...kept, next: "", confirm: "" },
+		);
+		setStep(from);
 	};
 
 	const change = api.auth.changePin.useMutation({
@@ -51,6 +49,7 @@ export function ChangePinFlow() {
 
 	const enter = (value: string) => {
 		if (change.isPending) return;
+		if (change.isError) change.reset();
 		const entered = { ...pins, [step]: value };
 		setProblem(null);
 		setPins(entered);

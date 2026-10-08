@@ -6,6 +6,7 @@ import {
 	profileIsValid,
 } from "~/features/account/components/profile-fields";
 import { Button } from "~/shared/ui/button";
+import { AuthHeading } from "./auth-heading";
 
 type StepDetailsProps = {
 	fullName: string;
@@ -25,14 +26,10 @@ export function StepDetails({
 	const blocked = !profileIsValid({ fullName, mobile });
 	return (
 		<div className="flex flex-1 flex-col">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-ink text-[24px] leading-tight font-semibold tracking-tight">
-					Your details
-				</h1>
-				<p className="text-ink-soft text-[14.5px] leading-relaxed">
-					Add your full name. Mobile number and Gmail are optional.
-				</p>
-			</div>
+			<AuthHeading
+				title="Your details"
+				subtitle="Full name is required. Mobile number and Gmail are optional."
+			/>
 			<div className="mt-8 flex flex-col gap-5">
 				<ProfileFields value={{ fullName, mobile }} onChange={onChange} />
 				<GmailLink />

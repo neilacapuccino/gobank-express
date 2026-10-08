@@ -1,15 +1,15 @@
-import { BITCOIN_FEE_CENTS, MAX_CENTS, SATOSHIS } from "./bitcoin.types";
+import { BITCOIN_FEE_CENTAVOS, MAX_CENTAVOS, SATOSHIS } from "./bitcoin.types";
 
 export type TradingBalances = {
-	cashCents: number;
+	cashCentavos: number;
 	satoshis: bigint;
-	costBasisCents: number;
-	realizedCents: number;
+	costBasisCentavos: number;
+	realizedCentavos: number;
 };
 export type BitcoinTrade =
-	{ side: "buy"; cashCents: number } | { side: "sell"; satoshis: bigint };
+	{ side: "buy"; cashCentavos: number } | { side: "sell"; satoshis: bigint };
 
-type Holdings = Omit<TradingBalances, "cashCents">;
+type Holdings = Omit<TradingBalances, "cashCentavos">;
 type SettledTrade = { side: string; satoshis: bigint; phpCentavos: number };
 
 function applyTrade(holdings: Holdings, trade: SettledTrade): Holdings {
@@ -28,13 +28,14 @@ function applyTrade(holdings: Holdings, trade: SettledTrade): Holdings {
 	const basis = buy
 		? -trade.phpCentavos
 		: Number(
-				(BigInt(holdings.costBasisCents) * trade.satoshis) / holdings.satoshis,
+				(BigInt(holdings.costBasisCentavos) * trade.satoshis) /
+					holdings.satoshis,
 			);
 	return {
 		satoshis: holdings.satoshis + (buy ? trade.satoshis : -trade.satoshis),
-		costBasisCents: holdings.costBasisCents - basis,
-		realizedCents:
-			holdings.realizedCents + (buy ? 0 : trade.phpCentavos - basis),
+		costBasisCentavos: holdings.costBasisCentavos - basis,
+		realizedCentavos:
+			holdings.realizedCentavos + (buy ? 0 : trade.phpCentavos - basis),
 	};
 }
 
@@ -42,78 +43,84 @@ function applyTrade(holdings: Holdings, trade: SettledTrade): Holdings {
 export function summarizeTrades(trades: readonly SettledTrade[]): Holdings {
 	return trades.reduce(applyTrade, {
 		satoshis: 0n,
-		costBasisCents: 0,
-		realizedCents: 0,
+		costBasisCentavos: 0,
+		realizedCentavos: 0,
 	});
 }
 
-// Integer cents and satoshis avoid floating-point balance drift.
+// Integer centavos and satoshis avoid floating-point balance drift.
 export function calculateTrade(
 	account: TradingBalances,
 	trade: BitcoinTrade,
-	priceCents: number,
+	priceCentavos: number,
 ) {
 	if (
-		!Number.isSafeInteger(priceCents) ||
-		priceCents <= 0 ||
-		priceCents > MAX_CENTS
+		!Number.isSafeInteger(priceCentavos) ||
+		priceCentavos <= 0 ||
+		priceCentavos > MAX_CENTAVOS
 	)
 		throw new Error("Price is unavailable. Try again.");
-	const price = BigInt(priceCents);
+	const price = BigInt(priceCentavos);
 	let satoshis: bigint;
-	let tradeCents: number;
+	let tradeCentavos: number;
 	if (trade.side === "buy") {
 		if (
-			!Number.isSafeInteger(trade.cashCents) ||
-			trade.cashCents < 100 ||
-			trade.cashCents > MAX_CENTS
+			!Number.isSafeInteger(trade.cashCentavos) ||
+			trade.cashCentavos < 100 ||
+			trade.cashCentavos > MAX_CENTAVOS
 		)
 			throw new Error("Enter at least ₱1.00.");
-		satoshis = (BigInt(trade.cashCents) * SATOSHIS) / price;
+		satoshis = (BigInt(trade.cashCentavos) * SATOSHIS) / price;
 		if (satoshis === 0n)
 			throw new Error("This amount is too small to buy Bitcoin.");
 		// Round purchase costs up and sale proceeds down, preventing rounding profits.
-		tradeCents = Number((satoshis * price + SATOSHIS - 1n) / SATOSHIS);
+		tradeCentavos = Number((satoshis * price + SATOSHIS - 1n) / SATOSHIS);
 	} else {
 		satoshis = trade.satoshis;
 		if (satoshis <= 0n)
 			throw new Error("Enter a Bitcoin amount greater than zero.");
 		if (satoshis > account.satoshis)
 			throw new Error("Not enough Bitcoin to sell.");
-		tradeCents = Number((satoshis * price) / SATOSHIS);
-		if (tradeCents === 0)
+		tradeCentavos = Number((satoshis * price) / SATOSHIS);
+		if (tradeCentavos === 0)
 			throw new Error("This amount is worth less than ₱0.01.");
 	}
-	const cashCents =
-		tradeCents +
-		(trade.side === "buy" ? BITCOIN_FEE_CENTS : -BITCOIN_FEE_CENTS);
-	if (trade.side === "buy" && cashCents > account.cashCents)
+	const cashCentavos =
+		tradeCentavos +
+		(trade.side === "buy" ? BITCOIN_FEE_CENTAVOS : -BITCOIN_FEE_CENTAVOS);
+	if (trade.side === "buy" && cashCentavos > account.cashCentavos)
 		throw new Error("Not enough PHP in your account.");
-	if (cashCents <= 0)
+	if (cashCentavos <= 0)
 		throw new Error("Sale proceeds must exceed the ₱10.00 fee.");
 	const holdings = applyTrade(account, {
 		side: trade.side,
 		satoshis,
-		phpCentavos: cashCents,
+		phpCentavos: cashCentavos,
 	});
-	const realizedCents = holdings.realizedCents - account.realizedCents;
+	const realizedCentavos = holdings.realizedCentavos - account.realizedCentavos;
 	const next = {
-		cashCents:
-			account.cashCents + (trade.side === "buy" ? -cashCents : cashCents),
+		cashCentavos:
+			account.cashCentavos +
+			(trade.side === "buy" ? -cashCentavos : cashCentavos),
 		...holdings,
 	};
 	if (
-		[next.cashCents, next.costBasisCents, next.realizedCents, cashCents].some(
-			(value) => !Number.isSafeInteger(value) || Math.abs(value) > MAX_CENTS,
+		[
+			next.cashCentavos,
+			next.costBasisCentavos,
+			next.realizedCentavos,
+			cashCentavos,
+		].some(
+			(value) => !Number.isSafeInteger(value) || Math.abs(value) > MAX_CENTAVOS,
 		)
 	)
 		throw new Error("This trade exceeds the account limit.");
 	return {
 		next,
 		satoshis,
-		tradeCents,
-		cashCents,
-		feeCents: BITCOIN_FEE_CENTS,
-		realizedCents,
+		tradeCentavos,
+		cashCentavos,
+		feeCentavos: BITCOIN_FEE_CENTAVOS,
+		realizedCentavos,
 	};
 }

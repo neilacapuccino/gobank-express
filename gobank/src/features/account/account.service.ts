@@ -1,6 +1,15 @@
 import { db } from "~/server/db";
 import { normalizeProfilePhoto } from "./profile-photo.server";
 
+const activityFields = {
+	id: true,
+	reference: true,
+	kind: true,
+	title: true,
+	amount: true,
+	createdAt: true,
+} as const;
+
 export const getOverview = (userId: string) =>
 	db.user.findUniqueOrThrow({
 		where: { id: userId },
@@ -12,7 +21,11 @@ export const getOverview = (userId: string) =>
 			balance: true,
 			points: true,
 			_count: { select: { stashes: true } },
-			transactions: { orderBy: { createdAt: "desc" }, take: 5 },
+			transactions: {
+				select: activityFields,
+				orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+				take: 5,
+			},
 		},
 	});
 
@@ -41,11 +54,14 @@ export async function listActivity(
 ) {
 	const items = await db.transaction.findMany({
 		where: { userId },
+		select: activityFields,
 		orderBy: [{ createdAt: "desc" }, { id: "desc" }],
 		take: limit + 1,
 		...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
 	});
-	const next = items.length > limit ? items.pop()?.id : null;
+	const hasMore = items.length > limit;
+	if (hasMore) items.pop();
+	const next = hasMore ? items.at(-1)?.id : null;
 	return { items, next };
 }
 
@@ -53,9 +69,9 @@ export const getTransaction = (userId: string, reference: string) =>
 	db.transaction.findUniqueOrThrow({
 		where: { reference_userId: { reference, userId } },
 		include: {
-			biller: true,
+			biller: { select: { name: true } },
 			stash: { select: { name: true } },
-			counterparty: { select: { username: true, fullName: true } },
+			counterparty: { select: { username: true } },
 		},
 	});
 

@@ -4,11 +4,12 @@ import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/shared/ui/button";
 import { getBrand } from "~/features/card/card-brands";
-import { cardholderName, type RegistrationDraft } from "../auth.rules";
+import type { RegistrationDraft } from "../auth.rules";
 import { formatMobile } from "~/shared/lib/contact";
 import { cn } from "~/shared/lib/cn";
 import { VirtualCard } from "~/features/card/components/virtual-card";
 import type { RouterOutputs } from "~/trpc/react";
+import { AuthHeading } from "./auth-heading";
 
 type StepReviewProps = {
 	draft: RegistrationDraft;
@@ -45,18 +46,14 @@ export function StepReview({
 	];
 	return (
 		<div className="flex flex-1 flex-col">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-ink text-[24px] leading-tight font-semibold tracking-tight">
-					Review your account
-				</h1>
-				<p className="text-ink-soft text-[14.5px] leading-relaxed">
-					Check your details before confirming.
-				</p>
-			</div>
+			<AuthHeading
+				title="Review your account"
+				subtitle="Check your details before confirming."
+			/>
 			<div className="mt-7">
 				<VirtualCard
 					brandId={draft.brand}
-					holder={cardholderName(draft)}
+					holder={draft.fullName.trim().toUpperCase()}
 					first4={card.number.slice(0, 4)}
 					last4={card.number.slice(-4)}
 					number={showCard ? card.number : undefined}

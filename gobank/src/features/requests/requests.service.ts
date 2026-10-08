@@ -3,8 +3,6 @@ import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { transfer } from "~/server/ledger";
 
-export const MAX_REQUEST_AMOUNT = 2_000_000;
-
 export const listRequests = (userId: string) =>
 	db.moneyRequest.findMany({
 		where: {
@@ -17,40 +15,12 @@ export const listRequests = (userId: string) =>
 		orderBy: { createdAt: "desc" },
 	});
 
-export const listPendingRequestsForNotifications = (userId: string) =>
-	db.moneyRequest.findMany({
-		where: {
-			payerId: userId,
-			status: "pending",
-		},
-		include: {
-			requester: {
-				select: PARTY,
-			},
-		},
-		orderBy: {
-			createdAt: "desc",
-		},
-	});
-
 export async function requestMoney(
 	userId: string,
 	from: string,
 	amount: number,
 	note: string | null,
 ) {
-	if (!Number.isInteger(amount)) {
-		fail("BAD_REQUEST", "Request amount must be a whole centavo value.");
-	}
-
-	if (amount <= 0) {
-		fail("BAD_REQUEST", "Request amount must be greater than ₱0.00.");
-	}
-
-	if (amount > MAX_REQUEST_AMOUNT) {
-		fail("BAD_REQUEST", "You can request a maximum of ₱20,000.00.");
-	}
-
 	const payer = await findRecipient(from, userId);
 
 	return db.moneyRequest.create({
@@ -66,39 +36,21 @@ export async function requestMoney(
 export const respondToRequest = (userId: string, id: string, accept: boolean) =>
 	db.$transaction(
 		async (tx) => {
-			const request = await tx.moneyRequest.findFirst({
-				where: {
-					id,
-					payerId: userId,
-					status: "pending",
-				},
+			// Claim the pending request before moving money; competing actions fail.
+			const claimed = await tx.moneyRequest.updateMany({
+				where: { id, payerId: userId, status: "pending" },
+				data: { status: accept ? "paid" : "declined" },
+			});
+			if (claimed.count !== 1) fail("NOT_FOUND", MESSAGES.requestClosed);
+			if (!accept) return null;
+
+			const request = await tx.moneyRequest.findUniqueOrThrow({
+				where: { id },
 				include: {
-					requester: {
-						select: PARTY,
-					},
-					payer: {
-						select: PARTY,
-					},
+					requester: { select: { id: true, username: true } },
+					payer: { select: { id: true, username: true } },
 				},
 			});
-
-			if (!request) {
-				fail("NOT_FOUND", MESSAGES.requestClosed);
-			}
-
-			if (!accept) {
-				await tx.moneyRequest.update({
-					where: {
-						id: request.id,
-					},
-					data: {
-						status: "declined",
-					},
-				});
-
-				return null;
-			}
-
 			const sent = await transfer(
 				tx,
 				request.payer,
@@ -108,13 +60,8 @@ export const respondToRequest = (userId: string, id: string, accept: boolean) =>
 			);
 
 			await tx.moneyRequest.update({
-				where: {
-					id: request.id,
-				},
-				data: {
-					status: "paid",
-					reference: sent.reference,
-				},
+				where: { id },
+				data: { reference: sent.reference },
 			});
 
 			return sent;
@@ -125,14 +72,10 @@ export const respondToRequest = (userId: string, id: string, accept: boolean) =>
 		},
 	);
 
-export const cancelRequest = (userId: string, id: string) =>
-	db.moneyRequest.update({
-		where: {
-			id,
-			requesterId: userId,
-			status: "pending",
-		},
-		data: {
-			status: "cancelled",
-		},
+export async function cancelRequest(userId: string, id: string) {
+	const cancelled = await db.moneyRequest.updateMany({
+		where: { id, requesterId: userId, status: "pending" },
+		data: { status: "cancelled" },
 	});
+	if (cancelled.count !== 1) fail("NOT_FOUND", MESSAGES.requestClosed);
+}

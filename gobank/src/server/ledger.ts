@@ -1,8 +1,12 @@
-import { pointsEarned } from "~/shared/lib/money";
+import {
+	MAX_BALANCE_CENTAVOS,
+	MAX_REWARD_POINTS,
+	pointsEarned,
+} from "~/shared/lib/money";
 import { compoundInterest } from "~/shared/lib/savings-interest";
 import { newReference } from "~/server/codes";
 import { asDatabaseError, fail, MESSAGES } from "~/server/errors";
-import type { Prisma, TransactionKind } from "../../generated/prisma";
+import type { Prisma, Stash, TransactionKind } from "../../generated/prisma";
 
 type Tx = Prisma.TransactionClient;
 
@@ -28,10 +32,16 @@ const startOfManilaDay = (now: Date) =>
 		`${now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" })}T00:00:00+08:00`,
 	);
 
-const guard = <T>(query: Promise<T>, message: string) =>
-	query.catch((error: unknown) => {
+const guard = <T>(
+	query: Promise<T>,
+	message: string | (() => Promise<string>),
+) =>
+	query.catch(async (error: unknown) => {
 		if (asDatabaseError(error)?.code === "P2025") {
-			return fail("BAD_REQUEST", message);
+			return fail(
+				"BAD_REQUEST",
+				typeof message === "string" ? message : await message(),
+			);
 		}
 		throw error;
 	});
@@ -44,15 +54,30 @@ export async function post(
 		tx.user.update({
 			where: {
 				id: userId,
-				balance: { gte: -amount },
-				points: { gte: -points },
+				balance: {
+					gte: Math.max(0, -amount),
+					lte: MAX_BALANCE_CENTAVOS - Math.max(0, amount),
+				},
+				points: {
+					gte: Math.max(0, -points),
+					lte: MAX_REWARD_POINTS - Math.max(0, points),
+				},
 			},
 			data: {
 				balance: { increment: amount },
 				points: { increment: points },
 			},
+			select: { balance: true },
 		}),
-		amount < 0 ? MESSAGES.insufficientBalance : MESSAGES.notEnoughPoints,
+		async () => {
+			const current = await tx.user.findUniqueOrThrow({
+				where: { id: userId },
+				select: { balance: true, points: true },
+			});
+			if (current.balance + amount < 0) return MESSAGES.insufficientBalance;
+			if (current.points + points < 0) return MESSAGES.notEnoughPoints;
+			return MESSAGES.accountLimit;
+		},
 	);
 
 	return tx.transaction.create({
@@ -68,6 +93,8 @@ export async function post(
 }
 
 export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
+	// Serialize spending before reading today's total.
+	await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${entry.userId} FOR UPDATE`;
 	const card = await tx.card.findUniqueOrThrow({
 		where: { userId: entry.userId },
 	});
@@ -82,10 +109,7 @@ export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
 		},
 		_sum: { amount: true },
 	});
-	if (
-		entry.kind !== "transfer" &&
-		entry.amount - (today._sum.amount ?? 0) > card.dailyLimit
-	) {
+	if (entry.amount - (today._sum.amount ?? 0) > card.dailyLimit) {
 		fail("BAD_REQUEST", MESSAGES.overDailyLimit);
 	}
 
@@ -103,6 +127,12 @@ export async function transfer(
 	amount: number,
 	note?: string | null,
 ) {
+	// Opposite transfers lock both accounts in the same order.
+	await tx.$queryRaw`
+		SELECT "id" FROM "User"
+		WHERE "id" IN (${from.id}, ${to.id})
+		ORDER BY "id" FOR UPDATE
+	`;
 	const reference = newReference();
 	const details = note ? { note } : undefined;
 
@@ -150,34 +180,35 @@ export async function moveStash(
 	});
 }
 
-export async function settleStashInterest(tx: Tx, userId: string, id: string) {
-	const stash = await tx.stash.findUniqueOrThrow({ where: { id, userId } });
+export async function settleStashInterest(tx: Tx, stash: Stash) {
 	const result = compoundInterest(stash, new Date());
 	if (result.days === 0) return stash;
+	const data = {
+		balance: result.balance,
+		interestCarry: result.interestCarry,
+		interestUpdatedAt: result.interestUpdatedAt,
+		updatedAt: result.interestUpdatedAt,
+	};
 	const updated = await tx.stash.updateMany({
 		where: {
-			id,
-			userId,
+			id: stash.id,
+			userId: stash.userId,
 			balance: stash.balance,
 			interestUpdatedAt: stash.interestUpdatedAt,
 		},
-		data: {
-			balance: result.balance,
-			interestCarry: result.interestCarry,
-			interestUpdatedAt: result.interestUpdatedAt,
-		},
+		data,
 	});
 	if (updated.count !== 1)
 		fail("CONFLICT", "Your savings changed. Please try again.");
 	if (result.earned > 0) {
 		const user = await tx.user.findUniqueOrThrow({
-			where: { id: userId },
+			where: { id: stash.userId },
 			select: { balance: true },
 		});
 		await tx.transaction.create({
 			data: {
-				userId,
-				stashId: id,
+				userId: stash.userId,
+				stashId: stash.id,
 				reference: newReference(),
 				kind: "interest",
 				title: `Interest in ${stash.name}`,
@@ -193,8 +224,6 @@ export async function settleStashInterest(tx: Tx, userId: string, id: string) {
 	}
 	return {
 		...stash,
-		balance: result.balance,
-		interestCarry: result.interestCarry,
-		interestUpdatedAt: result.interestUpdatedAt,
+		...data,
 	};
 }

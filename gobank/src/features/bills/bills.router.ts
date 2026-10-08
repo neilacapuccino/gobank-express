@@ -13,9 +13,10 @@ export const billsRouter = createTRPCRouter({
 	pay: protectedProcedure
 		.input(
 			z.object({
-				billerId: z.string(),
+				billerId: z.string().min(1),
 				accountNumber: z
 					.string()
+					.trim()
 					.regex(/^\d{4,20}$/, "Check the account number"),
 				amount: centavos,
 			}),

@@ -1,0 +1,1 @@
+export const MAX_REQUEST_CENTAVOS = 2_000_000;

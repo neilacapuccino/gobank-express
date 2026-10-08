@@ -2,14 +2,14 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import { getBitcoinChart, getBitcoinQuote } from "./bitcoin.market";
 import { getBitcoinPortfolio, tradeBitcoin } from "./bitcoin.service";
-import { BITCOIN_RANGES, MAX_CENTS } from "./bitcoin.types";
+import { BITCOIN_RANGES, MAX_CENTAVOS } from "./bitcoin.types";
 
 const requestId = z.string().uuid();
 const trade = z.discriminatedUnion("side", [
 	z.object({
 		requestId,
 		side: z.literal("buy"),
-		cashCents: z.number().int().min(100).max(MAX_CENTS),
+		cashCentavos: z.number().int().min(100).max(MAX_CENTAVOS),
 	}),
 	z.object({
 		requestId,

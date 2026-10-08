@@ -1,207 +1,224 @@
 "use client";
 
-import { Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
+import {
+	FormError,
+	MoneyReceipt,
+} from "~/features/transfers/components/money-form-ui";
+import { isPesoInput } from "~/shared/lib/amount-input";
 import { dateTime, digitsOnly, maskDigits, peso } from "~/shared/lib/format";
-import { toCentavos } from "~/shared/lib/money";
-import { cn } from "~/shared/lib/cn";
+import { MAX_TRANSACTION_CENTAVOS, toCentavos } from "~/shared/lib/money";
 import { BackButton } from "~/shared/ui/back-button";
+import { Button } from "~/shared/ui/button";
+import { TextField } from "~/shared/ui/text-field";
+import { TransactionSummary } from "~/shared/ui/transaction-summary";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { CATEGORIES, findCategory, type Category } from "../bill-categories";
 import { BillerCard } from "./biller-card";
 import { CategoryCard } from "./category-card";
-import { PaymentField } from "./payment-field";
-import { PaymentSummary } from "./payment-summary";
-import { ReceiptModal } from "./receipt-modal";
-
-const ACCOUNT_DIGITS = 12;
-const AMOUNT_DIGITS = 6;
 
 export function BillPayment() {
 	const router = useRouter();
+	const utils = api.useUtils();
 	const [categoryId, setCategoryId] = useState<Category | null>(null);
 	const [billerId, setBillerId] = useState<string | null>(null);
 	const [accountNumber, setAccountNumber] = useState("");
 	const [amount, setAmount] = useState("");
-
+	const [reviewing, setReviewing] = useState(false);
 	const catalogue = api.bills.billers.useQuery();
-	const pay = api.bills.pay.useMutation();
-
+	const pay = api.bills.pay.useMutation({
+		onSuccess: () => utils.account.invalidate(),
+	});
 	const category = findCategory(categoryId);
 	const billers =
-		catalogue.data?.filter((biller) => biller.category === categoryId) ?? [];
+		catalogue.data?.filter((item) => item.category === categoryId) ?? [];
 	const biller = billers.find((item) => item.id === billerId);
-	const centavos = toCentavos(Number(amount));
-
-	const canPay =
+	const amountCentavos = toCentavos(Number(amount));
+	const exceedsLimit = amountCentavos > MAX_TRANSACTION_CENTAVOS;
+	const validDetails =
 		Boolean(biller) &&
-		accountNumber.length >= 4 &&
-		centavos > 0 &&
-		!pay.isPending;
-
-	const chooseCategory = (id: Category) => {
-		setCategoryId(id);
-		setBillerId(null);
-	};
-
-	const payNow = () => {
-		if (!canPay || !biller) return;
-		pay.mutate({ billerId: biller.id, accountNumber, amount: centavos });
-	};
+		/^\d{4,20}$/.test(accountNumber) &&
+		amountCentavos > 0 &&
+		!exceedsLimit;
 
 	const done = () => {
 		router.push("/dashboard");
 		router.refresh();
 	};
 
-	return (
-		<div className="flex flex-1 flex-col pb-10">
-			<header className="relative flex h-16 items-center justify-center">
-				<BackButton
-					href="/dashboard"
-					label="Back to dashboard"
-					className="absolute left-0"
-				/>
-				<div className="text-center">
-					<h1 className="text-[16px] font-semibold tracking-tight">
-						Pay Bills
-					</h1>
-					<p className="text-ink-soft mt-0.5 text-[11px]">
-						Pay your bills easily
-					</p>
-				</div>
-			</header>
-
-			<section className="mt-4">
-				<SectionTitle>What do you want to pay?</SectionTitle>
-				<div className="grid grid-cols-4 gap-2">
-					{CATEGORIES.map((item) => (
-						<CategoryCard
-							key={item.id}
-							label={item.label}
-							icon={item.icon}
-							selected={categoryId === item.id}
-							onClick={() => chooseCategory(item.id)}
-						/>
-					))}
-				</div>
-			</section>
-
-			<section className="mt-6">
-				<SectionTitle>Select Biller</SectionTitle>
-				{!categoryId ? (
-					<EmptyState>Select a bill category first</EmptyState>
-				) : catalogue.isPending ? (
-					<EmptyState>Loading billers</EmptyState>
-				) : billers.length === 0 ? (
-					<EmptyState>No billers in this category yet</EmptyState>
-				) : (
-					<div className="space-y-2">
-						{billers.map((item) => (
-							<BillerCard
-								key={item.id}
-								biller={item}
-								icon={category?.icon ?? Zap}
-								selected={billerId === item.id}
-								onClick={() => setBillerId(item.id)}
-							/>
-						))}
-					</div>
-				)}
-			</section>
-
-			<section className="mt-6">
-				<SectionTitle>Payment Details</SectionTitle>
-				<div className="space-y-4">
-					<PaymentField
-						label="Account Number"
-						value={accountNumber}
-						placeholder="Enter your account number"
-						maxLength={ACCOUNT_DIGITS}
-						hint={`4 to ${ACCOUNT_DIGITS} digits.`}
-						onChange={(event) =>
-							setAccountNumber(digitsOnly(event.target.value, ACCOUNT_DIGITS))
-						}
-					/>
-					<PaymentField
-						label="Amount to Pay"
-						value={amount}
-						placeholder="Enter amount"
-						maxLength={AMOUNT_DIGITS}
-						hint={`Maximum of ${AMOUNT_DIGITS} digits.`}
-						prefix="₱"
-						onChange={(event) =>
-							setAmount(digitsOnly(event.target.value, AMOUNT_DIGITS))
-						}
-					/>
-				</div>
-			</section>
-
-			<PaymentSummary
-				category={category?.label}
-				biller={biller?.name}
-				total={peso(centavos)}
-			/>
-
-			{pay.error ? (
-				<p
-					role="alert"
-					className="bg-danger-soft text-danger mt-5 rounded-xl px-4 py-3 text-[12px]"
+	if (pay.data) {
+		return (
+			<MoneyReceipt title="Bill paid" onDone={done}>
+				<TransactionSummary
+					amount={Math.abs(pay.data.amount)}
+					details={[
+						{ label: "Account", value: maskDigits(accountNumber) },
+						{ label: "Reference", value: pay.data.reference },
+						{ label: "Date", value: dateTime(pay.data.createdAt) },
+						{ label: "Points earned", value: `+${pay.data.points}` },
+						{ label: "Balance", value: peso(pay.data.balanceAfter) },
+					]}
 				>
-					{errorMessage(pay.error)}
-				</p>
-			) : null}
+					<p className="text-ink text-[14px] font-medium">{biller?.name}</p>
+				</TransactionSummary>
+			</MoneyReceipt>
+		);
+	}
 
-			<button
-				type="button"
-				disabled={!canPay}
-				onClick={payNow}
-				className={cn(
-					"mt-5 h-12 w-full rounded-xl text-[13px] font-semibold transition-all",
-					canPay
-						? "bg-brand hover:bg-brand-hover text-white shadow-[0_8px_20px_-10px_rgba(5,150,105,0.8)] active:scale-[0.99]"
-						: "bg-surface-sunken text-ink-soft/50 cursor-not-allowed",
-				)}
-			>
-				{pay.isPending
-					? "Processing payment"
-					: canPay
-						? "Pay Now"
-						: "Enter Payment Details"}
-			</button>
-
-			<p className="text-ink-soft/60 mt-3 text-center text-[9.5px]">
-				Please review your payment details before continuing.
-			</p>
-
-			{pay.data ? (
-				<ReceiptModal
-					amount={peso(Math.abs(pay.data.amount))}
-					biller={biller?.name ?? ""}
-					category={category?.label ?? ""}
-					accountNumber={maskDigits(accountNumber)}
-					referenceNumber={pay.data.reference}
-					transactionDate={dateTime(pay.data.createdAt)}
-					points={pay.data.points}
-					balance={peso(pay.data.balanceAfter)}
-					onClose={() => pay.reset()}
-					onDone={done}
-				/>
-			) : null}
-		</div>
-	);
-}
-
-function SectionTitle({ children }: { children: ReactNode }) {
-	return <h2 className="mb-3 text-[13px] font-semibold">{children}</h2>;
-}
-
-function EmptyState({ children }: { children: ReactNode }) {
 	return (
-		<div className="bg-surface-raised flex min-h-[74px] items-center justify-center rounded-2xl px-4">
-			<p className="text-ink-soft text-center text-[11px]">{children}</p>
+		<div className="flex flex-1 flex-col">
+			<header className="relative flex h-14 shrink-0 items-center justify-center">
+				{reviewing ? (
+					<BackButton
+						onClick={() => {
+							pay.reset();
+							setReviewing(false);
+						}}
+						disabled={pay.isPending}
+						className="absolute left-0"
+					/>
+				) : (
+					<BackButton href="/dashboard" className="absolute left-0" />
+				)}
+				<h1 className="text-ink text-[16px] font-semibold">
+					{reviewing ? "Review bill" : "Pay bills"}
+				</h1>
+			</header>
+			{reviewing && biller ? (
+				<div className="flex flex-1 flex-col pt-7">
+					<TransactionSummary
+						amount={amountCentavos}
+						details={[{ label: "Account", value: accountNumber }]}
+					>
+						<p className="text-ink text-[14px] font-medium">{biller.name}</p>
+					</TransactionSummary>
+					<FormError error={pay.error ? errorMessage(pay.error) : null} />
+					<div className="mt-auto pt-8">
+						<Button
+							disabled={pay.isPending}
+							onClick={() => {
+								if (!validDetails || pay.isPending) return;
+								pay.mutate({
+									billerId: biller.id,
+									accountNumber,
+									amount: amountCentavos,
+								});
+							}}
+						>
+							{pay.isPending ? "Paying…" : `Pay ${peso(amountCentavos)}`}
+						</Button>
+					</div>
+				</div>
+			) : (
+				<form
+					className="flex flex-1 flex-col gap-6 pt-7"
+					onSubmit={(event) => {
+						event.preventDefault();
+						if (validDetails) setReviewing(true);
+					}}
+				>
+					<section>
+						<h2 className="text-ink mb-3 text-[14px] font-medium">Category</h2>
+						<div className="grid grid-cols-2 gap-2">
+							{CATEGORIES.map((item) => (
+								<CategoryCard
+									key={item.id}
+									label={item.label}
+									icon={item.icon}
+									selected={categoryId === item.id}
+									onClick={() => {
+										if (categoryId === item.id) return;
+										setCategoryId(item.id);
+										setBillerId(null);
+										setAccountNumber("");
+										setAmount("");
+									}}
+								/>
+							))}
+						</div>
+					</section>
+					{category ? (
+						<section>
+							<h2 className="text-ink mb-3 text-[14px] font-medium">Biller</h2>
+							{catalogue.isLoading ? (
+								<p role="status" className="text-ink-muted text-[13px]">
+									Loading billers…
+								</p>
+							) : catalogue.error ? (
+								<div>
+									<FormError error={errorMessage(catalogue.error)} />
+									<Button
+										type="button"
+										variant="ghost"
+										onClick={() => void catalogue.refetch()}
+									>
+										Retry
+									</Button>
+								</div>
+							) : !billers.length ? (
+								<p className="text-ink-muted text-[13px]">
+									No billers in this category.
+								</p>
+							) : (
+								<div className="space-y-2">
+									{billers.map((item) => (
+										<BillerCard
+											key={item.id}
+											biller={item}
+											icon={category.icon}
+											selected={billerId === item.id}
+											onClick={() => {
+												if (billerId === item.id) return;
+												setBillerId(item.id);
+												setAccountNumber("");
+												setAmount("");
+											}}
+										/>
+									))}
+								</div>
+							)}
+						</section>
+					) : null}
+					{biller ? (
+						<div className="space-y-5">
+							<TextField
+								label="Biller account number"
+								value={accountNumber}
+								inputMode="numeric"
+								placeholder="4–20 digits"
+								maxLength={20}
+								onChange={(event) =>
+									setAccountNumber(digitsOnly(event.target.value, 20))
+								}
+							/>
+							<TextField
+								label="Amount"
+								value={amount}
+								inputMode="decimal"
+								placeholder="0.00"
+								prefix="₱"
+								hint={`Up to ${peso(MAX_TRANSACTION_CENTAVOS)}`}
+								error={
+									exceedsLimit
+										? `Maximum ${peso(MAX_TRANSACTION_CENTAVOS)}`
+										: null
+								}
+								onChange={(event) => {
+									if (isPesoInput(event.target.value))
+										setAmount(event.target.value);
+								}}
+							/>
+						</div>
+					) : null}
+					<div className="mt-auto pt-2">
+						<Button type="submit" disabled={!validDetails}>
+							Review
+						</Button>
+					</div>
+				</form>
+			)}
 		</div>
 	);
 }

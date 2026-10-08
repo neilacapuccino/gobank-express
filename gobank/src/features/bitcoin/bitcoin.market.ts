@@ -3,7 +3,7 @@ import { z } from "zod";
 import { fail } from "~/server/errors";
 import { getPhpRate } from "./bitcoin.fx";
 import {
-	MAX_CENTS,
+	MAX_CENTAVOS,
 	BITCOIN_CANDLES,
 	quoteIsFresh,
 	type BitcoinCandle,
@@ -77,18 +77,18 @@ export async function getBitcoinQuote(): Promise<BitcoinQuote> {
 			]).then(([value, fx, peg]) => {
 				const phpPerQuote = (fx.rate * (peg.bidPrice + peg.askPrice)) / 2;
 				const result = {
-					priceCents: Math.round(value.lastPrice * phpPerQuote * 100),
-					openCents: Math.round(value.openPrice * phpPerQuote * 100),
-					highCents: Math.round(value.highPrice * phpPerQuote * 100),
-					lowCents: Math.round(value.lowPrice * phpPerQuote * 100),
+					priceCentavos: Math.round(value.lastPrice * phpPerQuote * 100),
+					openCentavos: Math.round(value.openPrice * phpPerQuote * 100),
+					highCentavos: Math.round(value.highPrice * phpPerQuote * 100),
+					lowCentavos: Math.round(value.lowPrice * phpPerQuote * 100),
 					volume: value.volume,
 					asOf: value.closeTime,
 					phpPerQuote,
 					rateDate: fx.date,
 				};
 				if (
-					result.priceCents <= 0 ||
-					result.priceCents > MAX_CENTS ||
+					result.priceCentavos <= 0 ||
+					result.priceCentavos > MAX_CENTAVOS ||
 					!quoteIsFresh(result.asOf, Date.now())
 				)
 					fail("BAD_REQUEST", FEED_ERROR);

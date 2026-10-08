@@ -6,7 +6,7 @@ import {
 	type TradingBalances,
 } from "./bitcoin.rules";
 import {
-	BITCOIN_FEE_CENTS,
+	BITCOIN_FEE_CENTAVOS,
 	btc,
 	parseUnits,
 	quoteIsFresh,
@@ -15,10 +15,10 @@ import {
 
 const FUNDED_CASH = 1_000_000;
 const empty = (): TradingBalances => ({
-	cashCents: FUNDED_CASH,
+	cashCentavos: FUNDED_CASH,
 	satoshis: 0n,
-	costBasisCents: 0,
-	realizedCents: 0,
+	costBasisCentavos: 0,
+	realizedCentavos: 0,
 });
 
 void test("trade history reproduces holdings and profit without mutating records", () => {
@@ -33,8 +33,8 @@ void test("trade history reproduces holdings and profit without mutating records
 	]);
 	assert.deepEqual(summarizeTrades(trades), {
 		satoshis: (SATOSHIS * 3n) / 2n,
-		costBasisCents: 22_500_000,
-		realizedCents: 2_500_000,
+		costBasisCentavos: 22_500_000,
+		realizedCentavos: 2_500_000,
 	});
 	const sold = summarizeTrades([
 		...trades,
@@ -42,13 +42,13 @@ void test("trade history reproduces holdings and profit without mutating records
 	]);
 	assert.deepEqual(sold, {
 		satoshis: 0n,
-		costBasisCents: 0,
-		realizedCents: 5_000_000,
+		costBasisCentavos: 0,
+		realizedCentavos: 5_000_000,
 	});
 	assert.deepEqual(summarizeTrades([]), {
 		satoshis: 0n,
-		costBasisCents: 0,
-		realizedCents: 0,
+		costBasisCentavos: 0,
+		realizedCentavos: 0,
 	});
 	assert.throws(() =>
 		summarizeTrades([{ side: "sell", satoshis: 1n, phpCentavos: 100 }]),
@@ -58,40 +58,40 @@ void test("trade history reproduces holdings and profit without mutating records
 void test("fractional buys and full sales preserve balances and clear cost basis", () => {
 	const bought = calculateTrade(
 		empty(),
-		{ side: "buy", cashCents: 10_000 },
+		{ side: "buy", cashCentavos: 10_000 },
 		10_000_000,
 	);
 	assert.equal(bought.satoshis, 100_000n);
-	assert.equal(bought.next.cashCents, 989_000);
-	assert.equal(bought.next.costBasisCents, 11_000);
+	assert.equal(bought.next.cashCentavos, 989_000);
+	assert.equal(bought.next.costBasisCentavos, 11_000);
 	const sold = calculateTrade(
 		bought.next,
 		{ side: "sell", satoshis: bought.satoshis },
 		11_000_000,
 	);
 	assert.deepEqual(sold.next, {
-		cashCents: 999_000,
+		cashCentavos: 999_000,
 		satoshis: 0n,
-		costBasisCents: 0,
-		realizedCents: -1_000,
+		costBasisCentavos: 0,
+		realizedCentavos: -1_000,
 	});
 });
 
 void test("partial sales realize only the sold portion's average cost", () => {
 	const account = {
-		cashCents: 0,
+		cashCentavos: 0,
 		satoshis: SATOSHIS,
-		costBasisCents: 10_000_000,
-		realizedCents: 0,
+		costBasisCentavos: 10_000_000,
+		realizedCentavos: 0,
 	};
 	const sold = calculateTrade(
 		account,
 		{ side: "sell", satoshis: SATOSHIS / 4n },
 		8_000_000,
 	);
-	assert.equal(sold.cashCents, 1_999_000);
-	assert.equal(sold.realizedCents, -501_000);
-	assert.equal(sold.next.costBasisCents, 7_500_000);
+	assert.equal(sold.cashCentavos, 1_999_000);
+	assert.equal(sold.realizedCentavos, -501_000);
+	assert.equal(sold.next.costBasisCentavos, 7_500_000);
 	assert.equal(sold.next.satoshis, (SATOSHIS * 3n) / 4n);
 });
 
@@ -100,7 +100,7 @@ void test("insufficient funds, overselling, invalid amounts and tiny sales are r
 		() =>
 			calculateTrade(
 				empty(),
-				{ side: "buy", cashCents: FUNDED_CASH + 1 },
+				{ side: "buy", cashCentavos: FUNDED_CASH + 1 },
 				10_000_000,
 			),
 		/PHP/,
@@ -110,14 +110,15 @@ void test("insufficient funds, overselling, invalid amounts and tiny sales are r
 		/Bitcoin/,
 	);
 	assert.throws(
-		() => calculateTrade(empty(), { side: "buy", cashCents: 99 }, 10_000_000),
+		() =>
+			calculateTrade(empty(), { side: "buy", cashCentavos: 99 }, 10_000_000),
 		/at least/,
 	);
 	assert.throws(() =>
-		calculateTrade(empty(), { side: "buy", cashCents: 100.5 }, 10_000_000),
+		calculateTrade(empty(), { side: "buy", cashCentavos: 100.5 }, 10_000_000),
 	);
 	assert.throws(() =>
-		calculateTrade(empty(), { side: "buy", cashCents: 100 }, Number.NaN),
+		calculateTrade(empty(), { side: "buy", cashCentavos: 100 }, Number.NaN),
 	);
 	assert.throws(
 		() =>
@@ -135,7 +136,7 @@ void test("round trips at the same price never manufacture cash through rounding
 		const price = 8_000_001 + index * 13_357;
 		const buy = calculateTrade(
 			empty(),
-			{ side: "buy", cashCents: 1_100 + index * 173 },
+			{ side: "buy", cashCentavos: 1_100 + index * 173 },
 			price,
 		);
 		const sell = calculateTrade(
@@ -143,29 +144,31 @@ void test("round trips at the same price never manufacture cash through rounding
 			{ side: "sell", satoshis: buy.satoshis },
 			price,
 		);
-		assert.ok(sell.next.cashCents <= FUNDED_CASH - 2 * BITCOIN_FEE_CENTS);
-		assert.ok(sell.next.cashCents >= FUNDED_CASH - 2 * BITCOIN_FEE_CENTS - 1);
-		assert.equal(sell.next.costBasisCents, 0);
+		assert.ok(sell.next.cashCentavos <= FUNDED_CASH - 2 * BITCOIN_FEE_CENTAVOS);
+		assert.ok(
+			sell.next.cashCentavos >= FUNDED_CASH - 2 * BITCOIN_FEE_CENTAVOS - 1,
+		);
+		assert.equal(sell.next.costBasisCentavos, 0);
 		assert.equal(sell.next.satoshis, 0n);
 	}
 });
 
 void test("fixed fees must fit the buy balance and leave positive sale proceeds", () => {
-	const account = { ...empty(), cashCents: 11_000 };
+	const account = { ...empty(), cashCentavos: 11_000 };
 	const buy = calculateTrade(
 		account,
-		{ side: "buy", cashCents: 10_000 },
+		{ side: "buy", cashCentavos: 10_000 },
 		10_000_000,
 	);
-	assert.equal(buy.tradeCents, 10_000);
-	assert.equal(buy.feeCents, 1_000);
-	assert.equal(buy.cashCents, 11_000);
-	assert.equal(buy.next.cashCents, 0);
+	assert.equal(buy.tradeCentavos, 10_000);
+	assert.equal(buy.feeCentavos, 1_000);
+	assert.equal(buy.cashCentavos, 11_000);
+	assert.equal(buy.next.cashCentavos, 0);
 	assert.throws(
 		() =>
 			calculateTrade(
-				{ ...account, cashCents: 10_999 },
-				{ side: "buy", cashCents: 10_000 },
+				{ ...account, cashCentavos: 10_999 },
+				{ side: "buy", cashCentavos: 10_000 },
 				10_000_000,
 			),
 		/Not enough PHP/,
@@ -180,9 +183,9 @@ void test("fixed fees must fit the buy balance and leave positive sale proceeds"
 		{ side: "sell", satoshis: 10_010n },
 		10_000_000,
 	);
-	assert.equal(sale.tradeCents, 1_001);
-	assert.equal(sale.cashCents, 1);
-	assert.equal(sale.next.cashCents, 1);
+	assert.equal(sale.tradeCentavos, 1_001);
+	assert.equal(sale.cashCentavos, 1);
+	assert.equal(sale.next.cashCentavos, 1);
 });
 
 void test("decimal parsing is exact and rejects unsupported notation and precision", () => {

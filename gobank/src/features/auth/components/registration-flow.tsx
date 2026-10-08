@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useReducer, useState } from "react";
+import { useState } from "react";
 import { StepBar } from "~/shared/ui/step-bar";
 import { EMPTY_DRAFT, type RegistrationDraft } from "../auth.rules";
 import { errorMessage } from "~/trpc/error-message";
@@ -14,16 +14,11 @@ import { StepReview } from "./step-review";
 import type { CardBrandId } from "~/features/card/card-brands";
 
 const TOTAL_STEPS = 4;
-type Action = { type: "patch"; patch: Partial<RegistrationDraft> };
 type CardPreview = RouterOutputs["auth"]["prepareCard"];
-
-function draftReducer(state: RegistrationDraft, action: Action) {
-	return { ...state, ...action.patch };
-}
 
 export function RegistrationFlow() {
 	const router = useRouter();
-	const [draft, dispatch] = useReducer(draftReducer, EMPTY_DRAFT);
+	const [draft, setDraft] = useState<RegistrationDraft>(EMPTY_DRAFT);
 	const [step, setStep] = useState(1);
 	const [card, setCard] = useState<CardPreview | null>(null);
 	const prepare = api.auth.prepareCard.useMutation();
@@ -33,10 +28,13 @@ export function RegistrationFlow() {
 			router.refresh();
 		},
 	});
-	const patch = (next: Partial<RegistrationDraft>) =>
-		dispatch({ type: "patch", patch: next });
+	const patch = (next: Partial<RegistrationDraft>) => {
+		setDraft((current) => ({ ...current, ...next }));
+		register.reset();
+	};
 	const prepareCard = (brand: CardBrandId) => {
 		setCard(null);
+		register.reset();
 		prepare.mutate({ brand }, { onSuccess: setCard });
 	};
 	return (
@@ -125,7 +123,8 @@ export function RegistrationFlow() {
 						<button
 							type="button"
 							onClick={() => prepareCard(draft.brand)}
-							className="text-brand mt-2 min-h-10 text-[13px] font-medium"
+							disabled={prepare.isPending}
+							className="text-brand mt-2 min-h-10 text-[13px] font-medium disabled:opacity-45"
 						>
 							Try again
 						</button>

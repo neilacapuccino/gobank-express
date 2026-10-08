@@ -5,6 +5,7 @@ import { CARD_BRANDS, type CardBrandId } from "~/features/card/card-brands";
 import { cn } from "~/shared/lib/cn";
 import { CardBrandLogo } from "~/features/card/components/card-brand-logo";
 import { VirtualCard } from "~/features/card/components/virtual-card";
+import { AuthHeading } from "./auth-heading";
 
 type StepCardProps = {
 	brand: CardBrandId;
@@ -27,15 +28,10 @@ export function StepCard({
 }: StepCardProps) {
 	return (
 		<div className="flex flex-1 flex-col">
-			<div className="flex flex-col gap-2">
-				<h1 className="text-ink text-[24px] leading-tight font-semibold tracking-tight">
-					Choose your card
-				</h1>
-				<p className="text-ink-soft text-[14.5px] leading-relaxed">
-					Your card details are prepared for review before you open your
-					account.
-				</p>
-			</div>
+			<AuthHeading
+				title="Choose your card"
+				subtitle="Your card details will appear during review."
+			/>
 
 			<div className="mt-7">
 				<VirtualCard brandId={brand} holder={holder} />
