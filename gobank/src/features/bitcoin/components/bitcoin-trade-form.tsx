@@ -29,7 +29,7 @@ export function BitcoinTradeForm({
 	const utils = api.useUtils();
 	const router = useRouter();
 	const [side, setSide] = useState<"buy" | "sell">("buy");
-	const [amount, setAmount] = useState("100");
+	const [amount, setAmount] = useState("");
 	const [attempted, setAttempted] = useState(false);
 	const [review, setReview] = useState(false);
 	const [success, setSuccess] = useState<Order | null>(null);
@@ -39,7 +39,7 @@ export function BitcoinTradeForm({
 			setSuccess(order);
 			setReview(false);
 			request.current = null;
-			setAmount(side === "buy" ? "100" : "");
+			setAmount("");
 			setAttempted(false);
 			void utils.bitcoin.portfolio.invalidate();
 			void utils.account.invalidate();
@@ -113,7 +113,7 @@ export function BitcoinTradeForm({
 						aria-pressed={side === value}
 						onClick={() => {
 							setSide(value);
-							change(value === "buy" ? "100" : "");
+							change("");
 						}}
 						className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg text-[13px] font-semibold ${side === value ? (value === "buy" ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "bg-rose-400/10 text-rose-300") : "text-ink-muted"}`}
 					>
@@ -152,11 +152,12 @@ export function BitcoinTradeForm({
 						type="text"
 						inputMode="decimal"
 						autoComplete="off"
+						placeholder={side === "buy" ? "0.00" : "0.00000000"}
 						value={amount}
 						disabled={!portfolio || mutation.isPending}
 						onChange={(event) => change(event.target.value)}
 						aria-describedby="bitcoin-amount-help"
-						className="min-w-0 flex-1 bg-transparent py-4 text-[25px] font-medium text-white tabular-nums outline-none"
+						className="placeholder:text-ink-faint min-w-0 flex-1 bg-transparent py-4 text-[25px] font-medium text-white tabular-nums outline-none"
 					/>
 					<span className="text-ink-muted text-[12px] font-semibold">
 						{side === "buy" ? "PHP" : "BTC"}

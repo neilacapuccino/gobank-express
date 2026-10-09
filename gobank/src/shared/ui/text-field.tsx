@@ -6,7 +6,7 @@ import { cn } from "~/shared/lib/cn";
 
 type TextFieldProps = Omit<
 	InputHTMLAttributes<HTMLInputElement>,
-	"id" | "placeholder"
+	"id" | "placeholder" | "autoComplete"
 > & {
 	label: string;
 	hint?: string;
@@ -24,6 +24,7 @@ export function TextField({
 	prefix,
 	trailing,
 	className,
+	inputMode,
 	...props
 }: TextFieldProps) {
 	const id = useId();
@@ -58,10 +59,13 @@ export function TextField({
 				) : null}
 				<input
 					id={id}
+					inputMode={inputMode}
+					autoComplete="off"
+					placeholder={inputMode === "decimal" ? "0.00" : undefined}
 					aria-invalid={Boolean(error)}
 					aria-describedby={error || hint ? descriptionId : undefined}
 					className={cn(
-						"text-ink h-13 min-w-0 flex-1 bg-transparent px-3.5 text-[16px] outline-none disabled:opacity-60",
+						"text-ink placeholder:text-ink-faint h-13 min-w-0 flex-1 bg-transparent px-3.5 text-[16px] outline-none disabled:opacity-60",
 						prefix ? "pl-1.5" : null,
 						className,
 					)}

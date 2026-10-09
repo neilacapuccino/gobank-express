@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { ProfileAvatar } from "~/features/account/components/profile-avatar";
 import { isPesoInput } from "~/shared/lib/amount-input";
@@ -74,17 +75,21 @@ export function RecipientPicker({
 	label = "Recipient",
 	value,
 	loading,
+	recipient,
 	error,
 	onChange,
 	onContinue,
+	onRetry,
 	children,
 }: {
 	label?: string;
 	value: string;
 	loading: boolean;
+	recipient: Recipient | null;
 	error: string | null;
 	onChange: (value: string) => void;
 	onContinue: () => void;
+	onRetry: () => void;
 	children?: ReactNode;
 }) {
 	return (
@@ -104,14 +109,13 @@ export function RecipientPicker({
 			<input
 				id="recipient"
 				value={value}
-				disabled={loading}
 				autoComplete="off"
 				autoCapitalize="none"
 				spellCheck={false}
 				aria-invalid={Boolean(error)}
 				aria-describedby="recipient-help"
 				onChange={(event) => onChange(event.target.value)}
-				className="border-line-strong bg-surface-sunken text-ink focus:border-brand h-13 w-full rounded-xl border px-4 text-[16px] outline-none disabled:opacity-60"
+				className="border-line-strong bg-surface-sunken text-ink focus:border-brand h-13 w-full rounded-xl border px-4 text-[16px] outline-none"
 			/>
 			<p
 				id="recipient-help"
@@ -120,9 +124,32 @@ export function RecipientPicker({
 				Username, linked Gmail, account number or mobile.
 			</p>
 			<FormError error={error} />
+			{error ? (
+				<button
+					type="button"
+					onClick={onRetry}
+					className="text-brand mt-2 self-start text-[13px] font-medium"
+				>
+					Try again
+				</button>
+			) : recipient ? (
+				<button
+					type="button"
+					onClick={onContinue}
+					disabled={loading}
+					className="border-line hover:bg-surface-sunken mt-5 flex w-full items-center justify-between gap-3 rounded-2xl border p-4 text-left transition-colors disabled:opacity-60"
+				>
+					<RecipientIdentity recipient={recipient} />
+					<ChevronRight
+						size={18}
+						className="text-ink-muted shrink-0"
+						aria-hidden
+					/>
+				</button>
+			) : null}
 			{children}
 			<div className="mt-auto pt-8">
-				<Button type="submit" disabled={!value.trim() || loading}>
+				<Button type="submit" disabled={!recipient || loading}>
 					{loading ? "Finding recipient…" : "Continue"}
 				</Button>
 			</div>
@@ -175,6 +202,8 @@ export function AmountFields({
 					<input
 						id="amount"
 						inputMode="decimal"
+						autoComplete="off"
+						placeholder="0.00"
 						value={amount}
 						aria-invalid={exceedsLimit}
 						aria-describedby="amount-limit"
@@ -182,7 +211,7 @@ export function AmountFields({
 							if (isPesoInput(event.target.value))
 								onAmountChange(event.target.value);
 						}}
-						className="text-ink h-20 min-w-0 flex-1 bg-transparent px-3 text-[28px] font-medium tabular-nums outline-none"
+						className="text-ink placeholder:text-ink-faint h-20 min-w-0 flex-1 bg-transparent px-3 text-[28px] font-medium tabular-nums outline-none"
 					/>
 				</div>
 				<p
@@ -201,6 +230,7 @@ export function AmountFields({
 				</label>
 				<textarea
 					id="note"
+					autoComplete="off"
 					value={note}
 					maxLength={120}
 					rows={3}

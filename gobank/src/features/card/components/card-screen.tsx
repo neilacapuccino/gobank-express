@@ -8,7 +8,6 @@ import {
 	EyeOff,
 	Lock,
 	LockKeyholeOpen,
-	RotateCw,
 	Smartphone,
 } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
@@ -34,7 +33,7 @@ type CvvState =
 const DETAIL_ACTION =
 	"text-ink-muted enabled:hover:text-ink focus-visible:outline-brand inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-1 text-[12.5px] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-45";
 const ICON_ACTION =
-	"inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#606064] enabled:hover:text-[#111113] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#606064] disabled:opacity-30";
+	"inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/60 enabled:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 disabled:opacity-30";
 
 export function CardScreen() {
 	const card = api.card.get.useQuery();
@@ -134,8 +133,6 @@ function CardControls({ card }: { card: CardOverview }) {
 function CardDetails({ card }: { card: Card }) {
 	const utils = api.useUtils();
 	const [showNumber, setShowNumber] = useState(true);
-	const [face, setFace] = useState<"front" | "back">("front");
-	const [hasFlipped, setHasFlipped] = useState(false);
 	const [cvv, setCvv] = useState<CvvState>({ status: "hidden" });
 	const cvvRequest = useRef(0);
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
@@ -183,90 +180,68 @@ function CardDetails({ card }: { card: Card }) {
 		<section aria-label="Card details" className="mt-4">
 			<div className={styles.cardStage}>
 				<div className={styles.switchCard}>
-					<div
-						key={face}
-						className={hasFlipped ? styles.flipCard : undefined}
-						data-face={face}
-					>
-						<BankCard
-							brand={card.brand}
-							fullName={card.user.fullName}
-							number={card.number}
-							hideNumber={!showNumber}
-							onToggleNumber={() => setShowNumber((visible) => !visible)}
-							expiresAt={card.expiresAt}
-							kind={card.kind}
-							face={face}
-							securityDetails={
-								face === "back" ? (
-									<div
-										aria-label="Card security code"
-										className="relative flex shrink-0 items-center gap-0.5 bg-[#f5f5f1] pr-1 pl-2"
+					<BankCard
+						brand={card.brand}
+						fullName={card.user.fullName}
+						number={card.number}
+						hideNumber={!showNumber}
+						onToggleNumber={() => setShowNumber((visible) => !visible)}
+						expiresAt={card.expiresAt}
+						kind={card.kind}
+						securityDetails={
+							<div
+								aria-label="Card security code"
+								className="flex shrink-0 flex-col"
+							>
+								<span className="text-[9px] tracking-[0.18em] text-white/55">
+									CVV
+								</span>
+								<div className="flex h-7 items-center gap-0.5">
+									<span className="min-w-6 text-[13px] font-medium text-white tabular-nums">
+										{cvv.status === "visible" ? cvv.cvv : "•••"}
+									</span>
+									<button
+										type="button"
+										aria-label={
+											copyStatus === "copied" ? "CVV copied" : "Copy CVV"
+										}
+										disabled={cvv.status !== "visible"}
+										onClick={copyCvv}
+										className={ICON_ACTION}
 									>
-										<span className="absolute -top-4 left-2 text-[9px] tracking-[0.12em] text-white/55">
-											CVV
-										</span>
-										<span className="min-w-6 text-[13px] font-medium text-[#111113] tabular-nums">
-											{cvv.status === "visible" ? cvv.cvv : "•••"}
-										</span>
-										<button
-											type="button"
-											aria-label={
-												copyStatus === "copied" ? "CVV copied" : "Copy CVV"
-											}
-											disabled={cvv.status !== "visible"}
-											onClick={copyCvv}
-											className={ICON_ACTION}
-										>
-											{copyStatus === "copied" ? (
-												<Check size={14} aria-hidden />
-											) : (
-												<Copy size={14} aria-hidden />
-											)}
-										</button>
-										<button
-											type="button"
-											aria-label={
-												cvv.status === "visible" ? "Hide CVV" : "Show CVV"
-											}
-											aria-pressed={cvv.status === "visible"}
-											disabled={cvv.status === "pending"}
-											onClick={revealCvv}
-											className={ICON_ACTION}
-										>
-											{cvv.status === "pending" ? (
-												<span
-													className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
-													aria-hidden
-												/>
-											) : cvv.status === "visible" ? (
-												<EyeOff size={15} aria-hidden />
-											) : (
-												<Eye size={15} aria-hidden />
-											)}
-										</button>
-									</div>
-								) : undefined
-							}
-						/>
-					</div>
+										{copyStatus === "copied" ? (
+											<Check size={14} aria-hidden />
+										) : (
+											<Copy size={14} aria-hidden />
+										)}
+									</button>
+									<button
+										type="button"
+										aria-label={
+											cvv.status === "visible" ? "Hide CVV" : "Show CVV"
+										}
+										aria-pressed={cvv.status === "visible"}
+										disabled={cvv.status === "pending"}
+										onClick={revealCvv}
+										className={ICON_ACTION}
+									>
+										{cvv.status === "pending" ? (
+											<span
+												className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+												aria-hidden
+											/>
+										) : cvv.status === "visible" ? (
+											<EyeOff size={15} aria-hidden />
+										) : (
+											<Eye size={15} aria-hidden />
+										)}
+									</button>
+								</div>
+							</div>
+						}
+					/>
 				</div>
 			</div>
-			<button
-				type="button"
-				aria-pressed={face === "back"}
-				className={cn(DETAIL_ACTION, "mx-auto mt-2 flex")}
-				onClick={() => {
-					cvvRequest.current += 1;
-					setCvv({ status: "hidden" });
-					setCopyStatus("idle");
-					setHasFlipped(true);
-					setFace((current) => (current === "front" ? "back" : "front"));
-				}}
-			>
-				<RotateCw size={15} aria-hidden />
-				{face === "front" ? "Show back" : "Show front"}
-			</button>
 			<span role="status" className="sr-only">
 				{copyStatus === "copied" ? "CVV copied." : ""}
 			</span>

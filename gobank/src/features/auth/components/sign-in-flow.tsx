@@ -83,7 +83,6 @@ export function SignInFlow() {
 							autoFocus
 							autoCapitalize="none"
 							autoCorrect="off"
-							autoComplete="username"
 							spellCheck={false}
 							maxLength={USERNAME_MAX}
 							value={username}

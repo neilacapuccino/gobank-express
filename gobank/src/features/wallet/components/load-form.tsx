@@ -115,7 +115,6 @@ export function LoadForm() {
 						label="Mobile number"
 						type="tel"
 						inputMode="tel"
-						autoComplete="tel-national"
 						value={mobile}
 						onChange={(event) =>
 							setMobile(digitsOnly(normalizeMobile(event.target.value), 11))

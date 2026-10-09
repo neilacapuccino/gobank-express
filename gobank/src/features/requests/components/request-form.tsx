@@ -71,9 +71,11 @@ export function RequestForm() {
 					label="Request from"
 					value={search.value}
 					loading={search.loading}
+					recipient={search.match}
 					error={search.error}
 					onChange={search.change}
-					onContinue={() => void search.find()}
+					onContinue={search.find}
+					onRetry={search.retry}
 				/>
 			) : step === "amount" && search.recipient ? (
 				<AmountFields

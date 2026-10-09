@@ -78,22 +78,42 @@ export function TransferForm() {
 				<RecipientPicker
 					value={search.value}
 					loading={search.loading}
+					recipient={search.match}
 					error={search.error}
 					onChange={search.change}
-					onContinue={() => void search.find()}
+					onContinue={search.find}
+					onRetry={search.retry}
 				>
-					{recent.data?.length ? (
-						<section className="mt-7">
-							<h2 className="text-ink-muted mb-3 text-[13px] font-medium">
-								Recent recipients
-							</h2>
+					<section className="mt-7">
+						<h2 className="text-ink-muted mb-3 text-[13px] font-medium">
+							Recent recipients
+						</h2>
+						{recent.isPending ? (
+							<p role="status" className="text-ink-muted text-[13px]">
+								Loading recent recipients…
+							</p>
+						) : recent.error ? (
+							<div className="text-[13px]">
+								<p role="alert" className="text-danger">
+									Could not load recent recipients.
+								</p>
+								<button
+									type="button"
+									disabled={recent.isFetching}
+									onClick={() => void recent.refetch()}
+									className="text-brand mt-2 font-medium disabled:opacity-60"
+								>
+									{recent.isFetching ? "Loading…" : "Try again"}
+								</button>
+							</div>
+						) : recent.data?.length ? (
 							<ul className="border-line divide-line divide-y rounded-2xl border">
 								{recent.data.map((recipient) => (
 									<li key={recipient.id}>
 										<button
 											type="button"
 											disabled={search.loading}
-											onClick={() => void search.find(`@${recipient.username}`)}
+											onClick={() => search.select(recipient)}
 											className="hover:bg-surface-sunken flex w-full items-center justify-between gap-3 rounded-xl p-3 text-left transition-colors disabled:opacity-60"
 										>
 											<RecipientIdentity recipient={recipient} />
@@ -106,8 +126,12 @@ export function TransferForm() {
 									</li>
 								))}
 							</ul>
-						</section>
-					) : null}
+						) : (
+							<p className="text-ink-muted text-[13px]">
+								No recent recipients yet.
+							</p>
+						)}
+					</section>
 				</RecipientPicker>
 			) : step === "amount" && search.recipient ? (
 				<AmountFields

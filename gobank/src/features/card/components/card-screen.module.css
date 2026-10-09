@@ -6,33 +6,6 @@
   animation: switch-card 280ms ease-out;
 }
 
-.flipCard {
-  animation: show-front 280ms ease-out;
-  backface-visibility: hidden;
-}
-
-.flipCard[data-face="back"] {
-  animation-name: show-back;
-}
-
-@keyframes show-front {
-  from {
-    transform: rotateY(-90deg);
-  }
-  to {
-    transform: rotateY(0);
-  }
-}
-
-@keyframes show-back {
-  from {
-    transform: rotateY(90deg);
-  }
-  to {
-    transform: rotateY(0);
-  }
-}
-
 @keyframes switch-card {
   from {
     opacity: 0.45;
@@ -45,8 +18,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .switchCard,
-  .flipCard {
+  .switchCard {
     animation: none;
   }
 }

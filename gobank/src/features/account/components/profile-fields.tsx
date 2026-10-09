@@ -19,7 +19,6 @@ export function ProfileFields({ value, onChange }: ProfileFieldsProps) {
 				required
 				minLength={2}
 				maxLength={80}
-				autoComplete="name"
 				value={value.fullName}
 				onChange={(event) => onChange({ fullName: event.target.value })}
 				hint="Printed on your card."
@@ -29,7 +28,6 @@ export function ProfileFields({ value, onChange }: ProfileFieldsProps) {
 				optional
 				type="tel"
 				inputMode="numeric"
-				autoComplete="tel"
 				value={value.mobile}
 				onChange={(event) => onChange({ mobile: event.target.value })}
 				error={validateMobile(value.mobile)}

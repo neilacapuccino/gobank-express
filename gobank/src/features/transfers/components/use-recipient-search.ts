@@ -1,43 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 
 export type Recipient = RouterOutputs["transfers"]["recipient"];
 
 export function useRecipientSearch(onFound: () => void) {
-	const utils = api.useUtils();
 	const [value, setValue] = useState("");
+	const [lookup, setLookup] = useState("");
 	const [recipient, setRecipient] = useState<Recipient | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [loading, setLoading] = useState(false);
+	const latestValue = useRef("");
+
+	useEffect(() => {
+		const timer = setTimeout(() => setLookup(value.trim()), 300);
+		return () => clearTimeout(timer);
+	}, [value]);
+
+	const result = api.transfers.recipient.useQuery(
+		{ to: lookup },
+		{ enabled: Boolean(lookup) && !recipient, retry: false },
+	);
+	const current = Boolean(value.trim()) && lookup === value.trim();
+	const loading =
+		Boolean(value.trim()) && !recipient && (!current || result.isFetching);
+	const match =
+		recipient ?? (current && !result.isError ? (result.data ?? null) : null);
+	const error =
+		current && !loading && !recipient ? errorMessage(result.error) : null;
 
 	const change = (next: string) => {
+		latestValue.current = next;
 		setValue(next);
 		setRecipient(null);
-		setError(null);
 	};
 
-	const find = async (handle = value) => {
-		if (!handle.trim() || loading) return;
+	const select = (found: Recipient) => {
+		const handle = `@${found.username}`;
+		latestValue.current = handle;
 		setValue(handle);
-		setError(null);
-		setLoading(true);
-		try {
-			const found = await utils.transfers.recipient.fetch(
-				{ to: handle.trim() },
-				{ staleTime: 0 },
-			);
-			setRecipient(found);
-			onFound();
-		} catch (cause) {
-			setError(
-				cause instanceof Error ? cause.message : "Could not find recipient.",
-			);
-		} finally {
-			setLoading(false);
-		}
+		setLookup(handle);
+		setRecipient(found);
+		onFound();
 	};
 
-	return { value, recipient, error, loading, change, find };
+	const find = () => {
+		if (loading || !match || latestValue.current.trim() !== lookup) return;
+		select(match);
+	};
+
+	return {
+		value,
+		recipient,
+		match,
+		error,
+		loading,
+		change,
+		find,
+		select,
+		retry: () => void result.refetch(),
+	};
 }
