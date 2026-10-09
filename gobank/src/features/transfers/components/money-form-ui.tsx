@@ -123,15 +123,23 @@ export function RecipientPicker({
 			>
 				Username, linked Gmail, account number or mobile.
 			</p>
-			<FormError error={error} />
 			{error ? (
-				<button
-					type="button"
-					onClick={onRetry}
-					className="text-brand mt-2 self-start text-[13px] font-medium"
+				<p
+					role="alert"
+					className="text-danger mt-3 text-[13px] leading-relaxed"
 				>
-					Try again
-				</button>
+					{error === "No GoBank account matches that"
+						? "No matching account."
+						: error}{" "}
+					<button
+						type="button"
+						onClick={onRetry}
+						disabled={loading}
+						className="text-danger focus-visible:outline-danger rounded-sm font-medium underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+					>
+						Try again
+					</button>
+				</p>
 			) : recipient ? (
 				<button
 					type="button"
