@@ -164,12 +164,7 @@ export function BankCard({
 								: ""}
 						</span>
 					)}
-					<div
-						className={cn(
-							"flex items-end justify-between",
-							securityDetails ? "gap-2" : "gap-4",
-						)}
-					>
+					<div className="flex items-end justify-between gap-4">
 						<div className="min-w-0 flex-1">
 							<p className="text-[9px] tracking-[0.18em] text-white/55 uppercase">
 								Cardholder
