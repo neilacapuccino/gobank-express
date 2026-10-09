@@ -317,7 +317,7 @@ function GoalContent({ stash }: { stash: Stash }) {
 							<div className="flex items-center justify-between gap-3 py-5 text-sm">
 								<dt>Annual growth rate</dt>
 								<dd className="font-semibold text-[#71d5f3]">
-									{(stash.interestRate * 100).toFixed(2)}%
+									{(stash.interestRate * 100).toFixed(2)}% p.a.
 								</dd>
 							</div>
 							<div className="flex items-center justify-between gap-3 py-5 text-sm">
