@@ -1,16 +1,18 @@
-.panel {
-  animation: reveal 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
 .panel::backdrop {
-  background: rgb(10 30 23 / 48%);
-  backdrop-filter: blur(6px);
+  background: var(--color-surface-sunken);
 }
-.tile {
-  animation: arrive 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+.panel[open] {
+  animation: unfold 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.flower {
+.panel[open] .heading {
+  animation: arrive 320ms 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.panel[open] .tile {
+  animation: arrive 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.atomicOrb {
   overflow: visible;
-  filter: drop-shadow(0 0 6px rgb(0 220 229 / 14%));
+  filter: drop-shadow(0 0 6px rgb(72 228 233 / 14%));
   transition: filter 220ms ease;
 }
 .goOrb {
@@ -26,67 +28,64 @@
   transform-origin: 40px 40px;
   animation: orbit 20s linear infinite;
 }
-.closeControl:hover .flower,
-.closeControl:focus-visible .flower {
+.closeControl:hover .atomicOrb,
+.closeControl:focus-visible .atomicOrb {
   filter: drop-shadow(0 0 10px rgb(72 228 233 / 28%));
 }
-.petalsOuter,
-.petalsInner,
-.petalsReveal,
+.orbitsReveal,
+.orbitsSpin,
 .closeCore,
 .morphOrb {
   transform-origin: 40px 40px;
 }
-.petalsOuter {
-  fill: rgb(0 220 229 / 10%);
-  stroke: #48e4e9;
-  stroke-width: 1.4;
+.panel[open] .orbitsReveal {
+  animation: energize 580ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.petalsInner {
-  fill: rgb(155 131 238 / 16%);
-  stroke: #9b83ee;
-  stroke-width: 1.3;
-  transform: rotate(30deg);
-}
-.panel[open] .petalsReveal {
-  animation: bloom 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+.panel[open] .orbitsSpin {
+  animation: orbit 18s 580ms linear infinite;
 }
 .panel[open] .closeCore {
-  animation: bloom 300ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: coreReveal 320ms 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .morphOrb {
   opacity: 0;
 }
 .panel[open] .morphOrb {
-  animation: dissolve 320ms ease-out both;
+  animation: dissolve 240ms ease-out both;
 }
-.panel[open] .petalsOuter {
-  animation: orbit 24s linear infinite;
-}
-.panel[open] .petalsInner {
-  animation: reverseOrbit 18s linear infinite;
-}
-@keyframes reveal {
+@keyframes unfold {
   from {
-    opacity: 0;
-    transform: translateY(18px);
+    clip-path: circle(40px at 50% calc(100% - 64px));
   }
   to {
-    opacity: 1;
-    transform: translateY(0);
+    clip-path: circle(150vmax at 50% calc(100% - 64px));
   }
 }
 @keyframes arrive {
   from {
     opacity: 0;
-    transform: translateY(22px) scale(0.9);
+    transform: translateY(36px) scale(0.94);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: none;
   }
 }
-@keyframes bloom {
+@keyframes energize {
+  from {
+    opacity: 0;
+    transform: rotate(-240deg) scale(0.35);
+  }
+  65% {
+    opacity: 1;
+    transform: rotate(-25deg) scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0) scale(1);
+  }
+}
+@keyframes coreReveal {
   from {
     opacity: 0;
     transform: scale(0.65);
@@ -111,23 +110,15 @@
     transform: scale(0.75);
   }
 }
-@keyframes reverseOrbit {
-  from {
-    transform: rotate(30deg);
-  }
-  to {
-    transform: rotate(-330deg);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .panel,
-  .tile,
+  .panel[open],
+  .panel[open] .heading,
+  .panel[open] .tile,
   .goHalo,
-  .panel[open] .petalsReveal,
+  .panel[open] .orbitsReveal,
+  .panel[open] .orbitsSpin,
   .panel[open] .closeCore,
-  .panel[open] .morphOrb,
-  .panel[open] .petalsOuter,
-  .panel[open] .petalsInner {
+  .panel[open] .morphOrb {
     animation: none;
   }
 }

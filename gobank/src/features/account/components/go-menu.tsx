@@ -150,7 +150,7 @@ export function GoMenu() {
 				className={`${styles.panel} bg-surface-sunken text-ink fixed inset-0 m-auto h-dvh max-h-dvh w-full max-w-[440px] overflow-y-auto border-0 p-0 outline-none`}
 			>
 				<div className="relative isolate flex min-h-full flex-col justify-center px-6 pt-8 pb-28">
-					<header className="mb-6 text-center">
+					<header className={`${styles.heading} mb-6 text-center`}>
 						<h2 className="text-[24px] font-semibold tracking-tight">
 							Quick actions
 						</h2>
@@ -161,7 +161,7 @@ export function GoMenu() {
 								key={href}
 								href={href}
 								onClick={() => dialog.current?.close()}
-								style={{ animationDelay: `${60 + index * 35}ms` }}
+								style={{ animationDelay: `${110 + index * 30}ms` }}
 								className={`${styles.tile} group flex min-h-[88px] items-center gap-3 rounded-[20px] border border-white/[.07] bg-linear-to-br from-[#232327] to-[#17171a] px-3 py-4 shadow-[inset_0_1px_0_#ffffff04] transition-colors hover:border-white/20 hover:from-[#29292f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#48e4e9]`}
 							>
 								<span
@@ -182,35 +182,28 @@ export function GoMenu() {
 						className={`${styles.closeControl} absolute bottom-6 left-1/2 grid h-20 w-20 -translate-x-1/2 place-items-center rounded-full transition-transform duration-200 hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#48e4e9] active:scale-95`}
 					>
 						<svg
-							className={styles.flower}
+							className={styles.atomicOrb}
 							width="80"
 							height="80"
 							viewBox="0 0 80 80"
 							aria-hidden="true"
 						>
-							<g className={styles.petalsReveal}>
-								<g className={styles.petalsOuter}>
-									{Array.from({ length: 6 }, (_, index) => (
-										<ellipse
-											key={index}
-											cx="40"
-											cy="23"
-											rx="10"
-											ry="17"
-											transform={`rotate(${index * 60} 40 40)`}
-										/>
-									))}
-								</g>
-								<g className={styles.petalsInner}>
-									{Array.from({ length: 6 }, (_, index) => (
-										<ellipse
-											key={index}
-											cx="40"
-											cy="26"
-											rx="8"
-											ry="15"
-											transform={`rotate(${index * 60} 40 40)`}
-										/>
+							<g className={styles.orbitsReveal}>
+								<g className={styles.orbitsSpin}>
+									{["#48e4e9", "#9b83ee", "#c4c4cc"].map((color, index) => (
+										<g key={color} transform={`rotate(${index * 60} 40 40)`}>
+											<ellipse
+												cx="40"
+												cy="40"
+												rx="35"
+												ry="14"
+												fill="none"
+												stroke={color}
+												strokeOpacity=".72"
+												strokeWidth="1.3"
+											/>
+											<circle cx="75" cy="40" r="2.5" fill={color} />
+										</g>
 									))}
 								</g>
 							</g>
