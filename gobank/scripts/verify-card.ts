@@ -5,8 +5,8 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { db } from "../src/server/db";
 import { AppError } from "../src/server/errors";
 import { env } from "../src/env";
-import { encryptCvv } from "../src/server/card-cvv";
-import { newCardCredentials } from "../src/server/card-credentials";
+import { encryptCvv } from "../src/features/card/card-cvv.server";
+import { newCardCredentials } from "../src/features/card/card-credentials.server";
 import { createRegisteredAccount } from "../src/features/auth/auth.service";
 import {
 	cardDraftId,
@@ -24,10 +24,10 @@ import {
 } from "../src/features/card/card.service";
 import {
 	cardExpiry,
-	newAccountNumber,
 	newCardNumber,
 	virtualCardBrand,
-} from "../src/server/codes";
+} from "../src/features/card/card-generation.server";
+import { newAccountNumber } from "../src/server/codes";
 
 const suffix = randomUUID().replaceAll("-", "");
 const users: string[] = [];

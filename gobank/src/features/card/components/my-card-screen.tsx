@@ -22,7 +22,7 @@ import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { MAX_DAILY_LIMIT_CENTAVOS } from "../card.rules";
 import { BankCard, type CardKind } from "./bank-card";
-import styles from "./card-screen.module.css";
+import styles from "./my-card-screen.module.css";
 
 type CardOverview = RouterOutputs["card"]["get"];
 type Card = CardOverview["physical"];
@@ -36,7 +36,7 @@ const DETAIL_ACTION =
 const ICON_ACTION =
 	"inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-white/60 enabled:hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 disabled:opacity-30";
 
-export function CardScreen() {
+export function MyCardScreen() {
 	const card = api.card.get.useQuery();
 	const account = api.account.overview.useQuery();
 

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import test from "node:test";
-import { decryptCvv, encryptCvv } from "~/server/card-cvv";
+import { decryptCvv, encryptCvv } from "./card-cvv.server";
 import { AppError } from "~/server/errors";
-import { newCardNumber, virtualCardBrand } from "~/server/codes";
+import { newCardNumber, virtualCardBrand } from "./card-generation.server";
 import { cardBrand } from "~/features/auth/auth.schemas";
 import { CARD_BRANDS } from "./card-brands";
 

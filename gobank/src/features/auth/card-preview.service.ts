@@ -5,7 +5,7 @@ import {
 	isSupportedCardBrand,
 	type CardBrandId,
 } from "~/features/card/card-brands";
-import { newCardCredentials } from "~/server/card-credentials";
+import { newCardCredentials } from "~/features/card/card-credentials.server";
 import { db } from "~/server/db";
 import { fail } from "~/server/errors";
 

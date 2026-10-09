@@ -10,7 +10,7 @@ import {
 import { verifyPin } from "../src/features/auth/pin";
 import { CARD_BRANDS } from "../src/features/card/card-brands";
 import { getCard, revealCvv } from "../src/features/card/card.service";
-import { virtualCardBrand } from "../src/server/codes";
+import { virtualCardBrand } from "../src/features/card/card-generation.server";
 import { getProfile } from "../src/features/account/account.service";
 import { findRecipient } from "../src/features/transfers/transfers.service";
 import {

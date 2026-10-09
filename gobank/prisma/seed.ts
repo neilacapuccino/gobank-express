@@ -1,11 +1,8 @@
 import { PrismaClient, type BillerCategory } from "../generated/prisma";
 import { hashPin } from "../src/features/auth/pin";
-import { newCardCredentials } from "../src/server/card-credentials";
-import {
-	newAccountNumber,
-	newReference,
-	virtualCardBrand,
-} from "../src/server/codes";
+import { newCardCredentials } from "../src/features/card/card-credentials.server";
+import { virtualCardBrand } from "../src/features/card/card-generation.server";
+import { newAccountNumber, newReference } from "../src/server/codes";
 
 const db = new PrismaClient();
 

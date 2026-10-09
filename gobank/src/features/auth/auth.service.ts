@@ -1,6 +1,7 @@
-import { newAccountNumber, virtualCardBrand } from "~/server/codes";
-import { newCardCredentials } from "~/server/card-credentials";
-import { decryptCvv } from "~/server/card-cvv";
+import { newAccountNumber } from "~/server/codes";
+import { virtualCardBrand } from "~/features/card/card-generation.server";
+import { newCardCredentials } from "~/features/card/card-credentials.server";
+import { decryptCvv } from "~/features/card/card-cvv.server";
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";

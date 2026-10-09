@@ -1,8 +1,8 @@
 import type { CardKind, Prisma } from "../../../generated/prisma";
 import { env } from "~/env";
-import { decryptCvv, newCvvCredentials } from "~/server/card-cvv";
-import { newCardCredentials } from "~/server/card-credentials";
-import { virtualCardBrand } from "~/server/codes";
+import { decryptCvv, newCvvCredentials } from "./card-cvv.server";
+import { newCardCredentials } from "./card-credentials.server";
+import { virtualCardBrand } from "./card-generation.server";
 import { db } from "~/server/db";
 import { fail } from "~/server/errors";
 import { isSupportedCardBrand, type CardBrandId } from "./card-brands";

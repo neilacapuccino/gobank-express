@@ -6,7 +6,7 @@ import {
 	randomInt,
 } from "node:crypto";
 import { hashPin } from "~/features/auth/pin";
-import { fail } from "./errors";
+import { fail } from "~/server/errors";
 
 const UNAVAILABLE = "Your card security details are temporarily unavailable.";
 
