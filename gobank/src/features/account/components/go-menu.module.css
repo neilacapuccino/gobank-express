@@ -10,9 +10,9 @@
 .panel[open] .tile {
   animation: arrive 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.atomicOrb {
+.flower {
   overflow: visible;
-  filter: drop-shadow(0 0 6px rgb(72 228 233 / 14%));
+  filter: drop-shadow(0 0 6px rgb(0 220 229 / 14%));
   transition: filter 220ms ease;
 }
 .goOrb {
@@ -28,21 +28,36 @@
   transform-origin: 40px 40px;
   animation: orbit 20s linear infinite;
 }
-.closeControl:hover .atomicOrb,
-.closeControl:focus-visible .atomicOrb {
+.closeControl:hover .flower,
+.closeControl:focus-visible .flower {
   filter: drop-shadow(0 0 10px rgb(72 228 233 / 28%));
 }
-.orbitsReveal,
-.orbitsSpin,
+.petalsOuter,
+.petalsInner,
+.petalsReveal,
 .closeCore,
 .morphOrb {
   transform-origin: 40px 40px;
 }
-.panel[open] .orbitsReveal {
+.petalsOuter {
+  fill: rgb(0 220 229 / 10%);
+  stroke: #48e4e9;
+  stroke-width: 1.4;
+}
+.petalsInner {
+  fill: rgb(155 131 238 / 16%);
+  stroke: #9b83ee;
+  stroke-width: 1.3;
+  transform: rotate(30deg);
+}
+.panel[open] .petalsReveal {
   animation: energize 580ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.panel[open] .orbitsSpin {
-  animation: orbit 18s 580ms linear infinite;
+.panel[open] .petalsOuter {
+  animation: orbit 24s linear infinite;
+}
+.panel[open] .petalsInner {
+  animation: reverseOrbit 18s linear infinite;
 }
 .panel[open] .closeCore {
   animation: coreReveal 320ms 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -110,13 +125,22 @@
     transform: scale(0.75);
   }
 }
+@keyframes reverseOrbit {
+  from {
+    transform: rotate(30deg);
+  }
+  to {
+    transform: rotate(-330deg);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .panel[open],
   .panel[open] .heading,
   .panel[open] .tile,
   .goHalo,
-  .panel[open] .orbitsReveal,
-  .panel[open] .orbitsSpin,
+  .panel[open] .petalsReveal,
+  .panel[open] .petalsOuter,
+  .panel[open] .petalsInner,
   .panel[open] .closeCore,
   .panel[open] .morphOrb {
     animation: none;

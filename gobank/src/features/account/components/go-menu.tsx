@@ -182,28 +182,35 @@ export function GoMenu() {
 						className={`${styles.closeControl} absolute bottom-6 left-1/2 grid h-20 w-20 -translate-x-1/2 place-items-center rounded-full transition-transform duration-200 hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#48e4e9] active:scale-95`}
 					>
 						<svg
-							className={styles.atomicOrb}
+							className={styles.flower}
 							width="80"
 							height="80"
 							viewBox="0 0 80 80"
 							aria-hidden="true"
 						>
-							<g className={styles.orbitsReveal}>
-								<g className={styles.orbitsSpin}>
-									{["#48e4e9", "#9b83ee", "#c4c4cc"].map((color, index) => (
-										<g key={color} transform={`rotate(${index * 60} 40 40)`}>
-											<ellipse
-												cx="40"
-												cy="40"
-												rx="35"
-												ry="14"
-												fill="none"
-												stroke={color}
-												strokeOpacity=".72"
-												strokeWidth="1.3"
-											/>
-											<circle cx="75" cy="40" r="2.5" fill={color} />
-										</g>
+							<g className={styles.petalsReveal}>
+								<g className={styles.petalsOuter}>
+									{Array.from({ length: 6 }, (_, index) => (
+										<ellipse
+											key={index}
+											cx="40"
+											cy="23"
+											rx="10"
+											ry="17"
+											transform={`rotate(${index * 60} 40 40)`}
+										/>
+									))}
+								</g>
+								<g className={styles.petalsInner}>
+									{Array.from({ length: 6 }, (_, index) => (
+										<ellipse
+											key={index}
+											cx="40"
+											cy="26"
+											rx="8"
+											ry="15"
+											transform={`rotate(${index * 60} 40 40)`}
+										/>
 									))}
 								</g>
 							</g>
