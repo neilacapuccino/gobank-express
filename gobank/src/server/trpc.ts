@@ -5,9 +5,7 @@ import { env } from "~/env";
 import { AppError, asDatabaseError, MESSAGES } from "~/server/errors";
 import { currentUserId } from "~/server/session";
 
-export const createTRPCContext = async (opts: { headers: Headers }) => opts;
-
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC.create({
 	transformer: superjson,
 	errorFormatter({ shape, error }) {
 		const hidden =
