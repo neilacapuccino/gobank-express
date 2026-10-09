@@ -62,14 +62,7 @@ export function validatePin(pin: string): string | null {
 		return "Avoid repeating the same digit";
 	}
 
-	const digits = pin.split("").map(Number);
-	const ascending = digits.every(
-		(digit, index) => index === 0 || digit === (digits[index - 1] ?? 0) + 1,
-	);
-	const descending = digits.every(
-		(digit, index) => index === 0 || digit === (digits[index - 1] ?? 0) - 1,
-	);
-	if (ascending || descending) {
+	if ("0123456789".includes(pin) || "9876543210".includes(pin)) {
 		return "Avoid sequences like 123456";
 	}
 

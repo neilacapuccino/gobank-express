@@ -49,13 +49,15 @@ export async function getRecentRecipients(userId: string) {
 	const ids = transactions.flatMap((entry) =>
 		entry.counterpartyId ? [entry.counterpartyId] : [],
 	);
+	if (ids.length === 0) return [];
 	const recipients = await db.user.findMany({
 		where: { id: { in: ids } },
 		select: PARTY,
 	});
-	return ids.flatMap((id) =>
-		recipients.filter((recipient) => recipient.id === id),
+	const ordered = ids.map((id) =>
+		recipients.find((recipient) => recipient.id === id),
 	);
+	return ordered.filter((recipient) => recipient !== undefined);
 }
 
 export async function sendMoney(

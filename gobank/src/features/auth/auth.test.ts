@@ -31,14 +31,20 @@ void test("a new PIN requires six digits and rejects predictable patterns", () =
 		"1234567",
 		"12x456",
 		"111111",
+		"012345",
 		"123456",
+		"456789",
+		"987654",
 		"654321",
+		"543210",
 	]) {
 		assert.notEqual(validatePin(value), null);
 		assert.equal(pin.safeParse(value).success, false);
 	}
 	assert.equal(validatePin("024680"), null);
 	assert.equal(pin.safeParse("024680").success, true);
+	assert.equal(validatePin("789012"), null);
+	assert.equal(pin.safeParse("789012").success, true);
 });
 
 void test("an existing six-digit PIN can be verified without applying new-PIN strength rules", () => {

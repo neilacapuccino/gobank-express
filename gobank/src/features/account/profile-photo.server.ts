@@ -16,17 +16,6 @@ export async function normalizeProfilePhoto(value: string | null) {
 	if (bytes.length > MAX_PHOTO_BYTES)
 		fail("BAD_REQUEST", "Photo is too large. Choose a smaller image.");
 	const format = match[1];
-	const headerMatches =
-		format === "jpeg"
-			? bytes.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))
-			: format === "png"
-				? bytes
-						.subarray(0, 8)
-						.equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-				: bytes.toString("ascii", 0, 4) === "RIFF" &&
-					bytes.toString("ascii", 8, 12) === "WEBP";
-	if (!headerMatches)
-		fail("BAD_REQUEST", "Choose a valid PNG, JPG or WebP photo.");
 	try {
 		const image = sharp(bytes, { limitInputPixels: 16_777_216 });
 		const metadata = await image.metadata();
