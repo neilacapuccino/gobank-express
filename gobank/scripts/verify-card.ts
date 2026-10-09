@@ -4,13 +4,19 @@ import { spawnSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { db } from "../src/server/db";
 import { AppError } from "../src/server/errors";
+import { env } from "../src/env";
+import { encryptCvv } from "../src/server/card-cvv";
+import { newCardCredentials } from "../src/server/card-credentials";
 import { createRegisteredAccount } from "../src/features/auth/auth.service";
 import {
 	cardDraftId,
 	createCardPreview,
 } from "../src/features/auth/card-preview.service";
 import { hashPin, verifyPin } from "../src/features/auth/pin";
-import { CARD_BRANDS } from "../src/features/card/card-brands";
+import {
+	CARD_BRANDS,
+	isSupportedCardBrand,
+} from "../src/features/card/card-brands";
 import {
 	getCard,
 	revealCvv,
@@ -58,11 +64,28 @@ const assertPublicCards = (cards: Awaited<ReturnType<typeof getCard>>) => {
 		assert.equal("locked" in card, false);
 		assert.equal("dailyLimit" in card, false);
 		assert.equal(card.hasCvv, true);
+		assert.equal(isSupportedCardBrand(card.brand), true);
 	}
 	assert.equal(cards.physical.kind, "physical");
 	assert.equal(cards.virtual.kind, "virtual");
 	assert.notEqual(cards.physical.number, cards.virtual.number);
-	assert.equal(cards.virtual.brand, virtualCardBrand(cards.physical.brand));
+	assert.notEqual(cards.virtual.brand, cards.physical.brand);
+};
+const assertIssuedNumber = (card: { brand: string; number: string }) => {
+	const network = CARD_BRANDS.find((brand) => brand.id === card.brand);
+	assert.ok(network);
+	assert.match(card.number, /^\d{16}$/);
+	assert.equal(card.number.slice(0, 4), network.numberPrefix);
+	let sum = 0;
+	let double = false;
+	for (let index = card.number.length - 1; index >= 0; index--) {
+		let digit = Number(card.number[index]);
+		if (double) digit *= 2;
+		if (digit > 9) digit -= 9;
+		sum += digit;
+		double = !double;
+	}
+	assert.equal(sum % 10, 0);
 };
 const withCardKey = (key: string, assertion: string) => {
 	const script = `
@@ -116,6 +139,8 @@ try {
 		assert.equal(issued.length, 2);
 		const physical = issued.find((card) => card.kind === "physical")!;
 		const virtual = issued.find((card) => card.kind === "virtual")!;
+		assertIssuedNumber(physical);
+		assertIssuedNumber(virtual);
 		assert.equal(physical.number, preview.number);
 		assert.equal(physical.expiresAt.toISOString(), preview.expiresAt);
 		assert.equal(physical.cvvEncrypted, draft.cvvEncrypted);
@@ -285,6 +310,111 @@ try {
 		(await revealCvv(legacy.id, "virtual")).cvv,
 	);
 
+	// Historical GoBank rows are reissued in place, preserving the supported counterpart.
+	const obsoleteCards = [
+		{
+			userId: users[0]!,
+			kind: "physical",
+			otherBrand: "mastercard",
+			expected: "discover",
+		},
+		{
+			userId: users[3]!,
+			kind: "physical",
+			otherBrand: "discover",
+			expected: "mastercard",
+		},
+		{ userId: users[2]!, kind: "virtual", otherBrand: "jcb", expected: "visa" },
+	] as const;
+	for (const [index, fixture] of obsoleteCards.entries()) {
+		const otherKind = fixture.kind === "physical" ? "virtual" : "physical";
+		const otherKey = { userId: fixture.userId, kind: otherKind } as const;
+		const other = await db.card.findUniqueOrThrow({
+			where: { userId_kind: otherKey },
+		});
+		if (other.brand !== fixture.otherBrand) {
+			const replacement = await newCardCredentials(fixture.otherBrand);
+			await db.card.update({
+				where: { userId_kind: otherKey },
+				data: replacement.card,
+			});
+		}
+		const otherBefore = await db.card.findUniqueOrThrow({
+			where: { userId_kind: otherKey },
+		});
+		const previousCvv = (await revealCvv(fixture.userId, fixture.kind)).cvv;
+		const number = `8007${newCardNumber("discover").slice(4)}`;
+		const obsolete = await db.card.update({
+			where: { userId_kind: { userId: fixture.userId, kind: fixture.kind } },
+			data: {
+				brand: "gobank",
+				number,
+				cvvEncrypted: encryptCvv(previousCvv, number, env.CARD_ENCRYPTION_KEY),
+			},
+		});
+		await db.user.update({
+			where: { id: fixture.userId },
+			data: {
+				balance: 123_450,
+				points: 37,
+				cardLocked: true,
+				cardDailyLimit: 234_500,
+			},
+		});
+		const accountBefore = await db.user.findUniqueOrThrow({
+			where: { id: fixture.userId },
+		});
+		const rowsBefore = await cardRows(fixture.userId);
+		if (index === 0) {
+			assertNoInitializationWithKey(fixture.userId, "", true);
+			assertNoInitializationWithKey(
+				fixture.userId,
+				randomBytes(32).toString("hex"),
+			);
+			assert.deepEqual(await cardRows(fixture.userId), rowsBefore);
+			assert.deepEqual(
+				await db.user.findUniqueOrThrow({ where: { id: fixture.userId } }),
+				accountBefore,
+			);
+		}
+		const repairs = await Promise.all(
+			Array.from({ length: 6 }, () => getCard(fixture.userId)),
+		);
+		for (const cards of repairs) assertPublicCards(cards);
+		assert.ok(
+			repairs.every(
+				(cards) =>
+					cards[fixture.kind].number === repairs[0]![fixture.kind].number,
+			),
+		);
+		const replacement = await db.card.findUniqueOrThrow({
+			where: { userId_kind: { userId: fixture.userId, kind: fixture.kind } },
+		});
+		assert.equal(replacement.id, obsolete.id);
+		assert.equal(replacement.kind, obsolete.kind);
+		assert.equal(
+			replacement.createdAt.toISOString(),
+			obsolete.createdAt.toISOString(),
+		);
+		assert.equal(replacement.brand, fixture.expected);
+		assert.notEqual(replacement.number, obsolete.number);
+		assertIssuedNumber(replacement);
+		const cvv = (await revealCvv(fixture.userId, fixture.kind)).cvv;
+		assert.ok(await verifyPin(cvv, replacement.cvvHash!));
+		assert.notEqual(cvv, (await revealCvv(fixture.userId, otherKind)).cvv);
+		assert.deepEqual(
+			await db.card.findUniqueOrThrow({ where: { userId_kind: otherKey } }),
+			otherBefore,
+		);
+		assert.deepEqual(
+			await db.user.findUniqueOrThrow({ where: { id: fixture.userId } }),
+			accountBefore,
+		);
+		const repairedRows = await cardRows(fixture.userId);
+		await getCard(fixture.userId);
+		assert.deepEqual(await cardRows(fixture.userId), repairedRows);
+	}
+
 	const oldDraft = await reserve("discover");
 	await db.registrationCard.update({
 		where: { id: cardDraftId(oldDraft.token) },
@@ -311,7 +441,7 @@ try {
 	await assert.rejects(getCard(`missing_${suffix}`));
 	await assert.rejects(revealCvv(`missing_${suffix}`, "physical"));
 	console.log(
-		"Passed: two issued networks/PANs/CVVs, exact physical preview, shared policy, encrypted legacy preservation, automatic concurrent upgrades, missing/wrong-key rollback, account isolation and obsolete-draft rejection.",
+		"Passed: four supported networks, distinct valid PANs/CVVs, exact physical preview, shared policy, concurrent legacy reissue with account/counterpart preservation, missing/wrong-key rollback, account isolation and obsolete-draft rejection.",
 	);
 } finally {
 	try {

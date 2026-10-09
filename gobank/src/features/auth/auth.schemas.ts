@@ -1,5 +1,14 @@
 import { z } from "zod";
 import { PIN_LENGTH, validatePin, validateUsername } from "./auth.rules";
+import {
+	isSupportedCardBrand,
+	type CardBrandId,
+} from "~/features/card/card-brands";
+
+export const cardBrand = z.custom<CardBrandId>(
+	isSupportedCardBrand,
+	"Choose a supported card network",
+);
 
 export const pinDigits = z
 	.string()

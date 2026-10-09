@@ -5,6 +5,7 @@ import { newCardCredentials } from "~/server/card-credentials";
 import { virtualCardBrand } from "~/server/codes";
 import { db } from "~/server/db";
 import { fail } from "~/server/errors";
+import { isSupportedCardBrand, type CardBrandId } from "./card-brands";
 
 type CardSettings = {
 	cardLocked?: boolean;
@@ -25,10 +26,17 @@ const CARD_FIELDS = {
 
 type CardRow = Prisma.CardGetPayload<{ select: typeof CARD_FIELDS }>;
 
-const publicCard = ({ cvvEncrypted, ...card }: CardRow) => ({
-	...card,
-	hasCvv: cvvEncrypted !== null,
-});
+const publicCard = ({ cvvEncrypted, ...card }: CardRow) => {
+	if (!isSupportedCardBrand(card.brand))
+		return fail(
+			"BAD_REQUEST",
+			"Reload your card details to update the network.",
+		);
+	return { ...card, brand: card.brand, hasCvv: cvvEncrypted !== null };
+};
+
+const readyCard = (card: CardRow) =>
+	isSupportedCardBrand(card.brand) && card.cvvEncrypted !== null;
 
 const publicCards = (cards: CardRow[]) => {
 	const physical = cards.find((card) => card.kind === "physical");
@@ -53,69 +61,77 @@ async function lockCardAccount(tx: Tx, userId: string) {
 	return account;
 }
 
+async function repairCard(
+	tx: Tx,
+	userId: string,
+	{
+		card,
+		kind,
+		brand,
+		excludedCvv,
+	}: {
+		card: CardRow | undefined;
+		kind: CardKind;
+		brand: CardBrandId;
+		excludedCvv?: string;
+	},
+) {
+	if (!card || !isSupportedCardBrand(card.brand)) {
+		const replacement = await newCardCredentials(brand, excludedCvv);
+		const issued = await tx.card.upsert({
+			where: { userId_kind: { userId, kind } },
+			create: { ...replacement.card, userId, kind },
+			update: replacement.card,
+			select: CARD_FIELDS,
+		});
+		return { card: issued, cvv: replacement.cvv };
+	}
+	if (card.cvvEncrypted !== null) return { card, cvv: storedCvv(card) };
+	const security = await newCvvCredentials(
+		card.number,
+		env.CARD_ENCRYPTION_KEY,
+		excludedCvv,
+	);
+	const issued = await tx.card.update({
+		where: { userId_kind: { userId, kind } },
+		data: { cvvHash: security.cvvHash, cvvEncrypted: security.cvvEncrypted },
+		select: CARD_FIELDS,
+	});
+	return { card: issued, cvv: security.cvv };
+}
+
 async function accountCards(tx: Tx, userId: string) {
-	let cards = await tx.card.findMany({
+	const cards = await tx.card.findMany({
 		where: { userId },
 		select: CARD_FIELDS,
 	});
 	const physical = cards.find((card) => card.kind === "physical");
 	const virtual = cards.find((card) => card.kind === "virtual");
 	if (!physical) return fail("NOT_FOUND", "Your physical card was not found.");
-	if (physical.cvvEncrypted === null || virtual?.cvvEncrypted == null) {
-		// Validate existing credentials before changing a legacy account.
-		const existingVirtualCvv =
-			virtual && virtual.cvvEncrypted !== null ? storedCvv(virtual) : undefined;
-		const physicalSecurity =
-			physical.cvvEncrypted === null
-				? await newCvvCredentials(
-						physical.number,
-						env.CARD_ENCRYPTION_KEY,
-						existingVirtualCvv,
-					)
-				: null;
-		const physicalCvv = physicalSecurity?.cvv ?? storedCvv(physical);
-		const virtualSecurity =
-			virtual?.cvvEncrypted === null
-				? await newCvvCredentials(
-						virtual.number,
-						env.CARD_ENCRYPTION_KEY,
-						physicalCvv,
-					)
-				: null;
-		const newVirtual = !virtual
-			? (
-					await newCardCredentials(
-						virtualCardBrand(physical.brand),
-						physicalCvv,
-					)
-				).card
-			: null;
+	if (virtual && cards.every(readyCard)) return publicCards(cards);
 
-		if (physicalSecurity)
-			await tx.card.updateMany({
-				where: { userId, kind: "physical", cvvEncrypted: null },
-				data: {
-					cvvHash: physicalSecurity.cvvHash,
-					cvvEncrypted: physicalSecurity.cvvEncrypted,
-				},
-			});
-		if (virtualSecurity)
-			await tx.card.updateMany({
-				where: { userId, kind: "virtual", cvvEncrypted: null },
-				data: {
-					cvvHash: virtualSecurity.cvvHash,
-					cvvEncrypted: virtualSecurity.cvvEncrypted,
-				},
-			});
-		if (newVirtual)
-			await tx.card.upsert({
-				where: { userId_kind: { userId, kind: "virtual" } },
-				create: { ...newVirtual, userId, kind: "virtual" },
-				update: {},
-			});
-		cards = await tx.card.findMany({ where: { userId }, select: CARD_FIELDS });
-	}
-	return publicCards(cards);
+	// Verify the configured key before replacing any existing credentials.
+	if (physical.cvvEncrypted !== null) storedCvv(physical);
+	const existingVirtualCvv =
+		virtual && virtual.cvvEncrypted !== null ? storedCvv(virtual) : undefined;
+	const physicalBrand = isSupportedCardBrand(physical.brand)
+		? physical.brand
+		: virtual?.brand === "discover"
+			? "mastercard"
+			: "discover";
+	const repairedPhysical = await repairCard(tx, userId, {
+		card: physical,
+		kind: "physical",
+		brand: physicalBrand,
+		excludedCvv: existingVirtualCvv,
+	});
+	const repairedVirtual = await repairCard(tx, userId, {
+		card: virtual,
+		kind: "virtual",
+		brand: virtualCardBrand(physicalBrand),
+		excludedCvv: repairedPhysical.cvv,
+	});
+	return publicCards([repairedPhysical.card, repairedVirtual.card]);
 }
 
 const TRANSACTION_OPTIONS = { maxWait: 30_000, timeout: 30_000 };
@@ -129,7 +145,7 @@ export async function getCard(userId: string) {
 			cards: { select: CARD_FIELDS },
 		},
 	});
-	if (cards.length === 2 && cards.every((card) => card.cvvEncrypted !== null))
+	if (cards.length === 2 && cards.every(readyCard))
 		return { ...publicCards(cards), ...account };
 	return db.$transaction(async (tx) => {
 		const account = await lockCardAccount(tx, userId);

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { profileFields } from "~/shared/lib/schemas";
-import { pin, pinChange, pinDigits, username } from "./auth.schemas";
+import { cardBrand, pin, pinChange, pinDigits, username } from "./auth.schemas";
 import { USERNAME_MAX, USERNAME_MIN } from "./auth.rules";
 import { endSession } from "~/server/session";
 import {
@@ -8,13 +8,12 @@ import {
 	protectedProcedure,
 	publicProcedure,
 } from "~/server/trpc";
-import { CardBrand } from "../../../generated/prisma";
 import { changePin, isUsernameFree, register, signIn } from "./auth.service";
 import { prepareRegistrationCard } from "./card-preview.service";
 
 export const authRouter = createTRPCRouter({
 	prepareCard: publicProcedure
-		.input(z.object({ brand: z.nativeEnum(CardBrand) }))
+		.input(z.object({ brand: cardBrand }))
 		.mutation(({ input }) => prepareRegistrationCard(input.brand)),
 
 	usernameAvailable: publicProcedure
@@ -29,7 +28,7 @@ export const authRouter = createTRPCRouter({
 			z.object({
 				username,
 				pin,
-				brand: z.nativeEnum(CardBrand),
+				brand: cardBrand,
 				...profileFields,
 			}),
 		)

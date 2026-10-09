@@ -5,7 +5,7 @@ import { env } from "~/env";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { endOtherSessions, startSession } from "~/server/session";
-import type { CardBrand } from "../../../generated/prisma";
+import type { CardBrandId } from "~/features/card/card-brands";
 import {
 	lockExpiry,
 	lockMinutesLeft,
@@ -22,7 +22,7 @@ import {
 type Registration = {
 	username: string;
 	pin: string;
-	brand: CardBrand;
+	brand: CardBrandId;
 	fullName: string;
 	mobile: string | null;
 };

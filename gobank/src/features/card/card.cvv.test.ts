@@ -3,6 +3,9 @@ import { randomBytes } from "node:crypto";
 import test from "node:test";
 import { decryptCvv, encryptCvv } from "~/server/card-cvv";
 import { AppError } from "~/server/errors";
+import { newCardNumber, virtualCardBrand } from "~/server/codes";
+import { cardBrand } from "~/features/auth/auth.schemas";
+import { CARD_BRANDS } from "./card-brands";
 
 const cardNumber = "4242000000000000";
 const newKey = () => randomBytes(32).toString("hex");
@@ -10,6 +13,42 @@ const unavailable = (error: unknown) =>
 	error instanceof AppError &&
 	error.code === "BAD_REQUEST" &&
 	error.message === "Your card security details are temporarily unavailable.";
+
+void test("Only the four supported networks can be issued", () => {
+	assert.deepEqual(
+		CARD_BRANDS.map((brand) => brand.id),
+		["visa", "mastercard", "jcb", "discover"],
+	);
+	for (const brand of CARD_BRANDS) {
+		assert.equal(cardBrand.parse(brand.id), brand.id);
+		assert.notEqual(virtualCardBrand(brand.id), brand.id);
+	}
+	for (const invalid of ["gobank", "amex", "", null, undefined, 1])
+		assert.equal(cardBrand.safeParse(invalid).success, false);
+});
+
+void test("Issued PANs have the network prefix and a valid Luhn checksum", () => {
+	const numbers = new Set<string>();
+	for (const brand of CARD_BRANDS) {
+		for (let sample = 0; sample < 10; sample++) {
+			const number = newCardNumber(brand.id);
+			assert.match(number, /^\d{16}$/);
+			assert.equal(number.slice(0, 4), brand.numberPrefix);
+			assert.equal(numbers.has(number), false);
+			numbers.add(number);
+			let sum = 0;
+			let double = false;
+			for (let index = number.length - 1; index >= 0; index--) {
+				let digit = Number(number[index]);
+				if (double) digit *= 2;
+				if (digit > 9) digit -= 9;
+				sum += digit;
+				double = !double;
+			}
+			assert.equal(sum % 10, 0);
+		}
+	}
+});
 
 void test("CVV encryption preserves leading zeroes and uses a fresh nonce", () => {
 	const key = newKey();

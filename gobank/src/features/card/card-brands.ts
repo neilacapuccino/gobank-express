@@ -23,18 +23,10 @@ export const CARD_BRANDS = [
 
 export type CardBrand = (typeof CARD_BRANDS)[number];
 export type CardBrandId = CardBrand["id"];
-export type IssuedCardBrandId = CardBrandId | "gobank";
 
-// Previously issued GoBank cards keep their original identity and number.
-const LEGACY_GOBANK = {
-	id: "gobank",
-	name: "GoBank",
-	numberPrefix: "8000",
-} as const;
+export const isSupportedCardBrand = (id: unknown): id is CardBrandId =>
+	typeof id === "string" && CARD_BRANDS.some((brand) => brand.id === id);
 
-export function getBrand(
-	id: IssuedCardBrandId,
-): CardBrand | typeof LEGACY_GOBANK {
-	if (id === "gobank") return LEGACY_GOBANK;
+export function getBrand(id: CardBrandId): CardBrand {
 	return CARD_BRANDS.find((brand) => brand.id === id) ?? CARD_BRANDS[3];
 }

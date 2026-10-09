@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { CardKind } from "../../../../generated/prisma";
-import type { IssuedCardBrandId } from "../card-brands";
+import type { CardBrandId } from "../card-brands";
 import { cn } from "~/shared/lib/cn";
 import { formatAccount } from "~/shared/lib/format";
 import { CardBrandLogo } from "./card-brand-logo";
@@ -18,7 +18,7 @@ import { CardBrandLogo } from "./card-brand-logo";
 export type { CardKind } from "../../../../generated/prisma";
 
 type BankCardProps = {
-	brand: IssuedCardBrandId;
+	brand: CardBrandId;
 	fullName: string;
 	number?: string;
 	expiresAt?: Date | string;
@@ -89,7 +89,7 @@ export function BankCard({
 							GoBank Express
 						</span>
 						{securityDetails ? (
-							<CardBrandLogo id={brand} onDark className="h-6 w-10 shrink-0" />
+							<CardBrandLogo id={brand} onDark className="h-6 w-16 shrink-0" />
 						) : null}
 					</div>
 				</div>

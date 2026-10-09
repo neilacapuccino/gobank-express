@@ -1,6 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
-import type { CardBrand, Prisma } from "../../../generated/prisma";
+import type { Prisma } from "../../../generated/prisma";
+import {
+	isSupportedCardBrand,
+	type CardBrandId,
+} from "~/features/card/card-brands";
 import { newCardCredentials } from "~/server/card-credentials";
 import { db } from "~/server/db";
 import { fail } from "~/server/errors";
@@ -10,7 +14,7 @@ const MAX_AGE = 30 * 60;
 export const cardDraftId = (token: string) =>
 	createHash("sha256").update(token).digest("hex");
 
-export async function createCardPreview(brand: CardBrand) {
+export async function createCardPreview(brand: CardBrandId) {
 	const token = randomBytes(32).toString("base64url");
 	const { card, cvv } = await newCardCredentials(brand);
 	const validUntil = new Date(Date.now() + MAX_AGE * 1000);
@@ -36,7 +40,7 @@ export async function createCardPreview(brand: CardBrand) {
 	};
 }
 
-export async function prepareRegistrationCard(brand: CardBrand) {
+export async function prepareRegistrationCard(brand: CardBrandId) {
 	const store = await cookies();
 	const previous = store.get(COOKIE)?.value;
 	const prepared = await createCardPreview(brand);
@@ -66,12 +70,13 @@ export async function clearRegistrationCard() {
 export async function consumeRegistrationCard(
 	tx: Prisma.TransactionClient,
 	token: string,
-	brand: CardBrand,
+	brand: CardBrandId,
 ) {
 	const id = cardDraftId(token);
 	const card = await tx.registrationCard.findUnique({ where: { id } });
 	if (
 		card?.brand !== brand ||
+		!isSupportedCardBrand(card.brand) ||
 		card.validUntil <= new Date() ||
 		card.cvvEncrypted === null
 	) {

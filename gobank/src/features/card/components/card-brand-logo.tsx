@@ -1,7 +1,7 @@
-import type { IssuedCardBrandId } from "../card-brands";
+import type { CardBrandId } from "../card-brands";
 
 type CardBrandLogoProps = {
-	id: IssuedCardBrandId;
+	id: CardBrandId;
 	className?: string;
 	onDark?: boolean;
 };
@@ -13,11 +13,7 @@ export function CardBrandLogo({ id, className, onDark }: CardBrandLogoProps) {
 		);
 	if (id === "mastercard") return <MastercardLogo className={className} />;
 	if (id === "jcb") return <JcbLogo className={className} />;
-	if (id === "discover")
-		return <DiscoverLogo className={className} onDark={onDark} />;
-	return (
-		<GoBankLogo className={className} tone={onDark ? "#ffffff" : "#047857"} />
-	);
+	return <DiscoverLogo className={className} onDark={onDark} />;
 }
 
 function DiscoverLogo({
@@ -110,30 +106,6 @@ function JcbLogo({ className }: { className?: string }) {
 					</text>
 				</g>
 			))}
-		</svg>
-	);
-}
-
-function GoBankLogo({ className, tone }: { className?: string; tone: string }) {
-	return (
-		<svg
-			viewBox="0 0 48 30"
-			className={className}
-			role="img"
-			aria-label="GoBank"
-		>
-			<text
-				x="24"
-				y="20"
-				textAnchor="middle"
-				fill={tone}
-				fontSize="14"
-				fontWeight="600"
-				fontFamily="Geist, Helvetica, Arial, sans-serif"
-				letterSpacing="-0.3"
-			>
-				GoBank
-			</text>
 		</svg>
 	);
 }
