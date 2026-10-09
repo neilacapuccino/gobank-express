@@ -46,12 +46,15 @@ type ProfileUpdate = {
 };
 
 export const updateProfile = async (userId: string, profile: ProfileUpdate) => {
-	const data = { ...profile };
-	if (data.profilePhoto !== undefined)
-		data.profilePhoto = await normalizeProfilePhoto(data.profilePhoto);
+	const { profilePhoto, ...fields } = profile;
 	return db.user.update({
 		where: { id: userId },
-		data,
+		data: {
+			...fields,
+			...(profilePhoto !== undefined
+				? { profilePhoto: await normalizeProfilePhoto(profilePhoto) }
+				: {}),
+		},
 		select: { id: true },
 	});
 };
