@@ -15,7 +15,7 @@ export const BITCOIN_CANDLES: Record<
 	"1Y": { interval: "1d", limit: 365, label: "1-day candles" },
 };
 export type BitcoinQuote = {
-	priceCentavos: number;
+	unitPriceCentavos: number;
 	openCentavos: number;
 	highCentavos: number;
 	lowCentavos: number;
@@ -32,7 +32,8 @@ export type BitcoinCandle = {
 	close: number;
 	volume: number;
 };
-export const SATOSHIS = 100_000_000n;
+// One Bitcoin equals 100,000,000 integer units.
+export const UNITS_PER_BITCOIN = 100_000_000n;
 
 export const MAX_CENTAVOS = 2_000_000_000;
 export const BITCOIN_FEE_CENTAVOS = 1_000;
@@ -47,11 +48,11 @@ const PHP_AMOUNT = new Intl.NumberFormat("en-PH", {
 
 export const money = (centavos: number) => PHP_AMOUNT.format(centavos / 100);
 
-export const btc = (satoshis: bigint) =>
-	`${satoshis / SATOSHIS}.${(satoshis % SATOSHIS).toString().padStart(8, "0")}`;
+export const btc = (bitcoinUnits: bigint) =>
+	`${bitcoinUnits / UNITS_PER_BITCOIN}.${(bitcoinUnits % UNITS_PER_BITCOIN).toString().padStart(8, "0")}`;
 
-export const holdingValue = (satoshis: bigint, priceCentavos: number) =>
-	Number((satoshis * BigInt(priceCentavos)) / SATOSHIS);
+export const holdingValue = (bitcoinUnits: bigint, unitPriceCentavos: number) =>
+	Number((bitcoinUnits * BigInt(unitPriceCentavos)) / UNITS_PER_BITCOIN);
 
 export function parseUnits(value: string, decimals: number): bigint | null {
 	const match = /^(\d+)(?:\.(\d*))?$/.exec(value.trim());

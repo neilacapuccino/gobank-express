@@ -22,13 +22,15 @@ export const stashesRouter = createTRPCRouter({
 		.query(({ ctx, input }) => getStash(ctx.userId, input.id)),
 
 	create: protectedProcedure
-		.input(z.object({ name, goal: centavos.nullish() }))
+		.input(z.object({ name, targetAmount: centavos.nullish() }))
 		.mutation(({ ctx, input }) =>
-			createStash(ctx.userId, input.name, input.goal),
+			createStash(ctx.userId, input.name, input.targetAmount),
 		),
 
 	update: protectedProcedure
-		.input(id.extend({ name: name.optional(), goal: centavos.nullish() }))
+		.input(
+			id.extend({ name: name.optional(), targetAmount: centavos.nullish() }),
+		)
 		.mutation(({ ctx, input: { id, ...fields } }) =>
 			updateStash(ctx.userId, id, fields),
 		),

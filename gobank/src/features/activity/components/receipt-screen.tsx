@@ -22,8 +22,8 @@ export function ReceiptScreen({
 		});
 	if (transaction.biller)
 		details.push({ label: "Biller", value: transaction.biller.name });
-	if (transaction.stash)
-		details.push({ label: "GoalSave", value: transaction.stash.name });
+	if (transaction.savingsGoal)
+		details.push({ label: "GoalSave", value: transaction.savingsGoal.name });
 	if (transaction.points)
 		details.push({
 			label: "Points",

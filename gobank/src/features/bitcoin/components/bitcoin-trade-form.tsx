@@ -28,7 +28,7 @@ export function BitcoinTradeForm({
 }) {
 	const utils = api.useUtils();
 	const router = useRouter();
-	const [side, setSide] = useState<"buy" | "sell">("buy");
+	const [action, setAction] = useState<"buy" | "sell">("buy");
 	const [amount, setAmount] = useState("");
 	const [attempted, setAttempted] = useState(false);
 	const [review, setReview] = useState(false);
@@ -46,20 +46,20 @@ export function BitcoinTradeForm({
 			router.refresh();
 		},
 	});
-	const parsed = parseUnits(amount, side === "buy" ? 2 : 8);
+	const parsed = parseUnits(amount, action === "buy" ? 2 : 8);
 	const trade =
 		parsed !== null &&
 		parsed > 0n &&
-		(side === "sell" || parsed <= BigInt(MAX_CENTAVOS))
-			? side === "buy"
-				? ({ side, cashCentavos: Number(parsed) } as const)
-				: ({ side, satoshis: parsed } as const)
+		(action === "sell" || parsed <= BigInt(MAX_CENTAVOS))
+			? action === "buy"
+				? ({ action, cashCentavos: Number(parsed) } as const)
+				: ({ action, bitcoinUnits: parsed } as const)
 			: null;
 	let preview: ReturnType<typeof calculateTrade> | null = null;
 	let problem = "";
 	if (portfolio && quote && trade) {
 		try {
-			preview = calculateTrade(portfolio, trade, quote.priceCentavos);
+			preview = calculateTrade(portfolio, trade, quote.unitPriceCentavos);
 		} catch (error) {
 			if (attempted)
 				problem = error instanceof Error ? error.message : "Check this amount.";
@@ -67,14 +67,14 @@ export function BitcoinTradeForm({
 	} else if (amount && !trade) {
 		problem =
 			parsed === null
-				? `Use up to ${side === "buy" ? 2 : 8} decimal places.`
-				: side === "buy"
+				? `Use up to ${action === "buy" ? 2 : 8} decimal places.`
+				: action === "buy"
 					? parsed === 0n
 						? "Enter at least ₱1.00."
 						: "This amount exceeds the account limit."
 					: "Enter a Bitcoin amount greater than zero.";
 	}
-	if (side === "sell" && portfolio?.satoshis === 0n) {
+	if (action === "sell" && portfolio?.bitcoinUnits === 0n) {
 		problem = "Buy some Bitcoin before making your first sale.";
 	}
 
@@ -89,12 +89,12 @@ export function BitcoinTradeForm({
 		if (!trade || !preview || !fresh || mutation.isPending) return;
 		request.current ??= crypto.randomUUID();
 		mutation.mutate(
-			trade.side === "buy"
-				? { ...trade, requestId: request.current }
+			trade.action === "buy"
+				? { ...trade, submissionId: request.current }
 				: {
-						side: "sell",
-						satoshis: trade.satoshis.toString(),
-						requestId: request.current,
+						action: "sell",
+						bitcoinUnits: trade.bitcoinUnits.toString(),
+						submissionId: request.current,
 					},
 		);
 	};
@@ -110,12 +110,12 @@ export function BitcoinTradeForm({
 						key={value}
 						type="button"
 						disabled={mutation.isPending}
-						aria-pressed={side === value}
+						aria-pressed={action === value}
 						onClick={() => {
-							setSide(value);
+							setAction(value);
 							change("");
 						}}
-						className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg text-[13px] font-semibold ${side === value ? (value === "buy" ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "bg-rose-400/10 text-rose-300") : "text-ink-muted"}`}
+						className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg text-[13px] font-semibold ${action === value ? (value === "buy" ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "bg-rose-400/10 text-rose-300") : "text-ink-muted"}`}
 					>
 						{value === "buy" ? (
 							<ArrowDownLeft size={16} />
@@ -138,11 +138,11 @@ export function BitcoinTradeForm({
 			>
 				<div className="mb-2 flex items-center justify-between gap-2 text-[11px]">
 					<label htmlFor="bitcoin-amount" className="text-ink-soft">
-						{side === "buy" ? "Bitcoin purchase amount" : "Bitcoin to sell"}
+						{action === "buy" ? "Bitcoin purchase amount" : "Bitcoin to sell"}
 					</label>
 					<span className="text-ink-muted">
 						{portfolio
-							? `${side === "buy" ? money(portfolio.cashCentavos) + " PHP" : btc(portfolio.satoshis) + " BTC"} available`
+							? `${action === "buy" ? money(portfolio.cashCentavos) + " PHP" : btc(portfolio.bitcoinUnits) + " BTC"} available`
 							: "Loading balance…"}
 					</span>
 				</div>
@@ -152,7 +152,7 @@ export function BitcoinTradeForm({
 						type="text"
 						inputMode="decimal"
 						autoComplete="off"
-						placeholder={side === "buy" ? "0.00" : "0.00000000"}
+						placeholder={action === "buy" ? "0.00" : "0.00000000"}
 						value={amount}
 						disabled={!portfolio || mutation.isPending}
 						onChange={(event) => change(event.target.value)}
@@ -160,7 +160,7 @@ export function BitcoinTradeForm({
 						className="placeholder:text-ink-faint min-w-0 flex-1 bg-transparent py-4 text-[25px] font-medium text-white tabular-nums outline-none"
 					/>
 					<span className="text-ink-muted text-[12px] font-semibold">
-						{side === "buy" ? "PHP" : "BTC"}
+						{action === "buy" ? "PHP" : "BTC"}
 					</span>
 				</div>
 				<div className="mt-3 grid grid-cols-4 gap-2">
@@ -172,7 +172,7 @@ export function BitcoinTradeForm({
 							onClick={() => {
 								if (portfolio)
 									change(
-										side === "buy"
+										action === "buy"
 											? (
 													Math.floor(
 														(Math.max(
@@ -183,7 +183,7 @@ export function BitcoinTradeForm({
 															100,
 													) / 100
 												).toFixed(2)
-											: btc((portfolio.satoshis * BigInt(percent)) / 100n),
+											: btc((portfolio.bitcoinUnits * BigInt(percent)) / 100n),
 									);
 							}}
 							className="text-ink-soft min-h-9 rounded-lg bg-white/[.04] text-[11px] font-medium hover:bg-white/10 disabled:opacity-40"
@@ -202,13 +202,13 @@ export function BitcoinTradeForm({
 						</span>
 					) : preview ? (
 						<span className="text-ink-muted">
-							{side === "buy"
-								? `You receive ≈ ${btc(preview.satoshis)} BTC · Total ${money(preview.cashCentavos)} PHP`
+							{action === "buy"
+								? `You receive ≈ ${btc(preview.bitcoinUnits)} BTC · Total ${money(preview.cashCentavos)} PHP`
 								: "You receive ≈ " + money(preview.cashCentavos) + " PHP"}
 						</span>
 					) : (
 						<span className="text-ink-muted">
-							{side === "sell"
+							{action === "sell"
 								? "You can sell any fraction of your Bitcoin."
 								: "Buy directly with PHP from your account."}
 						</span>
@@ -219,9 +219,9 @@ export function BitcoinTradeForm({
 					disabled={
 						!trade || !portfolio || !quote || !fresh || mutation.isPending
 					}
-					className={`mt-3 min-h-12 w-full rounded-xl text-[13px] font-bold transition-opacity disabled:opacity-35 ${side === "buy" ? "bg-[#56e3b1] text-[#0a211a] hover:bg-[#75edc3]" : "bg-rose-300 text-[#35151d] hover:bg-rose-200"}`}
+					className={`mt-3 min-h-12 w-full rounded-xl text-[13px] font-bold transition-opacity disabled:opacity-35 ${action === "buy" ? "bg-[#56e3b1] text-[#0a211a] hover:bg-[#75edc3]" : "bg-rose-300 text-[#35151d] hover:bg-rose-200"}`}
 				>
-					{fresh ? `Review ${side}` : "Waiting for a fresh price"}
+					{fresh ? `Review ${action}` : "Waiting for a fresh price"}
 				</button>
 			</form>
 			<p className="text-ink-faint mt-3 text-center text-[10px] leading-relaxed">
@@ -235,10 +235,11 @@ export function BitcoinTradeForm({
 					<Check size={16} className="mt-0.5 shrink-0" />
 					<div>
 						<p className="font-semibold">
-							{success.side === "buy" ? "Bitcoin bought" : "Bitcoin sold"}
+							{success.action === "buy" ? "Bitcoin bought" : "Bitcoin sold"}
 						</p>
 						<p className="mt-1 text-[11px]">
-							{btc(success.satoshis)} BTC · {money(success.phpCentavos)} PHP
+							{btc(success.bitcoinUnits)} BTC · {money(success.amountCentavos)}{" "}
+							PHP
 						</p>
 					</div>
 				</div>
@@ -279,7 +280,7 @@ export function BitcoinTradeForm({
 					>
 						<div className="flex items-center justify-between">
 							<h2 id="bitcoin-review-title" className="text-lg font-semibold">
-								Review {side}
+								Review {action}
 							</h2>
 							<button
 								autoFocus
@@ -296,7 +297,7 @@ export function BitcoinTradeForm({
 							<div className="flex justify-between">
 								<dt className="text-ink-muted">Bitcoin</dt>
 								<dd className="font-semibold tabular-nums">
-									{preview ? btc(preview.satoshis) : "—"} BTC
+									{preview ? btc(preview.bitcoinUnits) : "—"} BTC
 								</dd>
 							</div>
 							<div className="flex justify-between">
@@ -311,7 +312,7 @@ export function BitcoinTradeForm({
 							</div>
 							<div className="flex justify-between border-t border-white/10 pt-4">
 								<dt className="text-ink-muted">
-									{side === "buy" ? "Total to pay" : "Net proceeds"}
+									{action === "buy" ? "Total to pay" : "Net proceeds"}
 								</dt>
 								<dd className="font-semibold tabular-nums">
 									{preview ? money(preview.cashCentavos) : "—"} PHP
@@ -338,7 +339,7 @@ export function BitcoinTradeForm({
 							disabled={!preview || !fresh || mutation.isPending}
 							className="mt-5 min-h-12 w-full rounded-xl bg-[#56e3b1] text-[13px] font-bold text-[#0a211a] disabled:opacity-40"
 						>
-							{mutation.isPending ? "Completing trade…" : `Confirm ${side}`}
+							{mutation.isPending ? "Completing trade…" : `Confirm ${action}`}
 						</button>
 					</div>
 				</div>

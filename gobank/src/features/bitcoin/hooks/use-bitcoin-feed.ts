@@ -53,8 +53,9 @@ export function useBitcoinFeed() {
 					if (!result.success || !quoteIsFresh(result.data.E, Date.now()))
 						return;
 					const value = result.data;
-					const priceCentavos = Math.round(value.c * phpPerQuote * 100);
-					if (priceCentavos <= 0 || priceCentavos > MAX_CENTAVOS) return;
+					const unitPriceCentavos = Math.round(value.c * phpPerQuote * 100);
+					if (unitPriceCentavos <= 0 || unitPriceCentavos > MAX_CENTAVOS)
+						return;
 					received = Date.now();
 					delay = 1_000;
 					setConnected(true);
@@ -62,7 +63,7 @@ export function useBitcoinFeed() {
 						previous && previous.asOf > value.E
 							? previous
 							: {
-									priceCentavos,
+									unitPriceCentavos,
 									openCentavos: Math.round(value.o * phpPerQuote * 100),
 									highCentavos: Math.round(value.h * phpPerQuote * 100),
 									lowCentavos: Math.round(value.l * phpPerQuote * 100),

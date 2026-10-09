@@ -58,7 +58,7 @@ export function DashboardScreen({ account }: { account: Overview }) {
 			<QuickActions />
 			<FeatureGrid
 				points={account.points}
-				stashCount={account._count.stashes}
+				stashCount={account._count.savingsGoals}
 				stashLimit={MAX_STASHES}
 			/>
 			<div className="border-line bg-surface rounded-[24px] border p-4 shadow-[0_6px_20px_-10px_#00000080]">

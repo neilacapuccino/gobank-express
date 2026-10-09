@@ -12,7 +12,7 @@ export const getOverview = (userId: string) =>
 			accountNumber: true,
 			balance: true,
 			points: true,
-			_count: { select: { stashes: true } },
+			_count: { select: { savingsGoals: true } },
 			transactions: {
 				select: activityFields,
 				orderBy: [{ createdAt: "desc" }, { id: "desc" }],

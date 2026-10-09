@@ -77,7 +77,7 @@ export function getBitcoinQuote(): Promise<BitcoinQuote> {
 		]).then(([value, fx, peg]) => {
 			const phpPerQuote = (fx.rate * (peg.bidPrice + peg.askPrice)) / 2;
 			const result = {
-				priceCentavos: Math.round(value.lastPrice * phpPerQuote * 100),
+				unitPriceCentavos: Math.round(value.lastPrice * phpPerQuote * 100),
 				openCentavos: Math.round(value.openPrice * phpPerQuote * 100),
 				highCentavos: Math.round(value.highPrice * phpPerQuote * 100),
 				lowCentavos: Math.round(value.lowPrice * phpPerQuote * 100),
@@ -87,8 +87,8 @@ export function getBitcoinQuote(): Promise<BitcoinQuote> {
 				rateDate: fx.date,
 			};
 			if (
-				result.priceCentavos <= 0 ||
-				result.priceCentavos > MAX_CENTAVOS ||
+				result.unitPriceCentavos <= 0 ||
+				result.unitPriceCentavos > MAX_CENTAVOS ||
 				!quoteIsFresh(result.asOf, Date.now())
 			)
 				fail("BAD_REQUEST", FEED_ERROR);

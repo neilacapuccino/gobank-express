@@ -6,7 +6,11 @@ import {
 import { compoundInterest } from "~/shared/lib/savings-interest";
 import { newReference } from "~/server/codes";
 import { asDatabaseError, fail, MESSAGES } from "~/server/errors";
-import type { Prisma, Stash, TransactionKind } from "../../generated/prisma";
+import type {
+	Prisma,
+	SavingsGoal,
+	TransactionKind,
+} from "../../generated/prisma";
 
 type Tx = Prisma.TransactionClient;
 
@@ -20,7 +24,7 @@ type Entry = {
 	reference?: string;
 	points?: number;
 	counterpartyId?: string;
-	stashId?: string;
+	savingsGoalId?: string;
 	billerId?: string;
 	details?: Prisma.InputJsonValue;
 };
@@ -161,12 +165,12 @@ export async function transfer(
 export async function moveStash(
 	tx: Tx,
 	userId: string,
-	stashId: string,
+	savingsGoalId: string,
 	amount: number,
 ) {
-	const stash = await guard(
-		tx.stash.update({
-			where: { id: stashId, userId, balance: { gte: -amount } },
+	const savingsGoal = await guard(
+		tx.savingsGoal.update({
+			where: { id: savingsGoalId, userId, balance: { gte: -amount } },
 			data: { balance: { increment: amount } },
 		}),
 		MESSAGES.notEnoughInStash,
@@ -175,27 +179,30 @@ export async function moveStash(
 	return post(tx, {
 		userId,
 		kind: "stash",
-		title: amount > 0 ? `Moved to ${stash.name}` : `Moved from ${stash.name}`,
+		title:
+			amount > 0
+				? `Moved to ${savingsGoal.name}`
+				: `Moved from ${savingsGoal.name}`,
 		amount: -amount,
-		stashId,
+		savingsGoalId,
 	});
 }
 
-export async function settleStashInterest(tx: Tx, stash: Stash) {
-	const result = compoundInterest(stash, new Date());
-	if (result.days === 0) return stash;
+export async function settleStashInterest(tx: Tx, savingsGoal: SavingsGoal) {
+	const result = compoundInterest(savingsGoal, new Date());
+	if (result.days === 0) return savingsGoal;
 	const data = {
 		balance: result.balance,
-		interestCarry: result.interestCarry,
-		interestUpdatedAt: result.interestUpdatedAt,
-		updatedAt: result.interestUpdatedAt,
+		interestRemainder: result.interestRemainder,
+		interestCalculatedAt: result.interestCalculatedAt,
+		updatedAt: result.interestCalculatedAt,
 	};
-	const updated = await tx.stash.updateMany({
+	const updated = await tx.savingsGoal.updateMany({
 		where: {
-			id: stash.id,
-			userId: stash.userId,
-			balance: stash.balance,
-			interestUpdatedAt: stash.interestUpdatedAt,
+			id: savingsGoal.id,
+			userId: savingsGoal.userId,
+			balance: savingsGoal.balance,
+			interestCalculatedAt: savingsGoal.interestCalculatedAt,
 		},
 		data,
 	});
@@ -203,28 +210,28 @@ export async function settleStashInterest(tx: Tx, stash: Stash) {
 		fail("CONFLICT", "Your savings changed. Please try again.");
 	if (result.earned > 0) {
 		const user = await tx.user.findUniqueOrThrow({
-			where: { id: stash.userId },
+			where: { id: savingsGoal.userId },
 			select: { balance: true },
 		});
 		await tx.transaction.create({
 			data: {
-				userId: stash.userId,
-				stashId: stash.id,
+				userId: savingsGoal.userId,
+				savingsGoalId: savingsGoal.id,
 				reference: newReference(),
 				kind: "interest",
-				title: `Interest in ${stash.name}`,
+				title: `Interest in ${savingsGoal.name}`,
 				amount: result.earned,
 				balanceAfter: user.balance,
 				details: {
 					savingsBalanceAfter: result.balance,
-					annualRate: stash.interestRate,
+					annualRate: savingsGoal.annualInterestRate,
 					days: result.days,
 				},
 			},
 		});
 	}
 	return {
-		...stash,
+		...savingsGoal,
 		...data,
 	};
 }

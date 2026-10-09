@@ -26,18 +26,13 @@
     "check:ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
     "test": "npm run test:bitcoin && npm run test:profile && npm run test:savings && npm run test:auth && npm run test:card && npm run test:amount-input",
     "test:auth": "node --import tsx --test src/features/auth/auth.test.ts",
-    "test:auth:integration": "node --conditions=react-server --import tsx scripts/verify-auth.ts",
+    "test:integration": "node --conditions=react-server --import tsx scripts/verify-core.ts",
     "test:card": "node --conditions=react-server --import tsx --test src/features/card/card.cvv.test.ts",
-    "test:card:integration": "node --conditions=react-server --import tsx scripts/verify-card.ts",
     "test:amount-input": "node --import tsx --test src/shared/lib/amount-input.test.ts",
-    "test:transfers:integration": "node --conditions=react-server --import tsx scripts/verify-transfers-requests.ts",
-    "test:payments:integration": "node --conditions=react-server --import tsx scripts/verify-payments.ts",
     "test:savings": "node --import tsx --test src/shared/lib/savings-interest.test.ts",
-    "test:enrollment:savings": "node --conditions=react-server --import tsx scripts/verify-enrollment-savings.ts",
-    "test:bitcoin": "node --import tsx --test src/features/bitcoin/bitcoin.rules.test.ts src/features/bitcoin/bitcoin.candles.test.ts src/features/bitcoin/bitcoin.cache.test.ts",
+    "test:bitcoin": "node --import tsx --test src/features/bitcoin/bitcoin.test.ts",
     "test:bitcoin:integration": "node --conditions=react-server --import tsx scripts/verify-bitcoin.ts",
-    "test:profile": "node --conditions=react-server --import tsx --test src/features/account/profile-photo.test.ts",
-    "test:profile:integration": "node --conditions=react-server --import tsx scripts/verify-profile-photo.ts"
+    "test:profile": "node --conditions=react-server --import tsx --test src/features/account/profile-photo.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

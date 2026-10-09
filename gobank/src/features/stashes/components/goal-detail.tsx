@@ -33,21 +33,21 @@ export function GoalDetail({ id }: { id: string }) {
 				</button>
 			</div>
 		);
-	return <GoalContent stash={query.data} />;
+	return <GoalContent savingsGoal={query.data} />;
 }
-type Stash = RouterOutputs["stashes"]["get"];
-function GoalContent({ stash }: { stash: Stash }) {
+type SavingsGoal = RouterOutputs["stashes"]["get"];
+function GoalContent({ savingsGoal }: { savingsGoal: SavingsGoal }) {
 	const utils = api.useUtils();
 	const router = useRouter();
-	const { icon, setIcon } = useGoalIcon(stash.id, stash.name);
+	const { icon, setIcon } = useGoalIcon(savingsGoal.id, savingsGoal.name);
 	const [tab, setTab] = useState<"overview" | "transactions">("overview");
 	const [action, setAction] = useState<"in" | "out" | "settings" | null>(null);
 	const [amount, setAmount] = useState("");
 	const [message, setMessage] = useState("");
-	const [name, setName] = useState(stash.name);
+	const [name, setName] = useState(savingsGoal.name);
 	const [confirmClose, setConfirmClose] = useState(false);
 	const refresh = () => {
-		void utils.stashes.get.invalidate({ id: stash.id });
+		void utils.stashes.get.invalidate({ id: savingsGoal.id });
 		void utils.stashes.list.invalidate();
 		void utils.account.overview.invalidate();
 	};
@@ -78,7 +78,7 @@ function GoalContent({ stash }: { stash: Stash }) {
 	const valid =
 		amountCentavos > 0 &&
 		amountCentavos <= MAX_TRANSACTION_CENTAVOS &&
-		(action !== "out" || amountCentavos <= stash.balance);
+		(action !== "out" || amountCentavos <= savingsGoal.balance);
 	const pending =
 		move.isPending || update.isPending || remove.isPending || remove.isSuccess;
 	const validName =
@@ -86,18 +86,18 @@ function GoalContent({ stash }: { stash: Stash }) {
 	return (
 		<div className="bg-surface-sunken text-ink -mx-6 -mt-8 -mb-10 flex flex-1 flex-col pt-7">
 			<div className="px-5">
-				<PageHeader title={stash.name} back="/stashes" />
+				<PageHeader title={savingsGoal.name} back="/stashes" />
 			</div>
 			<section className="px-8 pt-7 pb-4 text-center">
 				<GoalBubble
 					icon={icon}
-					balance={stash.balance}
-					target={stash.goal}
-					label={stash.name}
+					balance={savingsGoal.balance}
+					target={savingsGoal.targetAmount}
+					label={savingsGoal.name}
 					large
 				/>
 				<h1 className="mt-4 text-[36px] font-bold tracking-tight break-all tabular-nums">
-					{peso(stash.balance)}
+					{peso(savingsGoal.balance)}
 				</h1>
 			</section>
 			<div className="grid grid-cols-3 gap-2 px-4 py-5">
@@ -114,11 +114,11 @@ function GoalContent({ stash }: { stash: Stash }) {
 							update.reset();
 							remove.reset();
 							setConfirmClose(false);
-							setName(stash.name);
+							setName(savingsGoal.name);
 							setMessage("");
 							setAmount(
-								value === "settings" && stash.goal
-									? String(stash.goal / 100)
+								value === "settings" && savingsGoal.targetAmount
+									? String(savingsGoal.targetAmount / 100)
 									: "",
 							);
 							setAction(value);
@@ -152,13 +152,13 @@ function GoalContent({ stash }: { stash: Stash }) {
 							if (action === "settings") {
 								if (validName && (amount.trim() === "" || valid))
 									update.mutate({
-										id: stash.id,
+										id: savingsGoal.id,
 										name: name.trim(),
-										goal: amount.trim() ? amountCentavos : null,
+										targetAmount: amount.trim() ? amountCentavos : null,
 									});
 							} else if (valid)
 								move.mutate({
-									id: stash.id,
+									id: savingsGoal.id,
 									amount: amountCentavos,
 									direction: action,
 								});
@@ -203,7 +203,7 @@ function GoalContent({ stash }: { stash: Stash }) {
 								action === "settings"
 									? "Leave blank to remove your target."
 									: action === "out"
-										? `Available: ${peso(stash.balance)}`
+										? `Available: ${peso(savingsGoal.balance)}`
 										: "Move money from your spending account."
 							}
 							error={
@@ -240,14 +240,14 @@ function GoalContent({ stash }: { stash: Stash }) {
 								>
 									<h3 className="font-semibold">Close this goal?</h3>
 									<p className="text-ink-soft text-[13px] leading-relaxed">
-										{peso(stash.balance)} will return to your main account. This
-										goal will be removed, and past transfers will stay in your
-										account activity.
+										{peso(savingsGoal.balance)} will return to your main
+										account. This goal will be removed, and past transfers will
+										stay in your account activity.
 									</p>
 									<button
 										type="button"
 										disabled={pending}
-										onClick={() => remove.mutate({ id: stash.id })}
+										onClick={() => remove.mutate({ id: savingsGoal.id })}
 										className="bg-danger-soft text-danger h-11 w-full rounded-xl text-sm font-semibold disabled:opacity-45"
 									>
 										{remove.isPending
@@ -317,27 +317,29 @@ function GoalContent({ stash }: { stash: Stash }) {
 							<div className="flex items-center justify-between gap-3 py-5 text-sm">
 								<dt>Annual growth rate</dt>
 								<dd className="font-semibold text-[#71d5f3]">
-									{(stash.interestRate * 100).toFixed(2)}% p.a.
+									{(savingsGoal.annualInterestRate * 100).toFixed(2)}% p.a.
 								</dd>
 							</div>
 							<div className="flex items-center justify-between gap-3 py-5 text-sm">
 								<dt>Target</dt>
 								<dd className="font-semibold">
-									{stash.goal ? peso(stash.goal) : "Not set"}
+									{savingsGoal.targetAmount
+										? peso(savingsGoal.targetAmount)
+										: "Not set"}
 								</dd>
 							</div>
 							<div className="flex items-center justify-between gap-3 py-5 text-sm">
 								<dt>Progress</dt>
 								<dd className="font-semibold">
-									{stash.goal
-										? `${Math.min(100, Math.floor((stash.balance / stash.goal) * 100))}%`
+									{savingsGoal.targetAmount
+										? `${Math.min(100, Math.floor((savingsGoal.balance / savingsGoal.targetAmount) * 100))}%`
 										: "—"}
 								</dd>
 							</div>
 						</dl>
-					) : stash.transactions.length ? (
+					) : savingsGoal.transactions.length ? (
 						<ul className="divide-line divide-y">
-							{stash.transactions.map((entry) => (
+							{savingsGoal.transactions.map((entry) => (
 								<li
 									key={entry.id}
 									className="flex items-center justify-between gap-4 py-4"

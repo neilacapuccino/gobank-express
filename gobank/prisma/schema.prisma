@@ -68,7 +68,7 @@ model User {
 
   cards            Card[]
   sessions         Session[]
-  stashes          Stash[]
+  savingsGoals     SavingsGoal[]
   transactions     Transaction[]
   counterpartyOf   Transaction[]  @relation("Counterparty")
   requestsSent     MoneyRequest[] @relation("Requester")
@@ -77,18 +77,18 @@ model User {
 }
 
 model BitcoinTrade {
-  id            String   @id @default(cuid())
-  userId        String
-  requestId     String
-  reference     String?  @unique
-  side          String
-  satoshis      BigInt
-  phpCentavos   Int
-  priceCentavos Int
-  createdAt     DateTime @default(now())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  userId            String
+  submissionId      String
+  reference         String?  @unique
+  action            String
+  bitcoinUnits      BigInt
+  amountCentavos    Int
+  unitPriceCentavos Int
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, requestId])
+  @@unique([userId, submissionId])
   @@index([userId, createdAt(sort: Desc)])
 }
 
@@ -134,17 +134,17 @@ model RegistrationCard {
   @@index([validUntil])
 }
 
-model Stash {
-  id                String   @id @default(cuid())
-  userId            String
-  name              String
-  goal              Int?
-  balance           Int      @default(0)
-  interestRate      Float    @default(0.04)
-  interestCarry     Float    @default(0)
-  interestUpdatedAt DateTime @default(now())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+model SavingsGoal {
+  id                   String   @id @default(cuid())
+  userId               String
+  name                 String
+  targetAmount         Int?
+  balance              Int      @default(0)
+  annualInterestRate   Float    @default(0.04)
+  interestRemainder    Float    @default(0)
+  interestCalculatedAt DateTime @default(now())
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
@@ -176,14 +176,14 @@ model Transaction {
   details        Json?
   userId         String
   counterpartyId String?
-  stashId        String?
+  savingsGoalId  String?
   billerId       String?
   createdAt      DateTime        @default(now())
 
-  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  counterparty User?   @relation("Counterparty", fields: [counterpartyId], references: [id], onDelete: SetNull)
-  stash        Stash?  @relation(fields: [stashId], references: [id], onDelete: SetNull)
-  biller       Biller? @relation(fields: [billerId], references: [id], onDelete: SetNull)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  counterparty User?        @relation("Counterparty", fields: [counterpartyId], references: [id], onDelete: SetNull)
+  savingsGoal  SavingsGoal? @relation(fields: [savingsGoalId], references: [id], onDelete: SetNull)
+  biller       Biller?      @relation(fields: [billerId], references: [id], onDelete: SetNull)
 
   @@unique([reference, userId])
   @@index([userId, createdAt(sort: Desc)])

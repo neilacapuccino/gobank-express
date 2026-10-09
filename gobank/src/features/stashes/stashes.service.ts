@@ -4,7 +4,7 @@ import { AppError, asDatabaseError, fail, MESSAGES } from "~/server/errors";
 import { moveStash, settleStashInterest } from "~/server/ledger";
 import type { Prisma } from "../../../generated/prisma";
 
-type StashFields = { name?: string; goal?: number | null };
+type SavingsGoalFields = { name?: string; targetAmount?: number | null };
 
 // Reading interest and changing a goal settle together; conflicts retry safely.
 async function savingsTransaction<T>(
@@ -26,13 +26,13 @@ async function savingsTransaction<T>(
 
 export const listStashes = (userId: string) =>
 	savingsTransaction(async (tx) => {
-		const stashes = await tx.stash.findMany({
+		const savingsGoals = await tx.savingsGoal.findMany({
 			where: { userId },
 			orderBy: { createdAt: "asc" },
 		});
-		const settled: typeof stashes = [];
-		for (const stash of stashes)
-			settled.push(await settleStashInterest(tx, stash));
+		const settled: typeof savingsGoals = [];
+		for (const savingsGoal of savingsGoals)
+			settled.push(await settleStashInterest(tx, savingsGoal));
 		return settled;
 	});
 
@@ -43,37 +43,46 @@ const settleOwnedStash = async (
 ) =>
 	settleStashInterest(
 		tx,
-		await tx.stash.findUniqueOrThrow({ where: { id, userId } }),
+		await tx.savingsGoal.findUniqueOrThrow({ where: { id, userId } }),
 	);
 
 export const getStash = (userId: string, id: string) =>
 	savingsTransaction(async (tx) => {
-		const stash = await settleOwnedStash(tx, userId, id);
+		const savingsGoal = await settleOwnedStash(tx, userId, id);
 		const transactions = await tx.transaction.findMany({
-			where: { stashId: id, userId },
+			where: { savingsGoalId: id, userId },
 			orderBy: { createdAt: "desc" },
 			take: 20,
 		});
-		return { ...stash, transactions };
+		return { ...savingsGoal, transactions };
 	});
 
 export const createStash = (
 	userId: string,
 	name: string,
-	goal?: number | null,
+	targetAmount?: number | null,
 ) =>
 	savingsTransaction(async (tx) => {
-		const count = await tx.stash.count({ where: { userId } });
+		const count = await tx.savingsGoal.count({ where: { userId } });
 		if (count >= MAX_STASHES) fail("BAD_REQUEST", MESSAGES.stashLimit);
-		return tx.stash.create({
-			data: { userId, name, goal, interestUpdatedAt: new Date() },
+		return tx.savingsGoal.create({
+			data: {
+				userId,
+				name,
+				targetAmount,
+				interestCalculatedAt: new Date(),
+			},
 		});
 	});
 
-export const updateStash = (userId: string, id: string, fields: StashFields) =>
+export const updateStash = (
+	userId: string,
+	id: string,
+	fields: SavingsGoalFields,
+) =>
 	savingsTransaction(async (tx) => {
 		await settleOwnedStash(tx, userId, id);
-		return tx.stash.update({ where: { id, userId }, data: fields });
+		return tx.savingsGoal.update({ where: { id, userId }, data: fields });
 	});
 
 export const moveMoney = (
@@ -94,9 +103,9 @@ export const moveMoney = (
 
 export const removeStash = (userId: string, id: string) =>
 	savingsTransaction(async (tx) => {
-		const stash = await settleOwnedStash(tx, userId, id);
-		if (stash.balance > 0)
-			await moveStash(tx, userId, stash.id, -stash.balance);
-		await tx.stash.delete({ where: { id, userId, balance: 0 } });
-		return { returned: stash.balance };
+		const savingsGoal = await settleOwnedStash(tx, userId, id);
+		if (savingsGoal.balance > 0)
+			await moveStash(tx, userId, savingsGoal.id, -savingsGoal.balance);
+		await tx.savingsGoal.delete({ where: { id, userId, balance: 0 } });
+		return { returned: savingsGoal.balance };
 	});

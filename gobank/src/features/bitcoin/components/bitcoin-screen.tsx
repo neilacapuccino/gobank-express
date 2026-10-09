@@ -32,12 +32,13 @@ export function BitcoinScreen() {
 	const account = portfolio.data;
 	const value =
 		account && quote
-			? holdingValue(account.satoshis, quote.priceCentavos)
+			? holdingValue(account.bitcoinUnits, quote.unitPriceCentavos)
 			: null;
 	const pnl =
 		account && value !== null ? value - account.costBasisCentavos : null;
 	const change = quote
-		? ((quote.priceCentavos - quote.openCentavos) / quote.openCentavos) * 100
+		? ((quote.unitPriceCentavos - quote.openCentavos) / quote.openCentavos) *
+			100
 		: null;
 	const gain = change !== null && change >= 0;
 
@@ -88,7 +89,7 @@ export function BitcoinScreen() {
 				</div>
 				<div className="mt-5 flex items-baseline gap-2">
 					<p className="text-[clamp(1.8rem,8vw,2.5rem)] font-semibold tracking-[-.06em] tabular-nums">
-						{quote ? money(quote.priceCentavos) : "—"}
+						{quote ? money(quote.unitPriceCentavos) : "—"}
 					</p>
 					<span className="text-ink-muted text-[11px] font-medium">PHP</span>
 				</div>
@@ -167,7 +168,7 @@ export function BitcoinScreen() {
 					<span className="text-[9px] text-[#8da99b]">Account holdings</span>
 				</div>
 				<p className="mt-4 text-[24px] font-semibold tracking-tight tabular-nums">
-					{account ? btc(account.satoshis) : "—"}
+					{account ? btc(account.bitcoinUnits) : "—"}
 					<span className="ml-2 text-[11px] font-medium text-[#8da99b]">
 						BTC
 					</span>
@@ -251,9 +252,9 @@ export function BitcoinScreen() {
 						{account.trades.map((order) => (
 							<div key={order.id} className="flex items-center gap-3 py-4">
 								<span
-									className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${order.side === "buy" ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "bg-rose-300/10 text-rose-300"}`}
+									className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${order.action === "buy" ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "bg-rose-300/10 text-rose-300"}`}
 								>
-									{order.side === "buy" ? (
+									{order.action === "buy" ? (
 										<ArrowDownLeft size={17} />
 									) : (
 										<ArrowUpRight size={17} />
@@ -261,7 +262,7 @@ export function BitcoinScreen() {
 								</span>
 								<div className="min-w-0 flex-1">
 									<p className="text-[12px] font-medium">
-										{order.side === "buy" ? "Bought Bitcoin" : "Sold Bitcoin"}
+										{order.action === "buy" ? "Bought Bitcoin" : "Sold Bitcoin"}
 									</p>
 									<p className="text-ink-faint mt-1 text-[9px]">
 										{order.createdAt.toLocaleString("en-US", {
@@ -274,11 +275,11 @@ export function BitcoinScreen() {
 								</div>
 								<div className="text-right">
 									<p className="text-[11px] font-semibold tabular-nums">
-										{order.side === "buy" ? "+" : "−"}
-										{btc(order.satoshis)} BTC
+										{order.action === "buy" ? "+" : "−"}
+										{btc(order.bitcoinUnits)} BTC
 									</p>
 									<p className="text-ink-muted mt-1 text-[10px] tabular-nums">
-										{money(order.phpCentavos)} PHP
+										{money(order.amountCentavos)} PHP
 									</p>
 								</div>
 							</div>

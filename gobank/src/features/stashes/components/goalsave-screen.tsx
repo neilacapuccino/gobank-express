@@ -144,7 +144,7 @@ function GoalTile({
 				<GoalBubble
 					icon={icon}
 					balance={goal.balance}
-					target={goal.goal}
+					target={goal.targetAmount}
 					label={goal.name}
 				/>
 			</div>
@@ -155,11 +155,11 @@ function GoalTile({
 				{peso(goal.balance)}
 			</p>
 			<p className="mt-2 text-[10px] text-[#71d5f3]">
-				{(goal.interestRate * 100).toFixed(2)}% p.a.
+				{(goal.annualInterestRate * 100).toFixed(2)}% p.a.
 			</p>
-			{goal.goal !== null && (
+			{goal.targetAmount !== null && (
 				<p className="text-ink-faint mt-2 text-[10px] break-words">
-					Target {peso(goal.goal)}
+					Target {peso(goal.targetAmount)}
 				</p>
 			)}
 		</Link>

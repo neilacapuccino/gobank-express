@@ -24,7 +24,7 @@ export const getTransaction = (userId: string, reference: string) =>
 		where: { reference_userId: { reference, userId } },
 		include: {
 			biller: { select: { name: true } },
-			stash: { select: { name: true } },
+			savingsGoal: { select: { name: true } },
 			counterparty: { select: { username: true } },
 		},
 	});

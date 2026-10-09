@@ -49,7 +49,7 @@ export function CreateGoalForm({
 					return;
 				}
 				if (validTarget)
-					create.mutate({ name: name.trim(), goal: targetCentavos });
+					create.mutate({ name: name.trim(), targetAmount: targetCentavos });
 			}}
 		>
 			<header className="relative flex min-h-11 items-center justify-center">

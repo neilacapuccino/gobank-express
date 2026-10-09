@@ -33,10 +33,15 @@ export async function getBitcoinPortfolio(userId: string) {
 
 export async function tradeBitcoin(
 	userId: string,
-	requestId: string,
+	submissionId: string,
 	trade: BitcoinTrade,
 ) {
-	const key = { userId_requestId: { userId, requestId } };
+	const key = {
+		userId_submissionId: {
+			userId,
+			submissionId,
+		},
+	};
 	const duplicate = await db.bitcoinTrade.findUnique({ where: key });
 	if (duplicate) return duplicate;
 	const quote = await getBitcoinQuote();
@@ -70,7 +75,7 @@ export async function tradeBitcoin(
 								cashCentavos: user.balance,
 							},
 							trade,
-							quote.priceCentavos,
+							quote.unitPriceCentavos,
 						);
 					} catch (error) {
 						return fail(
@@ -84,25 +89,27 @@ export async function tradeBitcoin(
 					await post(tx, {
 						userId,
 						kind: "exchange",
-						title: trade.side === "buy" ? "Bought Bitcoin" : "Sold Bitcoin",
+						title: trade.action === "buy" ? "Bought Bitcoin" : "Sold Bitcoin",
 						amount:
-							trade.side === "buy" ? -result.cashCentavos : result.cashCentavos,
+							trade.action === "buy"
+								? -result.cashCentavos
+								: result.cashCentavos,
 						reference,
 						details: {
-							satoshis: result.satoshis.toString(),
-							priceCentavos: quote.priceCentavos,
+							satoshis: result.bitcoinUnits.toString(),
+							priceCentavos: quote.unitPriceCentavos,
 							feeCentavos: result.feeCentavos,
 						},
 					});
 					return tx.bitcoinTrade.create({
 						data: {
 							userId,
-							requestId,
+							submissionId,
 							reference,
-							side: trade.side,
-							satoshis: result.satoshis,
-							phpCentavos: result.cashCentavos,
-							priceCentavos: quote.priceCentavos,
+							action: trade.action,
+							bitcoinUnits: result.bitcoinUnits,
+							amountCentavos: result.cashCentavos,
+							unitPriceCentavos: quote.unitPriceCentavos,
 						},
 					});
 				},
