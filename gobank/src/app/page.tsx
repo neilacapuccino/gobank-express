@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function WelcomePage() {
 	return (
-		<div className="min-h-dvh bg-[#020b16] text-[#f4f7fc]">
-			<main className="mx-auto flex min-h-dvh w-full max-w-[440px] flex-col border-[#172333] px-6 py-6 sm:border-x">
+		<div className="bg-surface-sunken text-ink min-h-dvh">
+			<main className="bg-surface border-line mx-auto flex min-h-dvh w-full max-w-[440px] flex-col px-6 py-6 sm:border-x">
 				<header className="flex shrink-0 justify-center">
 					<GoBankLogo className="h-14 w-[142px]" />
 				</header>
