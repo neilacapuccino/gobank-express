@@ -60,6 +60,27 @@ gobank/
 
 GoalSave is the interface name for the `Stash` entity. A user has one physical and one virtual `Card` record, distinguished by `kind`; account balance and shared card controls belong to `User`. TypeScript files use tabs with a displayed width of two spaces.
 
+Each feature lives in `gobank/src/features/`. Its `components/` folder holds the screens and controls; its router, service and rules stay alongside them when needed. Route files in `src/app/` connect those screens to URLs.
+
+| Feature                  | Folder           | Main screen and route                                                                                        |
+| ------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------ |
+| Dashboard                | `dashboard/`     | `dashboard-screen.tsx` → `/dashboard`                                                                        |
+| Deposit                  | `deposit/`       | `deposit-form.tsx` → `/deposit`                                                                              |
+| Buy load                 | `load/`          | `load-form.tsx` → `/load`                                                                                    |
+| Pay bills                | `bills/`         | `bill-payment.tsx` → `/bills`                                                                                |
+| Activity and receipts    | `activity/`      | `recent-activity.tsx` on the dashboard; receipts at `/transactions/[reference]`; `/transactions` stays blank |
+| My card                  | `card/`          | `my-card-screen.tsx` → `/card`; card generation and credential helpers also live here                        |
+| Notifications            | `notifications/` | `notifications-screen.tsx` → `/notifications`; money request actions stay in `requests/`                     |
+| Rewards                  | `rewards/`       | `rewards-screen.tsx` → `/rewards`; the page stays blank for the assigned member                              |
+| Profile                  | `account/`       | Profile screens and account overview data                                                                    |
+| Registration and sign-in | `auth/`          | Enrollment, sign-in and authentication                                                                       |
+| Send money               | `transfers/`     | `transfer-form.tsx` → `/transfer`                                                                            |
+| Request money            | `requests/`      | `request-form.tsx` → `/request`                                                                              |
+| GoalSave                 | `stashes/`       | Goal screens → `/stashes`                                                                                    |
+| Bitcoin                  | `bitcoin/`       | Market and trading screens → `/stocks`                                                                       |
+
+Shared branding, the animated GO menu, recipient search and money form controls live under `shared/`. Deposit and load have separate routers and services so their code is easy to find.
+
 Money moves through `src/server/ledger.ts`: balance changes and matching transaction records commit together. Transfers share a reference between the sender's debit and recipient's credit. Card locks, daily limits, insufficient funds and database constraints are checked before spending commits.
 
 ## Database
