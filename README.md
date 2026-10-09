@@ -84,7 +84,7 @@ Money moves through `src/server/ledger.ts`: balance changes and matching transac
 npm run check:ci
 ```
 
-This checks the generated Prisma client, formatting, lint, fresh TypeScript types, unit tests and production build. GitHub Actions runs the same checks; install the local push hook from the repository root with `git config core.hooksPath .githooks`.
+This checks formatting, lint, fresh TypeScript types, unit tests and the production build. Prisma generates its client on dependency installation and before GitHub checks; install the local push hook from the repository root with `git config core.hooksPath .githooks`.
 
 Integration checks create temporary accounts and remove their fixtures afterward:
 
