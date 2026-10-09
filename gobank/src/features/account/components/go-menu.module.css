@@ -25,6 +25,7 @@
   filter: drop-shadow(0 0 12px rgb(72 228 233 / 30%));
 }
 .goHalo {
+  transform-box: view-box;
   transform-origin: 40px 40px;
   animation: orbit 20s linear infinite;
 }
@@ -37,6 +38,7 @@
 .petalsReveal,
 .closeCore,
 .morphOrb {
+  transform-box: view-box;
   transform-origin: 40px 40px;
 }
 .petalsOuter {
@@ -54,10 +56,10 @@
   animation: energize 580ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .panel[open] .petalsOuter {
-  animation: orbit 24s linear infinite;
+  animation: orbit 12s linear infinite;
 }
 .panel[open] .petalsInner {
-  animation: reverseOrbit 18s linear infinite;
+  animation: reverseOrbit 12s linear infinite;
 }
 .panel[open] .closeCore {
   animation: coreReveal 320ms 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -89,15 +91,15 @@
 @keyframes energize {
   from {
     opacity: 0;
-    transform: rotate(-240deg) scale(0.35);
+    transform: scale(0.35);
   }
   65% {
     opacity: 1;
-    transform: rotate(-25deg) scale(1.08);
+    transform: scale(1.08);
   }
   to {
     opacity: 1;
-    transform: rotate(0) scale(1);
+    transform: scale(1);
   }
 }
 @keyframes coreReveal {
@@ -111,6 +113,9 @@
   }
 }
 @keyframes orbit {
+  from {
+    transform: rotate(0deg);
+  }
   to {
     transform: rotate(360deg);
   }
