@@ -35,6 +35,8 @@
 }
 .petalsOuter,
 .petalsInner,
+.petalsOuterLaunch,
+.petalsInnerLaunch,
 .petalsReveal,
 .closeCore,
 .morphOrb {
@@ -60,6 +62,12 @@
 }
 .panel[open] .petalsInner {
   animation: reverseOrbit 12s linear infinite;
+}
+.panel[open] .petalsOuterLaunch {
+  animation: launchOrbit 1.2s ease-out both;
+}
+.panel[open] .petalsInnerLaunch {
+  animation: launchReverseOrbit 1.2s ease-out both;
 }
 .panel[open] .closeCore {
   animation: coreReveal 320ms 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -120,6 +128,22 @@
     transform: rotate(360deg);
   }
 }
+@keyframes launchOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes launchReverseOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
 @keyframes dissolve {
   from {
     opacity: 1;
@@ -146,6 +170,8 @@
   .panel[open] .petalsReveal,
   .panel[open] .petalsOuter,
   .panel[open] .petalsInner,
+  .panel[open] .petalsOuterLaunch,
+  .panel[open] .petalsInnerLaunch,
   .panel[open] .closeCore,
   .panel[open] .morphOrb {
     animation: none;

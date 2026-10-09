@@ -189,29 +189,33 @@ export function GoMenu() {
 							aria-hidden="true"
 						>
 							<g className={styles.petalsReveal}>
-								<g className={styles.petalsOuter}>
-									{Array.from({ length: 6 }, (_, index) => (
-										<ellipse
-											key={index}
-											cx="40"
-											cy="23"
-											rx="10"
-											ry="17"
-											transform={`rotate(${index * 60} 40 40)`}
-										/>
-									))}
+								<g className={styles.petalsOuterLaunch}>
+									<g className={styles.petalsOuter}>
+										{Array.from({ length: 6 }, (_, index) => (
+											<ellipse
+												key={index}
+												cx="40"
+												cy="23"
+												rx="10"
+												ry="17"
+												transform={`rotate(${index * 60} 40 40)`}
+											/>
+										))}
+									</g>
 								</g>
-								<g className={styles.petalsInner}>
-									{Array.from({ length: 6 }, (_, index) => (
-										<ellipse
-											key={index}
-											cx="40"
-											cy="26"
-											rx="8"
-											ry="15"
-											transform={`rotate(${index * 60} 40 40)`}
-										/>
-									))}
+								<g className={styles.petalsInnerLaunch}>
+									<g className={styles.petalsInner}>
+										{Array.from({ length: 6 }, (_, index) => (
+											<ellipse
+												key={index}
+												cx="40"
+												cy="26"
+												rx="8"
+												ry="15"
+												transform={`rotate(${index * 60} 40 40)`}
+											/>
+										))}
+									</g>
 								</g>
 							</g>
 							<g className={styles.closeCore}>
