@@ -42,9 +42,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Prisma client
-        run: npx prisma generate
-
       - name: Format check
         run: npm run format:check
 

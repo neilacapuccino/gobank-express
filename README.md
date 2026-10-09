@@ -32,6 +32,7 @@ Copy `.env.example` to `.env` and configure `DATABASE_URL` and `DIRECT_URL`. Kee
 ```sh
 npm run card:setup-key
 npm run db:migrate
+npm run db:client
 npm run db:seed
 npm run dev
 ```
@@ -40,7 +41,7 @@ The app opens at `http://localhost:3001`. Seeding adds billers and demo accounts
 
 Card CVVs are generated when cards are issued and encrypted with `CARD_ENCRYPTION_KEY`; PINs and CVV verification values are salted hashes. **Every app using the same database must use the same private encryption key.** Generate a key only for a new environment, or configure the existing team's key privately; never commit it. Older accounts automatically receive missing card credentials when their cards load.
 
-After pulling changes, stop the dev server before `npm ci` and `npm run db:migrate`. The dev helper rebuilds Prisma only when needed and checks whether port 3001 is already occupied; a running Windows server can otherwise lock Prisma's engine DLL.
+After pulling changes, stop the dev server before `npm ci`, `npm run db:migrate` and `npm run db:client`. Run only one dev server on port 3001. Prisma client generation is an explicit setup command; a running Windows server can otherwise lock Prisma's engine DLL.
 
 ## Code and naming
 
