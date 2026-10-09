@@ -59,7 +59,7 @@ gobank/
     trpc/                Typed client and server callers
 ```
 
-GoalSave is the interface name for the `Stash` entity. A user has one physical and one virtual `Card` record, distinguished by `kind`; account balance and shared card controls belong to `User`. TypeScript files use tabs with a displayed width of two spaces.
+GoalSave is the interface name for the `SavingsGoal` entity. The existing `stashes/` routes and feature folder handle that feature. A user has one physical and one virtual `Card` record, distinguished by `kind`; account balance and shared card controls belong to `User`. TypeScript files use tabs with a displayed width of two spaces.
 
 Each feature lives in `gobank/src/features/`. Its `components/` folder holds the screens and controls; its router, service and rules stay alongside them when needed. Route files in `src/app/` connect those screens to URLs.
 
@@ -92,13 +92,13 @@ Money moves through `src/server/ledger.ts`: balance changes and matching transac
 | `Session`          | Hashed tokens for signed-in sessions                                       |
 | `Card`             | Physical or virtual kind, unique number, network, encrypted CVV and expiry |
 | `RegistrationCard` | A browser-bound card reservation that expires after 30 minutes             |
-| `Stash`            | Named savings, target and interest state                                   |
+| `SavingsGoal`      | Named savings, target and interest state                                   |
 | `Transaction`      | Reference, timestamp, signed amount and resulting balance                  |
 | `MoneyRequest`     | Requests between users and their status                                    |
 | `Biller`           | Biller catalogue                                                           |
 | `BitcoinTrade`     | Bitcoin buy and sell history                                               |
 
-`Stash.interestUpdatedAt` records the last settled time; `interestCarry` preserves fractions of a centavo. Both are needed for accurate daily compounding.
+`SavingsGoal.interestCalculatedAt` records the last settled time; `interestRemainder` preserves fractions of a centavo. Both are needed for accurate daily compounding. See the [database ERD and field guide](docs/database-erd.md) for relationships and Bitcoin units.
 
 ## Checks
 
@@ -108,16 +108,13 @@ npm run check:ci
 
 This checks formatting, lint, fresh TypeScript types, unit tests and the production build. Prisma generates its client on dependency installation and before GitHub checks; install the local push hook from the repository root with `git config core.hooksPath .githooks`.
 
-Integration checks create temporary accounts and remove their fixtures afterward:
+The compact unit suite keeps representative examples for authentication, card credentials, profile photos, savings, Bitcoin calculations and amount entry. Integration checks create temporary accounts and remove their fixtures afterward:
 
 ```sh
-npm run test:auth:integration
-npm run test:card:integration
-npm run test:transfers:integration
-npm run test:payments:integration
-npm run test:enrollment:savings
+npm run test:integration
 npm run test:bitcoin:integration
-npm run test:profile:integration
 ```
+
+The core integration script follows one example of the main banking flows. The separate Bitcoin script also needs access to the live market feed.
 
 Use `npm run format:write` to format source files, `npm run db:generate` to create a migration during development, and `npm run db:migrate` to apply committed migrations.
