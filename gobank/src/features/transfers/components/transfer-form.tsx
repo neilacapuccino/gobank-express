@@ -17,8 +17,8 @@ import {
 	RecipientIdentity,
 	RecipientPicker,
 	type MoneyStep,
-} from "./money-form-ui";
-import { useRecipientSearch } from "./use-recipient-search";
+} from "~/shared/ui/money-form-ui";
+import { useRecipientSearch } from "~/shared/hooks/use-recipient-search";
 
 export function TransferForm() {
 	const router = useRouter();

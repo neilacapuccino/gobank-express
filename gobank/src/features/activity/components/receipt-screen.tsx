@@ -8,7 +8,7 @@ import type { RouterOutputs } from "~/trpc/react";
 export function ReceiptScreen({
 	transaction,
 }: {
-	transaction: RouterOutputs["account"]["transaction"];
+	transaction: RouterOutputs["activity"]["transaction"];
 }) {
 	const details = [
 		{ label: "Reference", value: transaction.reference },

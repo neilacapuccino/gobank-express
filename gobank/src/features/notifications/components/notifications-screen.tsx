@@ -3,98 +3,102 @@
 import { Bell } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import {
-	FormError,
-	RecipientIdentity,
-} from "~/features/transfers/components/money-form-ui";
+import { FormError, RecipientIdentity } from "~/shared/ui/money-form-ui";
 import { cn } from "~/shared/lib/cn";
 import { dateTime, peso } from "~/shared/lib/format";
 import { Button } from "~/shared/ui/button";
+import { PageHeader } from "~/shared/ui/page-header";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 
-type MoneyRequest = RouterOutputs["requests"]["list"]["items"][number];
+type MoneyRequest = RouterOutputs["notifications"]["list"]["items"][number];
 type Direction = "received" | "sent";
 
-export function RequestNotifications() {
+export function NotificationsScreen() {
 	const [direction, setDirection] = useState<Direction>("received");
-	const requests = api.requests.list.useInfiniteQuery(
+	const requests = api.notifications.list.useInfiniteQuery(
 		{ requestDirection: direction, limit: 20 },
 		{ getNextPageParam: (page) => page.next ?? undefined },
 	);
 	const items = requests.data?.pages.flatMap((page) => page.items) ?? [];
 
 	return (
-		<div className="pt-7">
-			<div
-				className="border-line bg-surface-sunken mb-5 grid grid-cols-2 gap-1 rounded-2xl border p-1"
-				aria-label="Request direction"
-			>
-				{(["received", "sent"] as const).map((value) => (
-					<button
-						key={value}
-						type="button"
-						aria-pressed={direction === value}
-						onClick={() => setDirection(value)}
-						className={cn(
-							"h-11 rounded-xl text-[14px] font-medium capitalize transition-colors",
-							direction === value
-								? "bg-surface-raised text-ink"
-								: "text-ink-muted hover:text-ink",
-						)}
-					>
-						{value}
-					</button>
-				))}
-			</div>
-			{requests.isLoading ? (
-				<p
-					role="status"
-					className="text-ink-muted py-8 text-center text-[14px]"
+		<div className="flex flex-1 flex-col">
+			<PageHeader title="Notifications" back="/dashboard" />
+			<div className="pt-7">
+				<div
+					className="border-line bg-surface-sunken mb-5 grid grid-cols-2 gap-1 rounded-2xl border p-1"
+					aria-label="Request direction"
 				>
-					Loading requests…
-				</p>
-			) : !items.length && !requests.error ? (
-				<div className="border-line flex flex-col items-center gap-4 rounded-2xl border px-5 py-10">
-					<Bell size={28} className="text-ink-muted" aria-hidden />
-					<p className="text-ink-muted text-[14px]">No {direction} requests</p>
-				</div>
-			) : items.length ? (
-				<ul className="space-y-4">
-					{items.map((request) => (
-						<li key={request.id}>
-							<RequestCard
-								request={request}
-								received={direction === "received"}
-							/>
-						</li>
+					{(["received", "sent"] as const).map((value) => (
+						<button
+							key={value}
+							type="button"
+							aria-pressed={direction === value}
+							onClick={() => setDirection(value)}
+							className={cn(
+								"h-11 rounded-xl text-[14px] font-medium capitalize transition-colors",
+								direction === value
+									? "bg-surface-raised text-ink"
+									: "text-ink-muted hover:text-ink",
+							)}
+						>
+							{value}
+						</button>
 					))}
-				</ul>
-			) : null}
-			{requests.error ? (
-				<div className="mt-5">
-					<FormError error={errorMessage(requests.error)} />
-					<Button
-						variant="ghost"
-						disabled={requests.isFetching}
-						onClick={() => {
-							if (requests.isFetchNextPageError) void requests.fetchNextPage();
-							else void requests.refetch();
-						}}
-					>
-						{requests.isFetching ? "Retrying…" : "Retry"}
-					</Button>
 				</div>
-			) : requests.hasNextPage ? (
-				<Button
-					variant="outline"
-					className="mt-5"
-					disabled={requests.isFetching}
-					onClick={() => void requests.fetchNextPage()}
-				>
-					{requests.isFetchingNextPage ? "Loading…" : "Load more"}
-				</Button>
-			) : null}
+				{requests.isLoading ? (
+					<p
+						role="status"
+						className="text-ink-muted py-8 text-center text-[14px]"
+					>
+						Loading requests…
+					</p>
+				) : !items.length && !requests.error ? (
+					<div className="border-line flex flex-col items-center gap-4 rounded-2xl border px-5 py-10">
+						<Bell size={28} className="text-ink-muted" aria-hidden />
+						<p className="text-ink-muted text-[14px]">
+							No {direction} requests
+						</p>
+					</div>
+				) : items.length ? (
+					<ul className="space-y-4">
+						{items.map((request) => (
+							<li key={request.id}>
+								<RequestCard
+									request={request}
+									received={direction === "received"}
+								/>
+							</li>
+						))}
+					</ul>
+				) : null}
+				{requests.error ? (
+					<div className="mt-5">
+						<FormError error={errorMessage(requests.error)} />
+						<Button
+							variant="ghost"
+							disabled={requests.isFetching}
+							onClick={() => {
+								if (requests.isFetchNextPageError)
+									void requests.fetchNextPage();
+								else void requests.refetch();
+							}}
+						>
+							{requests.isFetching ? "Retrying…" : "Retry"}
+						</Button>
+					</div>
+				) : requests.hasNextPage ? (
+					<Button
+						variant="outline"
+						className="mt-5"
+						disabled={requests.isFetching}
+						onClick={() => void requests.fetchNextPage()}
+					>
+						{requests.isFetchingNextPage ? "Loading…" : "Load more"}
+					</Button>
+				) : null}
+			</div>
 		</div>
 	);
 }
@@ -146,7 +150,7 @@ function RequestActions({ id, received }: { id: string; received: boolean }) {
 	const [reviewing, setReviewing] = useState(false);
 	const refresh = async () => {
 		await Promise.all([
-			utils.requests.invalidate(),
+			utils.notifications.invalidate(),
 			utils.account.invalidate(),
 		]);
 		setReviewing(false);

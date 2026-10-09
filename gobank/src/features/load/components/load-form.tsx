@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
-import { FormError } from "~/features/transfers/components/money-form-ui";
+import { FormError } from "~/shared/ui/money-form-ui";
 import { isPesoInput } from "~/shared/lib/amount-input";
 import {
 	formatMobile,
@@ -19,7 +19,7 @@ import { TextField } from "~/shared/ui/text-field";
 import { TransactionSummary } from "~/shared/ui/transaction-summary";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
-import { MAX_LOAD_CENTAVOS, MIN_LOAD_CENTAVOS } from "../wallet.rules";
+import { MAX_LOAD_CENTAVOS, MIN_LOAD_CENTAVOS } from "../load.rules";
 
 const LOAD_PRESETS = [10, 15, 20, 50, 100, 300, 500, 1000];
 
@@ -29,7 +29,7 @@ export function LoadForm() {
 	const [mobile, setMobile] = useState("");
 	const [amount, setAmount] = useState("");
 	const [reviewing, setReviewing] = useState(false);
-	const load = api.wallet.load.useMutation({
+	const load = api.load.buy.useMutation({
 		onSuccess: () => utils.account.invalidate(),
 	});
 	const amountCentavos = toCentavos(Number(amount));

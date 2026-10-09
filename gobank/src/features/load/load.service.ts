@@ -1,11 +1,6 @@
 import { formatMobile } from "~/shared/lib/contact";
 import { db } from "~/server/db";
-import { post, spend } from "~/server/ledger";
-
-export const deposit = (userId: string, amount: number) =>
-	db.$transaction((tx) =>
-		post(tx, { userId, kind: "deposit", title: "Cash in", amount }),
-	);
+import { spend } from "~/server/ledger";
 
 export const buyLoad = (userId: string, mobile: string, amount: number) =>
 	db.$transaction((tx) =>

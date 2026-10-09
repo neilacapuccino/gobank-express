@@ -7,7 +7,7 @@ import { toCentavos } from "~/shared/lib/money";
 import { BackButton } from "~/shared/ui/back-button";
 import { Button } from "~/shared/ui/button";
 import { TransactionSummary } from "~/shared/ui/transaction-summary";
-import type { Recipient } from "./use-recipient-search";
+import type { Recipient } from "~/shared/hooks/use-recipient-search";
 
 export type MoneyStep = "recipient" | "amount" | "review";
 

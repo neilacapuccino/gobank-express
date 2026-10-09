@@ -12,12 +12,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { peso, shortDate } from "~/shared/lib/format";
-import type { RouterOutputs } from "~/trpc/react";
-import { SectionHeader } from "./section-header";
+import type { ActivityEntry } from "../activity.fields";
+import { SectionHeader } from "~/shared/ui/section-header";
 
-type Entry = RouterOutputs["account"]["overview"]["transactions"][number];
-
-const ICONS: Record<Entry["kind"], LucideIcon> = {
+const ICONS: Record<ActivityEntry["kind"], LucideIcon> = {
 	deposit: ArrowDownToLine,
 	transfer: ArrowUpRight,
 	bill: Receipt,
@@ -28,7 +26,7 @@ const ICONS: Record<Entry["kind"], LucideIcon> = {
 	exchange: ArrowLeftRight,
 };
 
-export function RecentActivity({ entries }: { entries: Entry[] }) {
+export function RecentActivity({ entries }: { entries: ActivityEntry[] }) {
 	return (
 		<section>
 			<SectionHeader title="Activity" href="/transactions" />

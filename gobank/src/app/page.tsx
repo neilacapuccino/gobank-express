@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { GoBankLogo } from "~/features/account/components/gobank-logo";
+import { GoBankLogo } from "~/shared/ui/gobank-logo";
 import { WelcomeActions } from "~/features/auth/components/welcome-actions";
 
 export const metadata: Metadata = {

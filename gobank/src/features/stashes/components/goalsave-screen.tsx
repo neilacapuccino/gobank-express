@@ -6,7 +6,7 @@ import Link from "next/link";
 import { MAX_STASHES } from "~/shared/lib/money";
 import { peso } from "~/shared/lib/format";
 import { PageHeader } from "~/shared/ui/page-header";
-import { GoMenu } from "~/features/account/components/go-menu";
+import { GoMenu } from "~/shared/ui/go-menu";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { CreateGoalForm } from "./create-goal-form";

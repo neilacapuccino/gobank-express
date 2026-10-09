@@ -69,7 +69,7 @@ function GoalContent({ stash }: { stash: Stash }) {
 	const remove = api.stashes.remove.useMutation({
 		onSuccess: () => {
 			refresh();
-			void utils.account.activity.invalidate();
+			void utils.activity.list.invalidate();
 			router.replace("/stashes");
 			router.refresh();
 		},

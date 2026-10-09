@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DashboardScreen } from "~/features/account/components/dashboard-screen";
+import { DashboardScreen } from "~/features/dashboard/components/dashboard-screen";
 import { api } from "~/trpc/server";
 
 export const metadata: Metadata = {

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
-import { FormError } from "~/features/transfers/components/money-form-ui";
+import { FormError } from "~/shared/ui/money-form-ui";
 import { isPesoInput } from "~/shared/lib/amount-input";
 import { dateTime, digitsOnly, maskDigits, peso } from "~/shared/lib/format";
 import { MAX_TRANSACTION_CENTAVOS, toCentavos } from "~/shared/lib/money";

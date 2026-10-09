@@ -3,13 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { MAX_STASHES } from "~/shared/lib/money";
 import { PocketIcon } from "~/shared/ui/pocket-art";
-import { GoMenu } from "./go-menu";
+import { GoMenu } from "~/shared/ui/go-menu";
 import type { RouterOutputs } from "~/trpc/react";
 import { BalanceCard } from "./balance-card";
 import { FeatureGrid } from "./feature-grid";
-import { GoBankLogo } from "./gobank-logo";
+import { GoBankLogo } from "~/shared/ui/gobank-logo";
 import { QuickActions } from "./quick-actions";
-import { RecentActivity } from "./recent-activity";
+import { RecentActivity } from "~/features/activity/components/recent-activity";
 type Overview = RouterOutputs["account"]["overview"];
 export function DashboardScreen({ account }: { account: Overview }) {
 	return (

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { TRPCError } from "@trpc/server";
 import { notFound } from "next/navigation";
-import { ReceiptScreen } from "~/features/account/components/receipt-screen";
+import { ReceiptScreen } from "~/features/activity/components/receipt-screen";
 import { api } from "~/trpc/server";
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default async function ReceiptPage({
 	try {
 		return (
 			<ReceiptScreen
-				transaction={await api.account.transaction({ reference })}
+				transaction={await api.activity.transaction({ reference })}
 			/>
 		);
 	} catch (error) {

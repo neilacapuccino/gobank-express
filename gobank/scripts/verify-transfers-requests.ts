@@ -12,10 +12,10 @@ import {
 } from "../src/features/transfers/transfers.service";
 import {
 	cancelRequest,
-	listRequests,
 	requestMoney,
 	respondToRequest,
 } from "../src/features/requests/requests.service";
+import { listNotifications } from "../src/features/notifications/notifications.service";
 
 const suffix = randomUUID().replaceAll("-", "");
 const fixtures: {
@@ -44,7 +44,7 @@ const funding = (userId: string, amount: number) =>
 	);
 
 const pendingRequests = async (userId: string) =>
-	(await listRequests(userId, "received")).items.filter(
+	(await listNotifications(userId, "received")).items.filter(
 		(request) => request.status === "pending",
 	);
 
@@ -152,7 +152,7 @@ try {
 	);
 	assert.equal((await pendingRequests(payer.id))[0]?.id, request.id);
 	assert.equal(
-		(await listRequests(requester.id, "sent")).items[0]?.id,
+		(await listNotifications(requester.id, "sent")).items[0]?.id,
 		request.id,
 	);
 	await assert.rejects(
@@ -387,7 +387,7 @@ try {
 		const seenStatuses = new Set<string>();
 		let cursor: string | null = null;
 		do {
-			const page = await listRequests(payer.id, direction, cursor, 5);
+			const page = await listNotifications(payer.id, direction, cursor, 5);
 			assert.ok(page.items.length <= 5);
 			for (const item of page.items) {
 				ids.push(item.id);
@@ -417,22 +417,30 @@ try {
 			"pending",
 		]);
 		assert.ok(!ids.includes(foreign.id));
-		assert.deepEqual(await listRequests(payer.id, direction, foreign.id, 5), {
-			items: [],
-			next: null,
-		});
-		const otherDirection = direction === "received" ? "sent" : "received";
-		const otherPage = await listRequests(payer.id, otherDirection, null, 1);
 		assert.deepEqual(
-			await listRequests(payer.id, direction, otherPage.items[0]!.id, 5),
+			await listNotifications(payer.id, direction, foreign.id, 5),
+			{
+				items: [],
+				next: null,
+			},
+		);
+		const otherDirection = direction === "received" ? "sent" : "received";
+		const otherPage = await listNotifications(
+			payer.id,
+			otherDirection,
+			null,
+			1,
+		);
+		assert.deepEqual(
+			await listNotifications(payer.id, direction, otherPage.items[0]!.id, 5),
 			{ items: [], next: null },
 		);
 	}
-	assert.deepEqual(await listRequests(outsider.id, "received"), {
+	assert.deepEqual(await listNotifications(outsider.id, "received"), {
 		items: [],
 		next: null,
 	});
-	assert.deepEqual(await listRequests(outsider.id, "sent"), {
+	assert.deepEqual(await listNotifications(outsider.id, "sent"), {
 		items: [],
 		next: null,
 	});

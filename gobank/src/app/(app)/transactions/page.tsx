@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PageHeader } from "~/shared/ui/page-header";
+import { ActivityScreen } from "~/features/activity/components/activity-screen";
 
 export const metadata: Metadata = {
 	title: "Activity",
 };
 
 export default function TransactionsPage() {
-	return <PageHeader title="Activity" back="/dashboard" />;
+	return <ActivityScreen />;
 }

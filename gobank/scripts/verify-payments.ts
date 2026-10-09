@@ -9,13 +9,14 @@ import {
 	MAX_REWARD_POINTS,
 } from "../src/shared/lib/money";
 import { listBillers, payBill } from "../src/features/bills/bills.service";
-import { buyLoad, deposit } from "../src/features/wallet/wallet.service";
+import { deposit } from "../src/features/deposit/deposit.service";
+import { buyLoad } from "../src/features/load/load.service";
 import { redeemPoints } from "../src/features/rewards/rewards.service";
 import { sendMoney } from "../src/features/transfers/transfers.service";
 import {
 	getTransaction,
 	listActivity,
-} from "../src/features/account/account.service";
+} from "../src/features/activity/activity.service";
 
 const suffix = randomUUID().replaceAll("-", "");
 const users: { id: string; username: string }[] = [];

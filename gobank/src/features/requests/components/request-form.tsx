@@ -10,8 +10,8 @@ import {
 	MoneySummary,
 	RecipientPicker,
 	type MoneyStep,
-} from "~/features/transfers/components/money-form-ui";
-import { useRecipientSearch } from "~/features/transfers/components/use-recipient-search";
+} from "~/shared/ui/money-form-ui";
+import { useRecipientSearch } from "~/shared/hooks/use-recipient-search";
 import { dateTime, peso } from "~/shared/lib/format";
 import { toCentavos } from "~/shared/lib/money";
 import { Button } from "~/shared/ui/button";
@@ -27,7 +27,7 @@ export function RequestForm() {
 	const [note, setNote] = useState("");
 	const search = useRecipientSearch(() => setStep("amount"));
 	const request = api.requests.create.useMutation({
-		onSuccess: () => utils.requests.invalidate(),
+		onSuccess: () => utils.notifications.invalidate(),
 	});
 	const amountCentavos = toCentavos(Number(amount));
 	const validAmount =

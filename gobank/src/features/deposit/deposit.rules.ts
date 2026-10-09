@@ -1,0 +1,1 @@
+export const MAX_DEPOSIT_CENTAVOS = 5_000_000;

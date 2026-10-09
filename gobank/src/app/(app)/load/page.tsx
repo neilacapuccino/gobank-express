@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LoadForm } from "~/features/wallet/components/load-form";
+import { LoadForm } from "~/features/load/components/load-form";
 
 export const metadata: Metadata = {
 	title: "Buy load",
