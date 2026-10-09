@@ -10,8 +10,9 @@ import {
 	LockKeyholeOpen,
 	Smartphone,
 } from "lucide-react";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { cn } from "~/shared/lib/cn";
+import { isPesoInput } from "~/shared/lib/amount-input";
 import { peso } from "~/shared/lib/format";
 import { toCentavos, toPesos } from "~/shared/lib/money";
 import { Button } from "~/shared/ui/button";
@@ -121,7 +122,11 @@ function CardControls({ card }: { card: CardOverview }) {
 					</button>
 				))}
 			</div>
-			<CardDetails key={selectedKind} card={selectedCard} />
+			<CardDetails
+				key={`${selectedKind}:${selectedCard.number}`}
+				card={selectedCard}
+				cardLocked={card.cardLocked}
+			/>
 			<CardSettings
 				cardLocked={card.cardLocked}
 				cardDailyLimit={card.cardDailyLimit}
@@ -130,16 +135,30 @@ function CardControls({ card }: { card: CardOverview }) {
 	);
 }
 
-function CardDetails({ card }: { card: Card }) {
+function CardDetails({
+	card,
+	cardLocked,
+}: {
+	card: Card;
+	cardLocked: boolean;
+}) {
 	const utils = api.useUtils();
-	const [showNumber, setShowNumber] = useState(true);
+	const [showNumber, setShowNumber] = useState(false);
 	const [cvv, setCvv] = useState<CvvState>({ status: "hidden" });
 	const cvvRequest = useRef(0);
 	const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
 		"idle",
 	);
+	useEffect(() => {
+		if (!cardLocked) return;
+		++cvvRequest.current;
+		setShowNumber(false);
+		setCvv({ status: "hidden" });
+		setCopyStatus("idle");
+	}, [cardLocked]);
 
 	const revealCvv = async () => {
+		if (cardLocked) return;
 		const request = ++cvvRequest.current;
 		setCopyStatus("idle");
 		if (cvv.status === "visible") {
@@ -164,7 +183,7 @@ function CardDetails({ card }: { card: Card }) {
 	};
 
 	const copyCvv = async () => {
-		if (cvv.status !== "visible") return;
+		if (cardLocked || cvv.status !== "visible") return;
 		const request = cvvRequest.current;
 		try {
 			await navigator.clipboard.writeText(cvv.cvv);
@@ -180,72 +199,91 @@ function CardDetails({ card }: { card: Card }) {
 		<section aria-label="Card details" className="mt-4">
 			<div className={styles.cardStage}>
 				<div className={styles.switchCard}>
-					<BankCard
-						brand={card.brand}
-						fullName={card.user.fullName}
-						number={card.number}
-						hideNumber={!showNumber}
-						onToggleNumber={() => setShowNumber((visible) => !visible)}
-						expiresAt={card.expiresAt}
-						kind={card.kind}
-						securityDetails={
-							<div
-								aria-label="Card security code"
-								className="flex shrink-0 flex-col"
-							>
-								<span className="text-[9px] tracking-[0.18em] text-white/55">
-									CVV
-								</span>
-								<div className="flex h-7 items-center gap-0.5">
-									<span className="min-w-6 text-[13px] font-medium text-white tabular-nums">
-										{cvv.status === "visible" ? cvv.cvv : "•••"}
+					<div
+						className={cn(styles.cardFace, cardLocked && styles.cardFaceLocked)}
+						inert={cardLocked}
+						aria-hidden={cardLocked}
+					>
+						<BankCard
+							key={cardLocked ? "locked" : "unlocked"}
+							brand={card.brand}
+							fullName={card.user.fullName}
+							number={card.number}
+							hideNumber={cardLocked || !showNumber}
+							onToggleNumber={
+								cardLocked
+									? undefined
+									: () => setShowNumber((visible) => !visible)
+							}
+							expiresAt={card.expiresAt}
+							kind={card.kind}
+							securityDetails={
+								<div
+									aria-label="Card security code"
+									className="flex shrink-0 flex-col"
+								>
+									<span className="text-[9px] tracking-[0.18em] text-white/55">
+										CVV
 									</span>
-									<button
-										type="button"
-										aria-label={
-											copyStatus === "copied" ? "CVV copied" : "Copy CVV"
-										}
-										disabled={cvv.status !== "visible"}
-										onClick={copyCvv}
-										className={ICON_ACTION}
-									>
-										{copyStatus === "copied" ? (
-											<Check size={14} aria-hidden />
-										) : (
-											<Copy size={14} aria-hidden />
-										)}
-									</button>
-									<button
-										type="button"
-										aria-label={
-											cvv.status === "visible" ? "Hide CVV" : "Show CVV"
-										}
-										aria-pressed={cvv.status === "visible"}
-										disabled={cvv.status === "pending"}
-										onClick={revealCvv}
-										className={ICON_ACTION}
-									>
-										{cvv.status === "pending" ? (
-											<span
-												className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
-												aria-hidden
-											/>
-										) : cvv.status === "visible" ? (
-											<EyeOff size={15} aria-hidden />
-										) : (
-											<Eye size={15} aria-hidden />
-										)}
-									</button>
+									<div className="flex h-7 items-center gap-0.5">
+										<span className="min-w-6 text-[13px] font-medium text-white tabular-nums">
+											{!cardLocked && cvv.status === "visible"
+												? cvv.cvv
+												: "•••"}
+										</span>
+										<button
+											type="button"
+											aria-label={
+												copyStatus === "copied" ? "CVV copied" : "Copy CVV"
+											}
+											disabled={cardLocked || cvv.status !== "visible"}
+											onClick={copyCvv}
+											className={ICON_ACTION}
+										>
+											{copyStatus === "copied" ? (
+												<Check size={14} aria-hidden />
+											) : (
+												<Copy size={14} aria-hidden />
+											)}
+										</button>
+										<button
+											type="button"
+											aria-label={
+												cvv.status === "visible" ? "Hide CVV" : "Show CVV"
+											}
+											aria-pressed={cvv.status === "visible"}
+											disabled={cardLocked || cvv.status === "pending"}
+											onClick={revealCvv}
+											className={ICON_ACTION}
+										>
+											{cvv.status === "pending" ? (
+												<span
+													className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"
+													aria-hidden
+												/>
+											) : cvv.status === "visible" ? (
+												<EyeOff size={15} aria-hidden />
+											) : (
+												<Eye size={15} aria-hidden />
+											)}
+										</button>
+									</div>
 								</div>
-							</div>
-						}
-					/>
+							}
+						/>
+					</div>
 				</div>
+				{cardLocked ? (
+					<div role="status" className={styles.cardLockOverlay}>
+						<Lock size={30} strokeWidth={1.6} aria-hidden />
+						<p className="text-[14px] font-medium">Card locked</p>
+					</div>
+				) : null}
 			</div>
 			<span role="status" className="sr-only">
-				{copyStatus === "copied" ? "CVV copied." : ""}
+				{!cardLocked && copyStatus === "copied" ? "CVV copied." : ""}
 			</span>
-			{cvv.status === "error" || copyStatus === "error" ? (
+			{!cardLocked && (cvv.status === "error" || copyStatus === "error") ? (
 				<p role="alert" className="text-danger mt-1 text-[13px]">
 					{cvv.status === "error"
 						? cvv.message
@@ -338,15 +376,13 @@ function CardSettings({
 					label="Daily spending limit"
 					prefix="₱"
 					name="cardDailyLimit"
-					type="number"
+					type="text"
 					inputMode="decimal"
-					min={0}
-					max={toPesos(MAX_DAILY_LIMIT_CENTAVOS)}
-					step="0.01"
 					required
 					value={limit}
 					disabled={update.isPending}
 					onChange={(event) => {
+						if (!isPesoInput(event.target.value)) return;
 						setLimitDraft(event.target.value);
 						setMessage("");
 						update.reset();

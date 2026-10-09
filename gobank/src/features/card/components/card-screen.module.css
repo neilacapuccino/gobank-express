@@ -1,9 +1,47 @@
 .cardStage {
+  position: relative;
   perspective: 900px;
 }
 
 .switchCard {
   animation: switch-card 280ms ease-out;
+}
+
+.cardFace {
+  transition:
+    filter 220ms ease,
+    opacity 220ms ease;
+}
+
+.cardFaceLocked {
+  filter: blur(5px);
+  opacity: 0.4;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cardLockOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #fff;
+  pointer-events: none;
+  animation: card-lock 180ms ease-out;
+}
+
+@keyframes card-lock {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes switch-card {
@@ -18,7 +56,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .switchCard {
+  .switchCard,
+  .cardLockOverlay {
     animation: none;
+  }
+
+  .cardFace {
+    transition: none;
   }
 }
