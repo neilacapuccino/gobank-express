@@ -20,12 +20,22 @@ import {
 	registrationCardToken,
 } from "./card-preview.service";
 
+import { normalizeGmail } from "~/shared/lib/contact";
+import {
+	forgetGoogleIdentity,
+	pendingGoogleIdentity,
+	rememberGoogleIdentity,
+} from "./google-identity.server";
+import type { GoogleProfile } from "./google.server";
+
 type Registration = {
 	username: string;
 	pin: string;
 	brand: CardBrandId;
 	fullName: string;
 	mobile: string | null;
+	googleId?: string;
+	gmail?: string | null;
 };
 
 type PinAccount = {
@@ -78,12 +88,16 @@ export async function createRegisteredAccount(
 }
 
 export async function register(profile: Registration) {
+	const google = await pendingGoogleIdentity();
 	const user = await createRegisteredAccount(
-		profile,
+		google
+			? { ...profile, googleId: google.sub, gmail: google.gmail }
+			: profile,
 		await registrationCardToken(),
 	);
 	await startSession(user.id);
 	await clearRegistrationCard();
+	await forgetGoogleIdentity();
 	return { created: true };
 }
 
@@ -151,4 +165,27 @@ export async function changePin(
 		await hashPin(newPin),
 	);
 	await endOtherSessions(userId);
+}
+
+export async function signInWithGoogle(profile: GoogleProfile) {
+	const known = await db.user.findUnique({
+		where: { googleId: profile.sub },
+		select: { id: true },
+	});
+	if (known) {
+		await startSession(known.id);
+		return "signed-in" as const;
+	}
+
+	const gmail = profile.email ? normalizeGmail(profile.email) : null;
+	if (gmail) {
+		const taken = await db.user.findUnique({
+			where: { gmail },
+			select: { id: true },
+		});
+		if (taken) return "email-in-use" as const;
+	}
+
+	await rememberGoogleIdentity({ sub: profile.sub, gmail, name: profile.name });
+	return "register" as const;
 }
