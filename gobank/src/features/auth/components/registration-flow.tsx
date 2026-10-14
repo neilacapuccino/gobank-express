@@ -13,6 +13,7 @@ import { StepDetails } from "./step-details";
 import { StepIdentity } from "./step-identity";
 import { StepReview } from "./step-review";
 import type { CardBrandId } from "~/features/card/card-brands";
+import { activateClientSession } from "../session-client";
 
 const TOTAL_STEPS = 4;
 type CardPreview = RouterOutputs["auth"]["prepareCard"];
@@ -26,7 +27,8 @@ export function RegistrationFlow() {
 	const preparationPending = useRef(false);
 	const prepare = api.auth.prepareCard.useMutation();
 	const register = api.auth.register.useMutation({
-		onSuccess: () => {
+		onSuccess: ({ sessionId }) => {
+			activateClientSession(sessionId);
 			queryClient.clear();
 			router.replace("/dashboard");
 			router.refresh();

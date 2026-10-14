@@ -54,7 +54,9 @@ export const authRouter = createTRPCRouter({
 		)
 		.mutation(({ input }) => signIn(input.username, input.pin)),
 
-	signOut: publicProcedure.mutation(() => endSession()),
+	signOut: publicProcedure.mutation(({ ctx }) =>
+		endSession(ctx.browserSession?.id),
+	),
 
 	changePin: protectedProcedure
 		.input(pinChange)

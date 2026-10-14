@@ -82,9 +82,9 @@ export async function register(profile: Registration) {
 		profile,
 		await registrationCardToken(),
 	);
-	await startSession(user.id);
+	const session = await startSession(user.id);
 	await clearRegistrationCard();
-	return { created: true };
+	return { created: true, ...session };
 }
 
 export async function verifyAccountPin(
@@ -136,7 +136,7 @@ export async function signIn(username: string, pin: string) {
 	});
 	if (!user) return fail("UNAUTHORIZED", MESSAGES.wrongCredentials);
 	await verifyAccountPin(user.id, pin, MESSAGES.wrongCredentials);
-	await startSession(user.id);
+	return startSession(user.id);
 }
 
 export async function changePin(

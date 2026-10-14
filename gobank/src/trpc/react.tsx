@@ -9,6 +9,8 @@ import SuperJSON from "superjson";
 
 import { type AppRouter } from "~/server/root";
 import { createQueryClient } from "./query-client";
+import { clientSessionId } from "~/features/auth/session-client";
+import { SESSION_HEADER } from "~/features/auth/session.rules";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {
@@ -27,6 +29,10 @@ export type RouterOutputs = inferRouterOutputs<AppRouter>;
 const link = {
 	transformer: SuperJSON,
 	url: getBaseUrl() + "/api/trpc",
+	headers: () => {
+		const sessionId = clientSessionId();
+		return sessionId ? { [SESSION_HEADER]: sessionId } : {};
+	},
 };
 
 export function TRPCReactProvider(props: { children: React.ReactNode }) {

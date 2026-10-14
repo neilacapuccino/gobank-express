@@ -5,12 +5,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "~/shared/ui/button";
 import { api } from "~/trpc/react";
+import { clearClientSession } from "../session-client";
 
 export function SignOutButton() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const signOut = api.auth.signOut.useMutation({
 		onSuccess: () => {
+			clearClientSession();
 			queryClient.clear();
 			router.replace("/signin");
 			router.refresh();

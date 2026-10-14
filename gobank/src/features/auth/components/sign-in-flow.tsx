@@ -12,6 +12,7 @@ import { PIN_LENGTH, USERNAME_MAX, USERNAME_MIN } from "../auth.rules";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { AuthHeading } from "./auth-heading";
+import { activateClientSession } from "../session-client";
 
 export function SignInFlow() {
 	const router = useRouter();
@@ -21,7 +22,8 @@ export function SignInFlow() {
 	const [pin, setPin] = useState("");
 
 	const signIn = api.auth.signIn.useMutation({
-		onSuccess: () => {
+		onSuccess: ({ sessionId }) => {
+			activateClientSession(sessionId);
 			queryClient.clear();
 			router.replace("/dashboard");
 			router.refresh();
