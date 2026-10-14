@@ -58,7 +58,7 @@ export async function createRegisteredAccount(
 ) {
 	const pinHash = await hashPin(pin);
 	return db.$transaction(
-		async (tx: any) => {
+		async (tx) => {
 			const card = await consumeRegistrationCard(tx, token, brand);
 			const physicalCvv = decryptCvv(
 				card.cvvEncrypted,
@@ -109,7 +109,7 @@ export async function verifyAccountPin(
 	pinHash?: string,
 ) {
 	const outcome = await db.$transaction(
-		async (tx:any) => {
+		async (tx) => {
 			const [user] = await tx.$queryRaw<PinAccount[]>`
 			SELECT "pinHash", "failedPinAttempts", "lockedUntil"
 			FROM "User" WHERE "id" = ${userId} FOR UPDATE
