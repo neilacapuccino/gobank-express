@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { signInWithGoogle } from "~/features/auth/auth.service";
+import { env } from "~/env";
+import { signToken } from "~/features/auth/signed-token";
 import {
 	fetchGoogleProfile,
 	googleEnabled,
@@ -38,8 +40,13 @@ export async function GET(request: NextRequest) {
 	}
 	if (!profile.emailVerified) return go("/signin?google=unverified");
 
-	const outcome = await signInWithGoogle(profile);
-	if (outcome === "signed-in") return go("/dashboard");
-	if (outcome === "register") return go("/register");
+	const secret = env.AUTH_SECRET;
+	if (!secret) return go("/signin?google=failed");
+	const result = await signInWithGoogle(profile);
+	if (result.status === "signed-in") {
+		const token = signToken({ sessionId: result.sessionId }, secret, 60_000);
+		return go(`/google-complete?token=${encodeURIComponent(token)}`);
+	}
+	if (result.status === "register") return go("/register");
 	return go("/signin?google=email-in-use");
 }
