@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit --incremental false",
     "check:ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
     "test": "npm run test:bitcoin && npm run test:profile && npm run test:savings && npm run test:auth && npm run test:card && npm run test:amount-input",
-    "test:auth": "node --import tsx --test src/features/auth/auth.test.ts",
+    "test:auth": "node --import tsx --test src/features/auth/auth.test.ts src/features/auth/signed-token.test.ts",
     "test:integration": "node --conditions=react-server --import tsx scripts/verify-core.ts",
     "test:card": "node --conditions=react-server --import tsx --test src/features/card/card.cvv.test.ts",
     "test:amount-input": "node --import tsx --test src/shared/lib/amount-input.test.ts",

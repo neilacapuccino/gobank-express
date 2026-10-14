@@ -12,9 +12,12 @@ import { PIN_LENGTH, USERNAME_MAX, USERNAME_MIN } from "../auth.rules";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { AuthHeading } from "./auth-heading";
+import { GoogleButton } from "./google-button";
 import { activateClientSession } from "../session-client";
 
-export function SignInFlow() {
+type SignInFlowProps = { google: boolean; notice: string | null };
+
+export function SignInFlow({ google, notice }: SignInFlowProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [phase, setPhase] = useState<"username" | "pin">("username");
@@ -96,7 +99,24 @@ export function SignInFlow() {
 						/>
 					</div>
 
+					{notice && (
+						<p role="alert" className="text-danger mt-4 text-[13px]">
+							{notice}
+						</p>
+					)}
+
 					<div className="flex-1" />
+
+					<Button type="submit" disabled={!ready}>
+						Continue
+						<ArrowRight size={17} strokeWidth={2} aria-hidden />
+					</Button>
+					{google && (
+						<div className="mt-3 flex flex-col gap-3">
+							<p className="text-ink-muted text-center text-[12.5px]">or</p>
+							<GoogleButton />
+						</div>
+					)}
 
 					<Button type="submit" disabled={!ready}>
 						Continue

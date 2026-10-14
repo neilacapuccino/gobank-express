@@ -12,16 +12,19 @@ import {
 } from "../auth.rules";
 import { useUsernameCheck } from "../hooks/use-username-check";
 import { AuthHeading } from "./auth-heading";
+import { GoogleButton } from "./google-button";
 
 type Phase = "username" | "pin" | "confirm";
 
 type StepIdentityProps = {
+	googleButton: boolean;
 	username: string;
 	onUsernameChange: (value: string) => void;
 	onComplete: (pin: string) => void;
 };
 
 export function StepIdentity({
+	googleButton,
 	username,
 	onUsernameChange,
 	onComplete,
@@ -63,6 +66,18 @@ export function StepIdentity({
 	if (phase === "username") {
 		return (
 			<div className="flex flex-1 flex-col">
+				{googleButton && (
+					<>
+						<GoogleButton />
+						<div className="my-6 flex items-center gap-3">
+							<span aria-hidden className="bg-line h-px flex-1" />
+							<span className="text-ink-muted text-[12.5px]">
+								or sign up with a username
+							</span>
+							<span aria-hidden className="bg-line h-px flex-1" />
+						</div>
+					</>
+				)}
 				<AuthHeading
 					title="Pick your username"
 					subtitle="This is how you sign in, and how friends find you."
