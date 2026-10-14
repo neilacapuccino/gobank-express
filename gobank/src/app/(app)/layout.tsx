@@ -1,9 +1,15 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { Screen } from "~/shared/ui/screen";
-import { currentUserId } from "~/server/session";
+import { currentSession } from "~/server/session";
+import { SessionGuard } from "~/features/auth/components/session-guard";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-	if (!(await currentUserId())) redirect("/signin");
-	return <Screen>{children}</Screen>;
+	const session = await currentSession();
+	if (!session) redirect("/signin");
+	return (
+		<Screen>
+			<SessionGuard sessionId={session.id}>{children}</SessionGuard>
+		</Screen>
+	);
 }
