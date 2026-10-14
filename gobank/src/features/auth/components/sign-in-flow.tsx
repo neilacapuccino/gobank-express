@@ -13,6 +13,7 @@ import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { AuthHeading } from "./auth-heading";
 import { GoogleButton } from "./google-button";
+import { activateClientSession } from "../session-client";
 
 type SignInFlowProps = { google: boolean; notice: string | null };
 
@@ -24,7 +25,8 @@ export function SignInFlow({ google, notice }: SignInFlowProps) {
 	const [pin, setPin] = useState("");
 
 	const signIn = api.auth.signIn.useMutation({
-		onSuccess: () => {
+		onSuccess: ({ sessionId }) => {
+			activateClientSession(sessionId);
 			queryClient.clear();
 			router.replace("/dashboard");
 			router.refresh();

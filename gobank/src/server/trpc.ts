@@ -3,9 +3,11 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 import { env } from "~/env";
 import { AppError, asDatabaseError, MESSAGES } from "~/server/errors";
-import { currentUserId } from "~/server/session";
+import { currentSession } from "~/server/session";
 
-const t = initTRPC.create({
+type Context = { browserSession?: { id: string | null } };
+
+const t = initTRPC.context<Context>().create({
 	transformer: superjson,
 	errorFormatter({ shape, error }) {
 		const hidden =
@@ -54,13 +56,16 @@ export const createTRPCRouter = t.router;
 
 export const publicProcedure = t.procedure.use(domainErrors);
 
-export const protectedProcedure = publicProcedure.use(async ({ next }) => {
-	const userId = await currentUserId();
-	if (!userId) {
+export const protectedProcedure = publicProcedure.use(async ({ ctx, next }) => {
+	const session = await currentSession();
+	if (
+		!session ||
+		(ctx.browserSession && ctx.browserSession.id !== session.id)
+	) {
 		throw new TRPCError({
 			code: "UNAUTHORIZED",
 			message: MESSAGES.signInRequired,
 		});
 	}
-	return next({ ctx: { userId } });
+	return next({ ctx: { userId: session.userId } });
 });
