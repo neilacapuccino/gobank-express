@@ -46,14 +46,14 @@ export function TextField({
 
 			<div
 				className={cn(
-					"group bg-surface flex items-center rounded-xl border transition-colors duration-150",
+					"bg-surface flex items-center rounded-xl border transition-colors duration-150",
 					error
 						? "border-danger"
-						: "border-line-strong focus-within:border-[#9fe870] focus-within:ring-2 focus-within:ring-[#9fe870]/20",
+						: "border-line-strong focus-within:border-brand focus-within:ring-brand/15 focus-within:ring-2",
 				)}
 			>
 				{prefix ? (
-					<span className="text-ink-faint pl-3.5 text-[15px] transition-colors select-none group-focus-within:text-[#9fe870]">
+					<span className="text-ink-faint pl-3.5 text-[15px] select-none">
 						{prefix}
 					</span>
 				) : null}
@@ -65,7 +65,7 @@ export function TextField({
 					aria-invalid={Boolean(error)}
 					aria-describedby={error || hint ? descriptionId : undefined}
 					className={cn(
-						"text-ink placeholder:text-ink-faint h-13 min-w-0 flex-1 bg-transparent px-3.5 text-[16px] caret-[#9fe870] outline-none disabled:opacity-60",
+						"text-ink placeholder:text-ink-faint h-13 min-w-0 flex-1 bg-transparent px-3.5 text-[16px] outline-none disabled:opacity-60",
 						prefix ? "pl-1.5" : null,
 						className,
 					)}
