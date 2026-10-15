@@ -33,23 +33,23 @@ export function WelcomeScreen({ googleEnabled, notice }: WelcomeScreenProps) {
 									fill
 									priority
 									sizes="(max-width: 440px) 100vw, 428px"
-									className="object-contain"
+									className={`${styles.greenArtwork} object-contain`}
 								/>
 							</div>
 							<Image
 								src="/images/welcome-growth.webp"
-								alt="A blue growth chart with savings, rewards, and progress icons"
+								alt="A green growth chart with savings, rewards, and progress icons"
 								fill
 								priority
 								sizes="(max-width: 440px) calc(100vw - 48px), 380px"
-								className="z-10 [mask-image:linear-gradient(to_bottom,black_75%,transparent_96%)] object-contain"
+								className={`${styles.greenArtwork} z-10 [mask-image:linear-gradient(to_bottom,black_75%,transparent_96%)] object-contain`}
 							/>
 						</div>
 
 						<h1 className="mt-5 text-[32px] leading-[1.12] font-semibold tracking-tight">
 							Send, receive,
 							<br />
-							<span className="text-[#20bfff]">and grow</span>
+							<span className="text-[#9fe870]">and grow</span>
 						</h1>
 
 						<p className="mt-4 max-w-[300px] text-[14px] leading-6 text-[#acb8ca]">

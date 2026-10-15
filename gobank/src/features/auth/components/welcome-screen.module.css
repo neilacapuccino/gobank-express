@@ -1,3 +1,7 @@
+.greenArtwork {
+  filter: hue-rotate(-80deg);
+}
+
 .progressFill {
   transform-origin: left;
   animation: welcome-fill 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
