@@ -15,22 +15,35 @@ import { AuthHeading } from "./auth-heading";
 import { GoogleButton } from "./google-button";
 import { activateClientSession } from "../session-client";
 
-export function SignInFlow({ googleEnabled }: { googleEnabled: boolean }) {
+type SignInFlowProps = {
+	googleEnabled: boolean;
+	googleUsername?: string;
+};
+
+export function SignInFlow({ googleEnabled, googleUsername }: SignInFlowProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const [phase, setPhase] = useState<"username" | "pin">("username");
-	const [username, setUsername] = useState("");
+	const [phase, setPhase] = useState<"username" | "pin">(
+		googleUsername ? "pin" : "username",
+	);
+	const [username, setUsername] = useState(googleUsername ?? "");
 	const [pin, setPin] = useState("");
 
-	const signIn = api.auth.signIn.useMutation({
-		onSuccess: ({ sessionId }) => {
-			activateClientSession(sessionId);
-			queryClient.clear();
-			router.replace("/dashboard");
-			router.refresh();
-		},
+	const finishSignIn = ({ sessionId }: { sessionId: string }) => {
+		activateClientSession(sessionId);
+		queryClient.clear();
+		router.replace("/dashboard");
+		router.refresh();
+	};
+	const manualSignIn = api.auth.signIn.useMutation({
+		onSuccess: finishSignIn,
 		onError: () => setPin(""),
 	});
+	const googleSignIn = api.auth.signInWithGooglePin.useMutation({
+		onSuccess: finishSignIn,
+		onError: () => setPin(""),
+	});
+	const signIn = googleUsername ? googleSignIn : manualSignIn;
 
 	const ready = username.length >= USERNAME_MIN;
 	const busy = signIn.isPending || signIn.isSuccess;
@@ -39,12 +52,19 @@ export function SignInFlow({ googleEnabled }: { googleEnabled: boolean }) {
 		if (busy) return;
 		if (signIn.isError) signIn.reset();
 		setPin(next);
-		if (next.length === PIN_LENGTH) signIn.mutate({ username, pin: next });
+		if (next.length === PIN_LENGTH) {
+			if (googleUsername) googleSignIn.mutate({ pin: next });
+			else manualSignIn.mutate({ username, pin: next });
+		}
 	};
 
 	const backToUsername = () => {
 		setPin("");
 		signIn.reset();
+		if (googleUsername) {
+			router.replace("/signin");
+			return;
+		}
 		setPhase("username");
 	};
 
@@ -144,7 +164,9 @@ export function SignInFlow({ googleEnabled }: { googleEnabled: boolean }) {
 					</div>
 
 					<Button variant="ghost" disabled={busy} onClick={backToUsername}>
-						Use a different username
+						{googleUsername
+							? "Use username instead"
+							: "Use a different username"}
 					</Button>
 				</div>
 			)}

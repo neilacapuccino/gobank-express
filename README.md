@@ -41,6 +41,8 @@ The app opens at `http://localhost:3001`. Seeding adds billers and demo accounts
 
 Google sign-in is available on the welcome and Log in screens when `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `AUTH_SECRET` are configured. Its callback URL is `http://localhost:3001/api/auth/google/callback` for local development.
 
+After Google verification, an existing account must enter its current PIN before a session starts. A new Google identity begins at "Pick your username" and completes the normal PIN, card and profile registration steps before an account is created.
+
 Card CVVs are generated when cards are issued and encrypted with `CARD_ENCRYPTION_KEY`; PINs and CVV verification values are salted hashes. **Every app using the same database must use the same private encryption key.** Generate a key only for a new environment, or configure the existing team's key privately; never commit it. Older accounts automatically receive missing card credentials when their cards load.
 
 After pulling changes, stop the dev server before `npm ci`, `npm run db:migrate` and `npm run db:client`. Run only one dev server on port 3001. Prisma client generation is an explicit setup command; a running Windows server can otherwise lock Prisma's engine DLL.

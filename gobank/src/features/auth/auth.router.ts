@@ -10,6 +10,7 @@ import {
 } from "~/server/trpc";
 import { changePin, isUsernameFree, register, signIn } from "./auth.service";
 import { prepareRegistrationCard } from "./card-preview.service";
+import { signInWithGooglePin } from "./google/google.service";
 
 export const authRouter = createTRPCRouter({
 	prepareCard: publicProcedure
@@ -53,6 +54,10 @@ export const authRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(({ input }) => signIn(input.username, input.pin)),
+
+	signInWithGooglePin: publicProcedure
+		.input(z.object({ pin: pinDigits }))
+		.mutation(({ input }) => signInWithGooglePin(input.pin)),
 
 	signOut: publicProcedure.mutation(({ ctx }) =>
 		endSession(ctx.browserSession?.id),
