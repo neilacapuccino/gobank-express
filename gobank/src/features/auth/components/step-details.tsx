@@ -11,6 +11,7 @@ import { AuthHeading } from "./auth-heading";
 type StepDetailsProps = {
 	fullName: string;
 	mobile: string;
+	gmail: string | null;
 	onChange: (patch: { fullName?: string; mobile?: string }) => void;
 	onNext: () => void;
 	onBack: () => void;
@@ -19,6 +20,7 @@ type StepDetailsProps = {
 export function StepDetails({
 	fullName,
 	mobile,
+	gmail,
 	onChange,
 	onNext,
 	onBack,
@@ -32,7 +34,7 @@ export function StepDetails({
 			/>
 			<div className="mt-8 flex flex-col gap-5">
 				<ProfileFields value={{ fullName, mobile }} onChange={onChange} />
-				<GmailLink />
+				<GmailLink gmail={gmail} />
 			</div>
 			<div className="flex-1" />
 			<div className="mt-8 flex flex-col gap-1.5">

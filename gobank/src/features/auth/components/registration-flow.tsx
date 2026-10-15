@@ -18,10 +18,23 @@ import { activateClientSession } from "../session-client";
 const TOTAL_STEPS = 4;
 type CardPreview = RouterOutputs["auth"]["prepareCard"];
 
-export function RegistrationFlow() {
+type RegistrationFlowProps = {
+	initialFullName: string;
+	gmail: string | null;
+	googleButton: boolean;
+};
+
+export function RegistrationFlow({
+	initialFullName,
+	gmail,
+	googleButton,
+}: RegistrationFlowProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const [draft, setDraft] = useState<RegistrationDraft>(EMPTY_DRAFT);
+	const [draft, setDraft] = useState<RegistrationDraft>({
+		...EMPTY_DRAFT,
+		fullName: initialFullName,
+	});
 	const [step, setStep] = useState(1);
 	const [card, setCard] = useState<CardPreview | null>(null);
 	const preparationPending = useRef(false);
@@ -98,6 +111,7 @@ export function RegistrationFlow() {
 					<StepIdentity
 						username={draft.username}
 						onUsernameChange={(username) => patch({ username })}
+						googleButton={googleButton}
 						onComplete={(pin) => {
 							patch({ pin });
 							setStep(2);
@@ -120,6 +134,7 @@ export function RegistrationFlow() {
 					<StepDetails
 						fullName={draft.fullName}
 						mobile={draft.mobile}
+						gmail={gmail}
 						onChange={patch}
 						onNext={() => setStep(4)}
 						onBack={() => setStep(2)}
