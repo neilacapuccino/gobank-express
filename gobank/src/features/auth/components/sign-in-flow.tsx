@@ -117,11 +117,6 @@ export function SignInFlow({ google, notice }: SignInFlowProps) {
 							<GoogleButton />
 						</div>
 					)}
-
-					<Button type="submit" disabled={!ready}>
-						Continue
-						<ArrowRight size={17} strokeWidth={2} aria-hidden />
-					</Button>
 				</form>
 			) : (
 				<div key="pin" className="animate-step-in mt-10 flex flex-1 flex-col">

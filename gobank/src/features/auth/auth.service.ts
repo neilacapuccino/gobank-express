@@ -98,7 +98,6 @@ export async function register(profile: Registration) {
 	const session = await startSession(user.id);
 	await clearRegistrationCard();
 	await forgetGoogleIdentity();
-	return { created: true };
 	return { created: true, ...session };
 }
 
@@ -174,8 +173,8 @@ export async function signInWithGoogle(profile: GoogleProfile) {
 		select: { id: true },
 	});
 	if (known) {
-		await startSession(known.id);
-		return "signed-in" as const;
+		const session = await startSession(known.id);
+		return { status: "signed-in" as const, ...session };
 	}
 
 	const gmail = profile.email ? normalizeGmail(profile.email) : null;
@@ -184,9 +183,9 @@ export async function signInWithGoogle(profile: GoogleProfile) {
 			where: { gmail },
 			select: { id: true },
 		});
-		if (taken) return "email-in-use" as const;
+		if (taken) return { status: "email-in-use" as const };
 	}
 
 	await rememberGoogleIdentity({ sub: profile.sub, gmail, name: profile.name });
-	return "register" as const;
+	return { status: "register" as const };
 }
