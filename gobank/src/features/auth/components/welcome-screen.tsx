@@ -16,7 +16,7 @@ export function WelcomeScreen({ googleEnabled, notice }: WelcomeScreenProps) {
 					className="h-1.5 shrink-0 overflow-hidden rounded-full bg-white/10"
 				>
 					<span
-						className={`${styles.progressFill} block h-full rounded-full bg-[#9fe870]`}
+						className={`${styles.progressFill} bg-brand block h-full rounded-full`}
 					/>
 				</div>
 
@@ -33,23 +33,23 @@ export function WelcomeScreen({ googleEnabled, notice }: WelcomeScreenProps) {
 									fill
 									priority
 									sizes="(max-width: 440px) 100vw, 428px"
-									className={`${styles.greenArtwork} object-contain`}
+									className="object-contain"
 								/>
 							</div>
 							<Image
 								src="/images/welcome-growth.webp"
-								alt="A green growth chart with savings, rewards, and progress icons"
+								alt="A blue growth chart with savings, rewards, and progress icons"
 								fill
 								priority
 								sizes="(max-width: 440px) calc(100vw - 48px), 380px"
-								className={`${styles.greenArtwork} z-10 [mask-image:linear-gradient(to_bottom,black_75%,transparent_96%)] object-contain`}
+								className="z-10 [mask-image:linear-gradient(to_bottom,black_75%,transparent_96%)] object-contain"
 							/>
 						</div>
 
 						<h1 className="mt-5 text-[32px] leading-[1.12] font-semibold tracking-tight">
 							Send, receive,
 							<br />
-							<span className="text-[#9fe870]">and grow</span>
+							<span className="text-brand">and grow</span>
 						</h1>
 
 						<p className="mt-4 max-w-[300px] text-[14px] leading-6 text-[#acb8ca]">

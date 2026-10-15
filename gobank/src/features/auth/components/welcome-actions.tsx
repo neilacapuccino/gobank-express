@@ -2,7 +2,7 @@ import Link from "next/link";
 import { GoogleButton } from "./google-button";
 
 const accountLinkClass =
-	"inline-flex min-h-14 items-center justify-center rounded-full bg-[#9fe870] px-5 text-base font-semibold text-[#163300] transition-colors hover:bg-[#b2f38c] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#9fe870]";
+	"bg-brand hover:bg-brand-hover focus-visible:outline-brand inline-flex min-h-14 items-center justify-center rounded-full px-5 text-base font-semibold text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-4";
 
 export function WelcomeActions({ googleEnabled }: { googleEnabled: boolean }) {
 	return (
