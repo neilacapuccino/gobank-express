@@ -1,13 +1,16 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
-import { signInWithGoogle } from "~/features/auth/auth.service";
+import { signInWithGoogle } from "~/features/auth/google/google.service";
 import { env } from "~/env";
-import { signToken } from "~/features/auth/signed-token";
+import { signToken } from "~/features/auth/google/signed-token";
 import {
 	fetchGoogleProfile,
 	googleEnabled,
-} from "~/features/auth/google.server";
-import { GOOGLE_COOKIE, GOOGLE_COOKIE_PATH } from "../cookie";
+} from "~/features/auth/google/google.server";
+import {
+	GOOGLE_COOKIE,
+	GOOGLE_COOKIE_PATH,
+} from "~/features/auth/google/google.rules";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +22,7 @@ export async function GET(request: NextRequest) {
 	const saved = store.get(GOOGLE_COOKIE)?.value;
 	store.delete({ name: GOOGLE_COOKIE, path: GOOGLE_COOKIE_PATH });
 
-	if (searchParams.get("error")) return go("/signin?google=cancelled");
+	if (searchParams.get("error")) return go("/?google=cancelled");
 	const [state, verifier] = saved?.split(".") ?? [];
 	const code = searchParams.get("code");
 	if (
@@ -29,24 +32,24 @@ export async function GET(request: NextRequest) {
 		!code ||
 		searchParams.get("state") !== state
 	) {
-		return go("/signin?google=failed");
+		return go("/?google=failed");
 	}
 
 	let profile;
 	try {
 		profile = await fetchGoogleProfile(code, verifier, origin);
 	} catch {
-		return go("/signin?google=failed");
+		return go("/?google=failed");
 	}
-	if (!profile.emailVerified) return go("/signin?google=unverified");
+	if (!profile.emailVerified) return go("/?google=unverified");
 
 	const secret = env.AUTH_SECRET;
-	if (!secret) return go("/signin?google=failed");
+	if (!secret) return go("/?google=failed");
 	const result = await signInWithGoogle(profile);
 	if (result.status === "signed-in") {
 		const token = signToken({ sessionId: result.sessionId }, secret, 60_000);
 		return go(`/google-complete?token=${encodeURIComponent(token)}`);
 	}
 	if (result.status === "register") return go("/register");
-	return go("/signin?google=email-in-use");
+	return go("/?google=email-in-use");
 }

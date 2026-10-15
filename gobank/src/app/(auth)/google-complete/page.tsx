@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { env } from "~/env";
 import { SessionHandoff } from "~/features/auth/components/session-handoff";
-import { readToken } from "~/features/auth/signed-token";
+import { readToken } from "~/features/auth/google/signed-token";
 import { currentSession } from "~/server/session";
 
 export const metadata: Metadata = {

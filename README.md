@@ -8,7 +8,7 @@ A mobile banking project built with Next.js, TypeScript, tRPC and Prisma. Amount
 - Physical and virtual cards with different networks, unique numbers and separate CVVs. Both use the main balance and shared spending controls.
 - Up to five named GoalSave savings pockets. Settings let users rename, change the target or close a goal and return its savings to the main account.
 - Savings earn 4% annually, compounded daily using server system time: `A = P × (1 + r / 365)^d`. Fractional centavos carry forward, and moving the clock backward cannot credit the same time twice.
-- Required full name and optional profile photo. Gmail linking is reserved for the member implementing Google authentication; there is no separate Email field.
+- Required full name and optional profile photo. Google sign-in connects a verified Google identity during registration; there is no separate Email field.
 - Registration generates the physical card number, expiry and CVV on Continue, preserves them at confirmation, then opens the dashboard directly.
 - Dashboard activity shows signed amounts and receipts. Rewards and Activity links remain available, with blank destination pages reserved for another member.
 
@@ -39,6 +39,8 @@ npm run dev
 
 The app opens at `http://localhost:3001`. Seeding adds billers and demo accounts `@maricel` and `@dante` with PIN `135790`.
 
+Google sign-in is available on the welcome and Log in screens when `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `AUTH_SECRET` are configured. Its callback URL is `http://localhost:3001/api/auth/google/callback` for local development.
+
 Card CVVs are generated when cards are issued and encrypted with `CARD_ENCRYPTION_KEY`; PINs and CVV verification values are salted hashes. **Every app using the same database must use the same private encryption key.** Generate a key only for a new environment, or configure the existing team's key privately; never commit it. Older accounts automatically receive missing card credentials when their cards load.
 
 After pulling changes, stop the dev server before `npm ci`, `npm run db:migrate` and `npm run db:client`. Run only one dev server on port 3001. Prisma client generation is an explicit setup command; a running Windows server can otherwise lock Prisma's engine DLL.
@@ -62,6 +64,8 @@ gobank/
 GoalSave is the interface name for the `SavingsGoal` entity. The existing `stashes/` routes and feature folder handle that feature. A user has one physical and one virtual `Card` record, distinguished by `kind`; account balance and shared card controls belong to `User`. TypeScript files use tabs with a displayed width of two spaces.
 
 Each feature lives in `gobank/src/features/`. Its `components/` folder holds the screens and controls; its router, service and rules stay alongside them when needed. Route files in `src/app/` connect those screens to URLs.
+
+The welcome screen and its entry buttons live in `auth/components/`. Google provider requests, temporary identity cookies, signed tokens and related rules live together in `auth/google/`. Google entry is available on welcome and Log in; retry messages stay on welcome. Registration screens handle the username and PIN flow and preserve any verified Google details.
 
 | Feature                  | Folder           | Main screen and route                                                                                        |
 | ------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------ |

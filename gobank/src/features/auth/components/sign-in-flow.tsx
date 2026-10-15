@@ -2,10 +2,10 @@
 
 import { ArrowRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "~/shared/ui/button";
+import { BackButton } from "~/shared/ui/back-button";
 import { PinPad } from "~/shared/ui/pin-pad";
 import { TextField } from "~/shared/ui/text-field";
 import { PIN_LENGTH, USERNAME_MAX, USERNAME_MIN } from "../auth.rules";
@@ -15,9 +15,7 @@ import { AuthHeading } from "./auth-heading";
 import { GoogleButton } from "./google-button";
 import { activateClientSession } from "../session-client";
 
-type SignInFlowProps = { google: boolean; notice: string | null };
-
-export function SignInFlow({ google, notice }: SignInFlowProps) {
+export function SignInFlow({ googleEnabled }: { googleEnabled: boolean }) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [phase, setPhase] = useState<"username" | "pin">("username");
@@ -52,19 +50,12 @@ export function SignInFlow({ google, notice }: SignInFlowProps) {
 
 	return (
 		<div className="flex flex-1 flex-col">
-			<header className="flex items-center justify-between">
-				<Link
-					href="/"
-					className="text-ink-muted hover:text-ink text-[13px] transition-colors"
-				>
-					GoBank Express
-				</Link>
-				<Link
-					href="/register"
-					className="text-brand hover:text-brand-hover text-[13px] font-medium transition-colors"
-				>
-					Create account
-				</Link>
+			<header className="flex">
+				{phase === "pin" ? (
+					<BackButton onClick={backToUsername} disabled={busy} />
+				) : (
+					<BackButton href="/" />
+				)}
 			</header>
 
 			{phase === "username" ? (
@@ -77,8 +68,8 @@ export function SignInFlow({ google, notice }: SignInFlowProps) {
 					className="animate-step-in mt-10 flex flex-1 flex-col"
 				>
 					<AuthHeading
-						title="Welcome back"
-						subtitle="Sign in with your username and six-digit PIN."
+						title="Log in"
+						subtitle="Use your username and six-digit PIN."
 					/>
 
 					<div className="mt-8">
@@ -99,21 +90,19 @@ export function SignInFlow({ google, notice }: SignInFlowProps) {
 						/>
 					</div>
 
-					{notice && (
-						<p role="alert" className="text-danger mt-4 text-[13px]">
-							{notice}
-						</p>
-					)}
-
 					<div className="flex-1" />
 
 					<Button type="submit" disabled={!ready}>
 						Continue
 						<ArrowRight size={17} strokeWidth={2} aria-hidden />
 					</Button>
-					{google && (
-						<div className="mt-3 flex flex-col gap-3">
-							<p className="text-ink-muted text-center text-[12.5px]">or</p>
+					{googleEnabled && (
+						<div className="mt-5 flex flex-col gap-4">
+							<div className="text-ink-muted flex items-center gap-3 text-xs">
+								<span aria-hidden className="bg-line h-px flex-1" />
+								<span>or</span>
+								<span aria-hidden className="bg-line h-px flex-1" />
+							</div>
 							<GoogleButton />
 						</div>
 					)}

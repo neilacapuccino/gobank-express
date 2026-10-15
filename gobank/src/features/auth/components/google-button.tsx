@@ -4,10 +4,10 @@ export function GoogleButton() {
 	return (
 		<a
 			href="/api/auth/google"
-			className="border-line bg-surface text-ink hover:bg-surface-sunken flex min-h-13 items-center justify-center gap-2.5 rounded-xl border text-[14.5px] font-medium transition-colors"
+			className="inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-white px-5 text-base font-semibold text-[#141710] transition-colors hover:bg-[#f1f3ef] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#9fe870]"
 		>
-			<GoogleMark />
-			Continue with Google
+			<GoogleMark size={20} />
+			Log in with Google
 		</a>
 	);
 }

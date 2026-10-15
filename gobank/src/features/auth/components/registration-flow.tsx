@@ -21,13 +21,11 @@ type CardPreview = RouterOutputs["auth"]["prepareCard"];
 type RegistrationFlowProps = {
 	initialFullName: string;
 	gmail: string | null;
-	googleButton: boolean;
 };
 
 export function RegistrationFlow({
 	initialFullName,
 	gmail,
-	googleButton,
 }: RegistrationFlowProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
@@ -111,7 +109,6 @@ export function RegistrationFlow({
 					<StepIdentity
 						username={draft.username}
 						onUsernameChange={(username) => patch({ username })}
-						googleButton={googleButton}
 						onComplete={(pin) => {
 							patch({ pin });
 							setStep(2);

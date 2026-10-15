@@ -1,20 +1,21 @@
 import Link from "next/link";
+import { GoogleButton } from "./google-button";
 
-export function WelcomeActions() {
+const accountLinkClass =
+	"inline-flex min-h-14 items-center justify-center rounded-full bg-[#9fe870] px-5 text-base font-semibold text-[#163300] transition-colors hover:bg-[#b2f38c] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#9fe870]";
+
+export function WelcomeActions({ googleEnabled }: { googleEnabled: boolean }) {
 	return (
-		<nav aria-label="Get started" className="flex flex-col gap-2">
-			<Link
-				href="/register"
-				className="inline-flex min-h-15 items-center justify-center rounded-full border-[5px] border-[#194e42] bg-[#22b366] px-5 text-[15px] font-medium text-white transition-colors hover:bg-[#2cbd71] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#68dba3]"
-			>
-				Create an account
-			</Link>
-			<Link
-				href="/signin"
-				className="inline-flex min-h-12 items-center justify-center px-4 text-[14px] font-medium text-[#aebfd1] transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#68d9f6]"
-			>
-				Already have an account? Sign in
-			</Link>
+		<nav aria-label="Get started" className="flex shrink-0 flex-col gap-3">
+			<div className="grid grid-cols-2 gap-3">
+				<Link href="/signin" className={accountLinkClass}>
+					Log in
+				</Link>
+				<Link href="/register" className={accountLinkClass}>
+					Register
+				</Link>
+			</div>
+			{googleEnabled && <GoogleButton />}
 		</nav>
 	);
 }

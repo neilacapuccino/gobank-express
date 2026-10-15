@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { pendingGoogleIdentity } from "~/features/auth/google-identity.server";
-import { googleEnabled } from "~/features/auth/google.server";
+import { pendingGoogleIdentity } from "~/features/auth/google/google-identity.server";
 import { RegistrationFlow } from "~/features/auth/components/registration-flow";
 
 export const metadata: Metadata = {
@@ -13,7 +12,6 @@ export default async function RegisterPage() {
 		<RegistrationFlow
 			initialFullName={pending?.name ?? ""}
 			gmail={pending?.gmail ?? null}
-			googleButton={googleEnabled() && !pending}
 		/>
 	);
 }
