@@ -1,13 +1,15 @@
 import { db } from "~/server/db";
 import { activityFields } from "./activity.fields";
+import { filterWhere, type ActivityFilter } from "./activity.rules";
 
 export async function listActivity(
 	userId: string,
 	cursor: string | null | undefined,
 	limit: number,
+	filter: ActivityFilter = "all",
 ) {
 	const items = await db.transaction.findMany({
-		where: { userId },
+		where: { userId, ...filterWhere(filter) },
 		select: activityFields,
 		orderBy: [{ createdAt: "desc" }, { id: "desc" }],
 		take: limit + 1,
