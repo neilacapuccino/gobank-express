@@ -6,6 +6,7 @@ export const activityFields = {
 	kind: true,
 	title: true,
 	amount: true,
+	points: true,
 	createdAt: true,
 } as const;
 
