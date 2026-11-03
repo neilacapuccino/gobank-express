@@ -38,7 +38,9 @@ test("send money blocks amounts above the balance", async ({ page }) => {
 
 	await page.getByRole("link", { name: "Send money" }).click();
 	await page.getByLabel("Recipient").fill("@dante");
-	await page.getByRole("button", { name: /Dante Reyes/ }).click();
+	const continueButton = page.getByRole("button", { name: "Continue" });
+	await expect(continueButton).toBeEnabled({ timeout: 15_000 });
+	await continueButton.click();
 	await page.getByLabel("Amount").fill("9999999");
 
 	await expect(page.locator("#amount-limit")).toHaveText(
