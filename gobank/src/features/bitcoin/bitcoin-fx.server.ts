@@ -1,7 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import { fail } from "~/server/errors";
-import { createRequestCache } from "./bitcoin.cache";
+import { createRequestCache } from "./bitcoin-cache";
 
 const schema = z.object({
 	date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -9,8 +9,11 @@ const schema = z.object({
 	quote: z.literal("PHP"),
 	rate: z.number().finite().positive().max(10_000),
 });
+
 type PhpRate = { rate: number; date: string };
+
 const rateCache = createRequestCache<string, PhpRate>(() => 60 * 60_000);
+
 const fresh = (date: string) => {
 	const age = Date.now() - Date.parse(`${date}T00:00:00Z`);
 	return Number.isFinite(age) && age > -86_400_000 && age < 7 * 86_400_000;
@@ -34,7 +37,10 @@ export async function getPhpRate(): Promise<PhpRate> {
 			);
 		}
 	});
-	if (!fresh(value.date))
+
+	if (!fresh(value.date)) {
 		fail("BAD_REQUEST", "PHP market pricing has expired. Try again later.");
+	}
+
 	return value;
 }

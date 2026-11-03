@@ -4,8 +4,18 @@ import { SESSION_STORAGE_KEY } from "./session.rules";
 
 type SessionWindow = Window & { gobankSessionId?: string };
 
+const sessionWindow = () => window as SessionWindow;
+
+function wasReloaded() {
+	const [navigation] = performance.getEntriesByType("navigation") as
+		PerformanceNavigationTiming[] | [];
+
+	return navigation?.type === "reload";
+}
+
 export function activateClientSession(sessionId: string) {
-	(window as SessionWindow).gobankSessionId = sessionId;
+	sessionWindow().gobankSessionId = sessionId;
+
 	try {
 		sessionStorage.setItem(SESSION_STORAGE_KEY, sessionId);
 	} catch {
@@ -14,7 +24,8 @@ export function activateClientSession(sessionId: string) {
 }
 
 export function clearClientSession() {
-	delete (window as SessionWindow).gobankSessionId;
+	delete sessionWindow().gobankSessionId;
+
 	try {
 		sessionStorage.removeItem(SESSION_STORAGE_KEY);
 	} catch {
@@ -24,14 +35,12 @@ export function clearClientSession() {
 
 export function clientSessionId() {
 	if (typeof window === "undefined") return null;
-	const active = (window as SessionWindow).gobankSessionId;
+
+	const active = sessionWindow().gobankSessionId;
 	if (active) return active;
+
 	try {
-		const navigation = performance.getEntriesByType("navigation")[0] as
-			PerformanceNavigationTiming | undefined;
-		return navigation?.type === "reload"
-			? sessionStorage.getItem(SESSION_STORAGE_KEY)
-			: null;
+		return wasReloaded() ? sessionStorage.getItem(SESSION_STORAGE_KEY) : null;
 	} catch {
 		return null;
 	}

@@ -1,8 +1,8 @@
 import "server-only";
 import { z } from "zod";
 import { fail } from "~/server/errors";
-import { createRequestCache } from "./bitcoin.cache";
-import { getPhpRate } from "./bitcoin.fx";
+import { createRequestCache } from "./bitcoin-cache";
+import { getPhpRate } from "./bitcoin-fx.server";
 import {
 	MAX_CENTAVOS,
 	BITCOIN_CANDLES,
@@ -39,8 +39,10 @@ const candle = z
 		z.coerce.number().finite().nonnegative(),
 	])
 	.rest(z.unknown());
+
 const FEED_ERROR =
 	"Bitcoin market data is unavailable. Please try again shortly.";
+
 const quoteCache = createRequestCache<string, BitcoinQuote>(() => 5_000);
 const chartCache = createRequestCache<BitcoinRange, BitcoinCandle[]>((range) =>
 	range === "1MIN" ? 2_000 : 5_000,
@@ -76,22 +78,27 @@ export function getBitcoinQuote(): Promise<BitcoinQuote> {
 			),
 		]).then(([value, fx, peg]) => {
 			const phpPerQuote = (fx.rate * (peg.bidPrice + peg.askPrice)) / 2;
+			const toCentavos = (price: number) =>
+				Math.round(price * phpPerQuote * 100);
+
 			const result = {
-				unitPriceCentavos: Math.round(value.lastPrice * phpPerQuote * 100),
-				openCentavos: Math.round(value.openPrice * phpPerQuote * 100),
-				highCentavos: Math.round(value.highPrice * phpPerQuote * 100),
-				lowCentavos: Math.round(value.lowPrice * phpPerQuote * 100),
+				unitPriceCentavos: toCentavos(value.lastPrice),
+				openCentavos: toCentavos(value.openPrice),
+				highCentavos: toCentavos(value.highPrice),
+				lowCentavos: toCentavos(value.lowPrice),
 				volume: value.volume,
 				asOf: value.closeTime,
 				phpPerQuote,
 				rateDate: fx.date,
 			};
-			if (
-				result.unitPriceCentavos <= 0 ||
-				result.unitPriceCentavos > MAX_CENTAVOS ||
-				!quoteIsFresh(result.asOf, Date.now())
-			)
+
+			const priceInRange =
+				result.unitPriceCentavos > 0 &&
+				result.unitPriceCentavos <= MAX_CENTAVOS;
+			if (!priceInRange || !quoteIsFresh(result.asOf, Date.now())) {
 				fail("BAD_REQUEST", FEED_ERROR);
+			}
+
 			return result;
 		}),
 	);

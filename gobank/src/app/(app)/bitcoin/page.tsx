@@ -5,6 +5,6 @@ export const metadata: Metadata = {
 	title: "Bitcoin",
 };
 
-export default function StocksPage() {
+export default function BitcoinPage() {
 	return <BitcoinScreen />;
 }
