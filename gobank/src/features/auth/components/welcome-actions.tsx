@@ -1,21 +1,26 @@
 import Link from "next/link";
+import { buttonClass } from "~/shared/ui/button";
 import { GoogleButton } from "./google-button";
-
-const accountLinkClass =
-	"bg-brand hover:bg-brand-hover focus-visible:outline-brand inline-flex min-h-14 items-center justify-center rounded-full px-5 text-base font-semibold text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-4";
 
 export function WelcomeActions({ googleEnabled }: { googleEnabled: boolean }) {
 	return (
 		<nav aria-label="Get started" className="flex shrink-0 flex-col gap-3">
-			<div className="grid grid-cols-2 gap-3">
-				<Link href="/signin" className={accountLinkClass}>
-					Log in
-				</Link>
-				<Link href="/register" className={accountLinkClass}>
-					Register
-				</Link>
-			</div>
-			{googleEnabled && <GoogleButton />}
+			<Link href="/register" className={buttonClass("primary")}>
+				Create account
+			</Link>
+			<Link href="/signin" className={buttonClass("outline")}>
+				Log in
+			</Link>
+			{googleEnabled && (
+				<>
+					<div className="text-ink-faint flex items-center gap-3 text-[12px]">
+						<span aria-hidden className="bg-line h-px flex-1" />
+						<span>or</span>
+						<span aria-hidden className="bg-line h-px flex-1" />
+					</div>
+					<GoogleButton />
+				</>
+			)}
 		</nav>
 	);
 }
