@@ -41,45 +41,45 @@ Open **http://localhost:3001** and sign in as **@maricel** or **@dante** with PI
 Every request goes through the same layers. Each layer does one job.
 
 ```mermaid
-flowchart LR
-    UI["React screens<br/>features/*/components"] --> Client["tRPC client"]
-    Client -->|"HTTPS + session"| API["/api/trpc"]
-    API --> Router["Router<br/>Zod checks every input"]
+flowchart TB
+    UI["React screen"] -->|"tRPC request + session"| Router["Router · Zod checks every input"]
     Router --> Guard{"Signed in?"}
-    Guard -->|yes| Service["Service<br/>business rules"]
-    Guard -->|no| Denied["401 Sign in to continue"]
-    Service --> Ledger["Ledger<br/>the only place balances change"]
-    Service --> Prisma[("Prisma")]
-    Ledger --> Prisma
-    Prisma --> DB[("PostgreSQL<br/>Neon · Singapore")]
+    Guard -->|no| Denied["401 · Sign in to continue"]
+    Guard -->|yes| Service["Service · business rules"]
+    Service --> Ledger["Ledger · the only place balances change"]
+    Service --> DB[("PostgreSQL via Prisma")]
+    Ledger --> DB
 ```
 
 ## Project structure
 
+How the folders depend on each other:
+
 ```mermaid
-flowchart TB
-    subgraph app ["src/app · pages and API routes"]
-        Pages["(app) dashboard · card · goals · bills · ...<br/>(auth) signin · register"]
-        Api["api/trpc · api/session · api/auth/google"]
-    end
+flowchart LR
+    App["src/app<br/>pages + API routes"] --> Features["src/features<br/>one folder per feature"]
+    Features --> Server["src/server<br/>tRPC · ledger · sessions"]
+    Features --> Shared["src/shared<br/>money · formats · UI kit"]
+    Server --> Prisma["prisma<br/>schema + migrations"]
+```
 
-    subgraph features ["src/features · one folder per feature"]
-        List["account · activity · auth · bills · bitcoin · card · deposit<br/>goals · load · notifications · requests · rewards · transfers"]
-        Inside["each feature: *.router.ts · *.service.ts · *.rules.ts · components/ · hooks/"]
-    end
+What is inside every feature folder, using `goals` as the example:
 
-    subgraph server ["src/server · shared backend core"]
-        Core["trpc.ts · root.ts · ledger.ts · session.ts<br/>db.ts · errors.ts · pagination.ts · identifiers.ts"]
-    end
+```mermaid
+flowchart LR
+    Screen["components/<br/>goal-detail.tsx"] -->|"api.goals.move()"| Router["goals.router.ts<br/>endpoints + Zod"]
+    Router --> Service["goals.service.ts<br/>business logic"]
+    Service --> Rules["goals.rules.ts<br/>pure rules + tests"]
+    Screen --> Rules
+```
 
-    subgraph shared ["src/shared · reused everywhere"]
-        Lib["lib: money · format · schemas<br/>ui: buttons · forms · PIN pad"]
-    end
-
-    Pages --> features
-    Api --> server
-    features --> server
-    features --> shared
+```text
+gobank/src
+├── app/        pages: dashboard, card, goals, bills, ... and api/trpc, api/session, api/auth/google
+├── features/   account, activity, auth, bills, bitcoin, card, deposit, goals,
+│               load, notifications, requests, rewards, transfers
+├── server/     trpc.ts, root.ts, ledger.ts, session.ts, db.ts, errors.ts, pagination.ts
+└── shared/     lib/ (money, format, schemas), ui/ (buttons, forms, PIN pad), hooks/
 ```
 
 | File suffix                 | What it holds                                    |
