@@ -13,8 +13,8 @@ import { api } from "~/trpc/react";
 import {
 	goalAmountError,
 	isValidGoalName,
-	STASH_NAME_MAX,
-} from "../stashes.rules";
+	GOAL_NAME_MAX,
+} from "../goals.rules";
 import type { GoalIcon } from "./goal-art";
 import { GoalIconPicker } from "./goal-icon-picker";
 
@@ -37,9 +37,9 @@ function CloseGoal({
 	const router = useRouter();
 	const [confirming, setConfirming] = useState(false);
 
-	const remove = api.stashes.remove.useMutation({
+	const remove = api.goals.remove.useMutation({
 		onSuccess: () => {
-			router.replace("/stashes");
+			router.replace("/goals");
 			router.refresh();
 		},
 	});
@@ -111,7 +111,7 @@ export function GoalSettingsForm({
 		goal.targetAmount ? String(toPesos(goal.targetAmount)) : "",
 	);
 
-	const update = api.stashes.update.useMutation({
+	const update = api.goals.update.useMutation({
 		onSuccess: () => onDone("Goal settings saved."),
 	});
 
@@ -152,7 +152,7 @@ export function GoalSettingsForm({
 				value={name}
 				onChange={(event) => setName(event.target.value)}
 				required
-				maxLength={STASH_NAME_MAX}
+				maxLength={GOAL_NAME_MAX}
 				disabled={update.isPending}
 			/>
 

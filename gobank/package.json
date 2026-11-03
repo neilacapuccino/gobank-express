@@ -27,7 +27,7 @@
     "test:integration": "node --conditions=react-server --import tsx scripts/verify-core.ts",
     "test:card": "node --conditions=react-server --import tsx --test src/features/card/card-cvv.test.ts",
     "test:amount-input": "node --import tsx --test src/shared/lib/amount-input.test.ts",
-    "test:savings": "node --import tsx --test src/shared/lib/savings-interest.test.ts src/features/stashes/stashes.rules.test.ts",
+    "test:savings": "node --import tsx --test src/shared/lib/savings-interest.test.ts src/features/goals/goals.rules.test.ts",
     "test:rewards": "node --import tsx --test src/features/rewards/rewards.rules.test.ts",
     "test:bitcoin": "node --import tsx --test src/features/bitcoin/bitcoin.test.ts src/features/bitcoin/bitcoin-trade-input.test.ts src/features/bitcoin/bitcoin-chart-geometry.test.ts",
     "test:bitcoin:integration": "node --conditions=react-server --import tsx scripts/verify-bitcoin.ts",

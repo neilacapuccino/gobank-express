@@ -28,7 +28,7 @@ const SHORTCUTS: Shortcut[] = [
 	{ href: "/transfer", label: "Send money", icon: Send, tone: "text-mint" },
 	{ href: "/deposit", label: "Deposit", icon: Download, tone: "text-sky" },
 	{ href: "/request", label: "Request", icon: HandCoins, tone: "text-violet" },
-	{ href: "/stashes", label: "GoalSave", icon: PiggyBank, tone: "text-gold" },
+	{ href: "/goals", label: "GoalSave", icon: PiggyBank, tone: "text-gold" },
 	{ href: "/bills", label: "Pay bills", icon: ReceiptText, tone: "text-sky" },
 	{ href: "/load", label: "Buy load", icon: Smartphone, tone: "text-violet" },
 	{ href: "/bitcoin", label: "Bitcoin", icon: Bitcoin, tone: "text-gold" },

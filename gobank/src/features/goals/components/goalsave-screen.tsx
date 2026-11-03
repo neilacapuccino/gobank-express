@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { cn } from "~/shared/lib/cn";
 import { peso } from "~/shared/lib/format";
-import { MAX_STASHES } from "~/shared/lib/money";
+import { MAX_GOALS } from "~/shared/lib/money";
 import { GoMenu } from "~/shared/ui/go-menu";
 import { PageHeader } from "~/shared/ui/page-header";
 import { errorMessage } from "~/trpc/error-message";
@@ -15,7 +15,7 @@ import { useGoalIcon } from "../hooks/use-goal-icon";
 import { CreateGoalForm } from "./create-goal-form";
 import { GoalBubble } from "./goal-bubble";
 
-type Goal = RouterOutputs["stashes"]["list"][number];
+type Goal = RouterOutputs["goals"]["list"][number];
 
 const REFRESH_EVERY_MS = 15_000;
 
@@ -35,10 +35,10 @@ function SavingsOverview({ goals }: { goals: Goal[] | undefined }) {
 
 			<div className="mt-6 flex items-center justify-between gap-4 border-t border-white/[.07] pt-4">
 				<p className="text-ink-muted text-[11px]">
-					{goals ? count : "—"} / {MAX_STASHES} goals
+					{goals ? count : "—"} / {MAX_GOALS} goals
 				</p>
 				<div className="flex gap-1.5" aria-hidden>
-					{Array.from({ length: MAX_STASHES }, (_, index) => (
+					{Array.from({ length: MAX_GOALS }, (_, index) => (
 						<span
 							key={index}
 							className={cn(
@@ -86,7 +86,7 @@ function GoalTile({ goal }: { goal: Goal }) {
 
 	return (
 		<Link
-			href={`/stashes/${goal.id}`}
+			href={`/goals/${goal.id}`}
 			className="group focus-visible:outline-sky min-w-0 rounded-[28px] text-center focus-visible:outline-2 focus-visible:outline-offset-4"
 		>
 			<div className="transition-transform duration-200 group-hover:-translate-y-1">
@@ -120,14 +120,14 @@ function GoalTile({ goal }: { goal: Goal }) {
 export function GoalSaveScreen() {
 	const router = useRouter();
 	const utils = api.useUtils();
-	const goals = api.stashes.list.useQuery(undefined, {
+	const goals = api.goals.list.useQuery(undefined, {
 		refetchInterval: REFRESH_EVERY_MS,
 	});
 	const [creating, setCreating] = useState(false);
 	const [notice, setNotice] = useState("");
 
 	const count = goals.data?.length ?? 0;
-	const full = count >= MAX_STASHES;
+	const full = count >= MAX_GOALS;
 
 	const startCreating = () => {
 		setNotice("");
@@ -135,7 +135,7 @@ export function GoalSaveScreen() {
 	};
 
 	const showCreatedGoal = (goal: Goal) => {
-		utils.stashes.list.setData(undefined, (current) => [
+		utils.goals.list.setData(undefined, (current) => [
 			...(current ?? []).filter((item) => item.id !== goal.id),
 			goal,
 		]);

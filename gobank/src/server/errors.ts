@@ -1,4 +1,4 @@
-import { MAX_STASHES } from "~/shared/lib/money";
+import { MAX_GOALS } from "~/shared/lib/money";
 
 type ErrorCode =
 	| "BAD_REQUEST"
@@ -16,7 +16,7 @@ export const MESSAGES = {
 	insufficientBalance: "Insufficient balance",
 	notEnoughPoints: "Not enough points",
 	accountLimit: "This transaction would exceed the account limit",
-	notEnoughInStash: "Not enough in this Stash",
+	notEnoughInGoal: "Not enough in this goal",
 	cardLocked: "This card is locked. Unlock it or pay with your other card.",
 	cardNotFound: "Your card details were not found.",
 	accountNotFound: "This account no longer exists.",
@@ -24,7 +24,7 @@ export const MESSAGES = {
 	overDailyLimit: "This goes over your daily limit",
 	recipientNotFound: "No GoBank account matches that",
 	ownAccount: "That is your own account",
-	stashLimit: `You can have up to ${MAX_STASHES} Stashes`,
+	goalLimit: `You can have up to ${MAX_GOALS} goals`,
 	requestClosed: "This request is no longer open",
 	notFound: "Not found",
 	unexpected: "Something went wrong. Please try again.",

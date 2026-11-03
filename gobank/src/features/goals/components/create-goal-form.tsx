@@ -9,7 +9,7 @@ import { TextField } from "~/shared/ui/text-field";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { saveGoalIcon } from "../hooks/use-goal-icon";
-import { isValidGoalName, STASH_NAME_MAX } from "../stashes.rules";
+import { isValidGoalName, GOAL_NAME_MAX } from "../goals.rules";
 import type { GoalIcon } from "./goal-art";
 import { GoalIconPicker } from "./goal-icon-picker";
 
@@ -38,7 +38,7 @@ export function CreateGoalForm({
 	onCreated,
 	onCancel,
 }: {
-	onCreated: (goal: RouterOutputs["stashes"]["create"]) => void;
+	onCreated: (goal: RouterOutputs["goals"]["create"]) => void;
 	onCancel: () => void;
 }) {
 	const [name, setName] = useState("");
@@ -46,7 +46,7 @@ export function CreateGoalForm({
 	const [icon, setIcon] = useState<GoalIcon>("safe");
 	const [step, setStep] = useState<Step>("name");
 
-	const create = api.stashes.create.useMutation({
+	const create = api.goals.create.useMutation({
 		onSuccess: (goal) => {
 			saveGoalIcon(goal.id, icon);
 			onCreated(goal);
@@ -111,10 +111,10 @@ export function CreateGoalForm({
 						value={name}
 						onChange={(event) => setName(event.target.value)}
 						required
-						maxLength={STASH_NAME_MAX}
+						maxLength={GOAL_NAME_MAX}
 						disabled={create.isPending}
 						autoFocus
-						hint={`${name.length}/${STASH_NAME_MAX}`}
+						hint={`${name.length}/${GOAL_NAME_MAX}`}
 					/>
 				</div>
 			) : (

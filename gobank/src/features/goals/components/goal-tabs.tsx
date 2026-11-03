@@ -5,7 +5,7 @@ import { cn } from "~/shared/lib/cn";
 import { peso, shortDate } from "~/shared/lib/format";
 import type { RouterOutputs } from "~/trpc/react";
 
-type Goal = RouterOutputs["stashes"]["get"];
+type Goal = RouterOutputs["goals"]["get"];
 type Tab = "overview" | "transactions";
 
 const TABS: { id: Tab; label: string }[] = [

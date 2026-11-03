@@ -9,7 +9,7 @@ import { loadRouter } from "~/features/load/load.router";
 import { notificationsRouter } from "~/features/notifications/notifications.router";
 import { requestsRouter } from "~/features/requests/requests.router";
 import { rewardsRouter } from "~/features/rewards/rewards.router";
-import { stashesRouter } from "~/features/stashes/stashes.router";
+import { goalsRouter } from "~/features/goals/goals.router";
 import { transfersRouter } from "~/features/transfers/transfers.router";
 import { createCallerFactory, createTRPCRouter } from "~/server/trpc";
 
@@ -25,7 +25,7 @@ export const appRouter = createTRPCRouter({
 	notifications: notificationsRouter,
 	requests: requestsRouter,
 	rewards: rewardsRouter,
-	stashes: stashesRouter,
+	goals: goalsRouter,
 	transfers: transfersRouter,
 });
 

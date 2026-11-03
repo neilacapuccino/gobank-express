@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { goalAmountError, isValidGoalName } from "./stashes.rules";
+import { goalAmountError, isValidGoalName } from "./goals.rules";
 
 void test("an empty amount shows no error while the user is still typing", () => {
 	assert.equal(goalAmountError("", 0), null);

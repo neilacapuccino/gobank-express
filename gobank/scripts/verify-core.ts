@@ -36,11 +36,11 @@ import {
 } from "../src/features/requests/requests.service";
 import { listNotifications } from "../src/features/notifications/notifications.service";
 import {
-	createStash,
-	getStash,
+	createGoal,
+	getGoal,
 	moveMoney,
-	removeStash,
-} from "../src/features/stashes/stashes.service";
+	removeGoal,
+} from "../src/features/goals/goals.service";
 
 type Account = { id: string; username: string };
 
@@ -289,7 +289,7 @@ async function checkCardLocks(owner: Account, other: Account) {
 }
 
 async function checkSavings(owner: Account, other: Account) {
-	const goal = await createStash(owner.id, "Core savings", 100_000);
+	const goal = await createGoal(owner.id, "Core savings", 100_000);
 	await moveMoney(owner.id, goal.id, 10_000, "in");
 	const mainBalance = await balanceOf(owner.id);
 
@@ -298,18 +298,18 @@ async function checkSavings(owner: Account, other: Account) {
 		data: { interestCalculatedAt: new Date(Date.now() - ONE_YEAR) },
 	});
 
-	const afterOneYear = await getStash(owner.id, goal.id);
+	const afterOneYear = await getGoal(owner.id, goal.id);
 	assert.ok(afterOneYear.balance > 10_400 && afterOneYear.balance < 10_420);
 	assert.equal(
-		(await getStash(owner.id, goal.id)).balance,
+		(await getGoal(owner.id, goal.id)).balance,
 		afterOneYear.balance,
 	);
 	assert.equal(await balanceOf(owner.id), mainBalance);
 
-	await assert.rejects(getStash(other.id, goal.id));
-	await assert.rejects(removeStash(other.id, goal.id));
+	await assert.rejects(getGoal(other.id, goal.id));
+	await assert.rejects(removeGoal(other.id, goal.id));
 
-	const closed = await removeStash(owner.id, goal.id);
+	const closed = await removeGoal(owner.id, goal.id);
 	assert.equal(closed.returned, afterOneYear.balance);
 	assert.equal(await balanceOf(owner.id), mainBalance + closed.returned);
 	assert.equal(

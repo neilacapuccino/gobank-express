@@ -1,13 +1,13 @@
 import { peso } from "~/shared/lib/format";
 import { MAX_TRANSACTION_CENTAVOS } from "~/shared/lib/money";
 
-export const STASH_NAME_MAX = 40;
+export const GOAL_NAME_MAX = 40;
 
 export type GoalTransfer = "in" | "out";
 
 export const isValidGoalName = (name: string) => {
 	const length = name.trim().length;
-	return length > 0 && length <= STASH_NAME_MAX;
+	return length > 0 && length <= GOAL_NAME_MAX;
 };
 
 export function goalAmountError(

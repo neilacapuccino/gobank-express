@@ -50,12 +50,12 @@ function FeatureRow({ feature }: { feature: Feature }) {
 
 export function FeatureGrid({
 	points,
-	stashCount,
-	stashLimit,
+	goalCount,
+	goalLimit,
 }: {
 	points: number;
-	stashCount: number;
-	stashLimit: number;
+	goalCount: number;
+	goalLimit: number;
 }) {
 	const features: Feature[] = [
 		{
@@ -72,10 +72,10 @@ export function FeatureGrid({
 			),
 		},
 		{
-			href: "/stashes",
+			href: "/goals",
 			title: "GoalSave",
 			description: "Savings goals · 4% p.a.",
-			meta: `${stashCount} of ${stashLimit} goals`,
+			meta: `${goalCount} of ${goalLimit} goals`,
 			icon: (
 				<PocketIcon
 					name="goal"

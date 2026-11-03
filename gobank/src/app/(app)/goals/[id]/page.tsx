@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { GoalDetail } from "~/features/stashes/components/goal-detail";
+import { GoalDetail } from "~/features/goals/components/goal-detail";
 
 export const metadata: Metadata = {
 	title: "GoalSave",
 };
 
-export default async function StashDetailPage({
+export default async function GoalDetailPage({
 	params,
 }: {
 	params: Promise<{ id: string }>;

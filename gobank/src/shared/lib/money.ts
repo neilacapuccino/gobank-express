@@ -1,4 +1,4 @@
-export const MAX_STASHES = 5;
+export const MAX_GOALS = 5;
 export const MAX_TRANSACTION_CENTAVOS = 100_000_000;
 export const MAX_BALANCE_CENTAVOS = 2_147_483_647;
 export const MAX_REWARD_POINTS = 2_147_483_647;

@@ -14,7 +14,7 @@ import { GoalSettingsForm } from "./goal-settings-form";
 import { GoalTabs } from "./goal-tabs";
 import { GoalTransferForm } from "./goal-transfer-form";
 
-type Goal = RouterOutputs["stashes"]["get"];
+type Goal = RouterOutputs["goals"]["get"];
 type Action = "in" | "out" | "settings";
 
 const ACTIONS = [
@@ -24,7 +24,7 @@ const ACTIONS = [
 ] as const;
 
 const REFRESH_EVERY_MS = 15_000;
-const SAVINGS_CHANGES = { mutationKey: [["stashes"]] };
+const SAVINGS_CHANGES = { mutationKey: [["goals"]] };
 
 function ActionButtons({
 	disabled,
@@ -79,7 +79,7 @@ function GoalContent({ goal }: { goal: Goal }) {
 	return (
 		<div className="bg-surface-sunken text-ink -mx-6 -mt-8 -mb-10 flex flex-1 flex-col pt-7">
 			<div className="px-5">
-				<PageHeader title={goal.name} back="/stashes" />
+				<PageHeader title={goal.name} back="/goals" />
 			</div>
 
 			<section className="px-8 pt-7 pb-4 text-center">
@@ -135,7 +135,7 @@ function GoalContent({ goal }: { goal: Goal }) {
 }
 
 export function GoalDetail({ id }: { id: string }) {
-	const query = api.stashes.get.useQuery(
+	const query = api.goals.get.useQuery(
 		{ id },
 		{ refetchInterval: REFRESH_EVERY_MS },
 	);
@@ -145,7 +145,7 @@ export function GoalDetail({ id }: { id: string }) {
 	if (query.isError) {
 		return (
 			<div>
-				<PageHeader title="GoalSave" back="/stashes" />
+				<PageHeader title="GoalSave" back="/goals" />
 				<p role="alert" className="text-danger mt-8">
 					{errorMessage(query.error)}
 				</p>

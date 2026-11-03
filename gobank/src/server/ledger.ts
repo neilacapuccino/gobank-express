@@ -209,7 +209,7 @@ export async function transfer(
 	return sent;
 }
 
-export async function moveStash(
+export async function moveGoalMoney(
 	tx: Tx,
 	userId: string,
 	savingsGoalId: string,
@@ -220,7 +220,7 @@ export async function moveStash(
 			where: { id: savingsGoalId, userId, balance: { gte: -amount } },
 			data: { balance: { increment: amount } },
 		}),
-		MESSAGES.notEnoughInStash,
+		MESSAGES.notEnoughInGoal,
 	);
 
 	const action = amount > 0 ? "deposit" : "withdrawal";
@@ -262,7 +262,7 @@ async function recordInterest(
 	});
 }
 
-export async function settleStashInterest(
+export async function settleGoalInterest(
 	tx: Tx,
 	savingsGoal: SavingsGoal,
 	persist = false,

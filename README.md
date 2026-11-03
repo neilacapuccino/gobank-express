@@ -5,7 +5,7 @@ A mobile-first student banking app built with **Next.js 15, TypeScript, tRPC 11,
 ## Features
 
 - **Main account and cards** — account number, spending balance, a physical and a virtual card, lock/unlock and a daily spending limit.
-- **GoalSave (Stashes)** — up to 5 named savings goals earning 4% p.a., compounded daily.
+- **GoalSave** — up to 5 named savings goals earning 4% p.a., compounded daily.
 - **Transfers and bills** — send money by username, account number, mobile or linked Gmail; request money; pay billers; buy mobile load. Every movement gets a reference number, timestamp and balance snapshot.
 - **Rewards** — 1 point per ₱50 on transfers and bill payments; 100 points = ₱1.00 cash back.
 - **Sign-in** — username + 6-digit PIN, or Continue with Google followed by the PIN.

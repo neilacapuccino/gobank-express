@@ -9,7 +9,7 @@ import { FormError } from "~/shared/ui/money-form-ui";
 import { TextField } from "~/shared/ui/text-field";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
-import { goalAmountError, type GoalTransfer } from "../stashes.rules";
+import { goalAmountError, type GoalTransfer } from "../goals.rules";
 
 const TITLE: Record<GoalTransfer, string> = {
 	in: "Transfer in",
@@ -42,7 +42,7 @@ export function GoalTransferForm({
 }) {
 	const [amount, setAmount] = useState("");
 	const spending = api.account.spending.useQuery();
-	const move = api.stashes.move.useMutation({
+	const move = api.goals.move.useMutation({
 		onSuccess: () => onDone("Transfer complete."),
 	});
 
