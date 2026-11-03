@@ -26,7 +26,7 @@ Fill in `gobank/.env`:
 
 | Variable | Needed for | How to get it |
 | --- | --- | --- |
-| `DATABASE_URL` | everything | Neon → **Connect** → copy the connection string with **pooling on** |
+| `DATABASE_URL` | everything | Create the Neon project in **AWS Asia Pacific 1 (Singapore)**, then **Connect** → copy the connection string with **pooling on** |
 | `DIRECT_URL` | migrations | Same screen with **pooling off** |
 | `CARD_ENCRYPTION_KEY` | cards | Run `npm run card:setup-key` (adds it to `.env`). Everyone sharing one database must use the **same** key. |
 | `AUTH_SECRET` | Google sign-in | Any random 32+ characters, e.g. `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
@@ -42,6 +42,8 @@ npm run dev
 ```
 
 Open **http://localhost:3001**. The seed adds billers and two demo accounts, **@maricel** and **@dante**, both with PIN **135790**.
+
+For a demo or presentation, run the optimized build instead: `npm run build` then `npm start`. Development mode compiles each page the first time you open it.
 
 ### Google sign-in (optional)
 
@@ -213,6 +215,8 @@ Run inside `gobank/`.
 | `npm run check:ci` | Format, lint, typecheck, unit tests and production build |
 
 ## Troubleshooting
+
+- **Slow screens** — keep the database near your users (Singapore for the Philippines; each query to a US region costs about four times as long) and use `npm run build` + `npm start` for demos.
 
 - **`P1001: Can't reach database server`** — Neon may be waking up; run the command again.
 - **`EPERM … query_engine` on Windows** — stop `npm run dev` before `npm ci` or `npx prisma generate`.
