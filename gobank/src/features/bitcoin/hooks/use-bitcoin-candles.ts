@@ -63,7 +63,7 @@ export function useBitcoinCandles(range: BitcoinRange) {
 						asOf: result.asOf,
 					}));
 				} catch {
-					/* REST history remains available after malformed messages. */
+					return;
 				}
 			};
 			socket.onerror = () => socket?.close();

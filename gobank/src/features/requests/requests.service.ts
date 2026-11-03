@@ -24,7 +24,6 @@ export async function requestMoney(
 export const respondToRequest = (userId: string, id: string, accept: boolean) =>
 	db.$transaction(
 		async (tx) => {
-			// Claim the pending request before moving money; competing actions fail.
 			const claimed = await tx.moneyRequest.updateMany({
 				where: { id, payerId: userId, status: "pending" },
 				data: { status: accept ? "paid" : "declined" },

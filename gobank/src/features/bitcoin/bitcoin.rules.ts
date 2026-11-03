@@ -49,7 +49,6 @@ function applyTrade(holdings: Holdings, trade: SettledTrade): Holdings {
 	};
 }
 
-// History must be in execution order. This calculation never changes its inputs.
 export function summarizeTrades(trades: readonly SettledTrade[]): Holdings {
 	return trades.reduce(applyTrade, {
 		bitcoinUnits: 0n,
@@ -58,7 +57,6 @@ export function summarizeTrades(trades: readonly SettledTrade[]): Holdings {
 	});
 }
 
-// Integer centavos and Bitcoin units avoid floating-point balance drift.
 export function calculateTrade(
 	account: TradingBalances,
 	trade: BitcoinTrade,
@@ -83,7 +81,6 @@ export function calculateTrade(
 		bitcoinUnits = (BigInt(trade.cashCentavos) * UNITS_PER_BITCOIN) / price;
 		if (bitcoinUnits === 0n)
 			throw new Error("This amount is too small to buy Bitcoin.");
-		// Round purchase costs up and sale proceeds down, preventing rounding profits.
 		tradeCentavos = Number(
 			(bitcoinUnits * price + UNITS_PER_BITCOIN - 1n) / UNITS_PER_BITCOIN,
 		);

@@ -32,7 +32,6 @@ export type BitcoinCandle = {
 	close: number;
 	volume: number;
 };
-// One Bitcoin equals 100,000,000 integer units.
 export const UNITS_PER_BITCOIN = 100_000_000n;
 
 export const MAX_CENTAVOS = 2_000_000_000;

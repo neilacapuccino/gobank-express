@@ -49,7 +49,6 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
 	const maximum = high + spread * 0.12;
 	const y = (value: number) =>
 		TOP + ((maximum - value) / (maximum - minimum)) * (H - TOP - BOTTOM);
-	// Time-based spacing preserves gaps in the exchange's candle history.
 	const x = (point: BitcoinCandle) =>
 		LEFT +
 		((point.time - (first?.time ?? 0)) /

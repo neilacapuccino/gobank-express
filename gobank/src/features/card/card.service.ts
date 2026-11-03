@@ -110,7 +110,6 @@ async function accountCards(tx: Tx, userId: string) {
 	if (!physical) return fail("NOT_FOUND", "Your physical card was not found.");
 	if (virtual && cards.every(readyCard)) return publicCards(cards);
 
-	// Verify the configured key before replacing any existing credentials.
 	if (physical.cvvEncrypted !== null) storedCvv(physical);
 	const existingVirtualCvv =
 		virtual && virtual.cvvEncrypted !== null ? storedCvv(virtual) : undefined;

@@ -6,7 +6,6 @@ import type { Prisma } from "../../../generated/prisma";
 
 type SavingsGoalFields = { name?: string; targetAmount?: number | null };
 
-// Reading interest and changing a goal settle together; conflicts retry safely.
 async function savingsTransaction<T>(
 	work: (tx: Prisma.TransactionClient) => Promise<T>,
 ) {

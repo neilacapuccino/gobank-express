@@ -74,7 +74,7 @@ export function useBitcoinFeed() {
 								},
 					);
 				} catch {
-					/* Ignore malformed messages; REST remains available. */
+					return;
 				}
 			};
 			socket.onerror = () => socket?.close();

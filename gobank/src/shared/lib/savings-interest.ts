@@ -8,7 +8,6 @@ type Savings = {
 	interestCalculatedAt: Date;
 };
 
-// A = P × (1 + r / 365)^days. Keep fractions of a centavo for later credits.
 export function compoundInterest(savings: Savings, now: Date) {
 	const days = Math.max(
 		0,

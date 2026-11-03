@@ -1,4 +1,3 @@
-// Each check uses tracked temporary fixtures and removes them in finally.
 import "dotenv/config";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -58,7 +57,6 @@ const balance = async (id: string) =>
 	).balance;
 
 try {
-	// Registration keeps the confirmed card and creates a separate virtual card.
 	const registration = {
 		username: `core_${suffix}_a`,
 		fullName: "Core fixture",
@@ -108,7 +106,6 @@ try {
 	);
 	await verifyAccountPin(owner.id, registration.pin, MESSAGES.wrongPin);
 
-	// Profile changes persist; an invalid photo cannot partially save the name.
 	const photo = await sharp({
 		create: { width: 8, height: 8, channels: 3, background: "#009b72" },
 	})
@@ -132,7 +129,6 @@ try {
 	assert.deepEqual(await getProfile(owner.id), profile);
 	assert.equal((await getProfile(other.id)).profilePhoto, null);
 
-	// Payments update the ledger and rewards together, with owner-only receipts.
 	const biller = await db.biller.create({
 		data: {
 			code: `core-${suffix}`,
@@ -160,7 +156,6 @@ try {
 	);
 	assert.deepEqual(await getOverview(owner.id), beforeFailure);
 
-	// Transfers balance both ledger entries; requests allow one authorized decision.
 	const sent = await sendMoney(owner.id, `@${other.username}`, 12_345, null);
 	const entries = await db.transaction.findMany({
 		where: { reference: sent.reference },
@@ -193,7 +188,6 @@ try {
 	);
 	assert.equal((await listNotifications(owner.id, "received")).items.length, 0);
 
-	// Physical and virtual cards share account locks and spending limits.
 	await updateCard(owner.id, { cardLocked: true });
 	const locked = await getOverview(owner.id);
 	await assert.rejects(
@@ -207,7 +201,6 @@ try {
 		rejectsMessage(MESSAGES.overDailyLimit),
 	);
 
-	// Interest stays in its savings goal, credits once, and returns on closure.
 	const goal = await createStash(owner.id, "Core savings", 100_000);
 	await moveMoney(owner.id, goal.id, 10_000, "in");
 	const mainBalance = await balance(owner.id);

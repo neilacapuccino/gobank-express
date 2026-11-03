@@ -133,7 +133,6 @@ export async function verifyAccountPin(
 		{ maxWait: 30_000, timeout: 30_000 },
 	);
 
-	// Failed attempts must commit before an error is returned to the client.
 	if (outcome.correct) return;
 	if (outcome.minutesLeft > 0) {
 		fail("TOO_MANY_REQUESTS", MESSAGES.pinLocked(outcome.minutesLeft));

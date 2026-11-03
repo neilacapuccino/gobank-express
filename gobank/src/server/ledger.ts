@@ -111,7 +111,6 @@ export async function spentToday(tx: Tx, userId: string) {
 }
 
 export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
-	// Serialize spending before reading today's total.
 	await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${entry.userId} FOR UPDATE`;
 	const user = await tx.user.findUniqueOrThrow({
 		where: { id: entry.userId },
@@ -138,7 +137,6 @@ export async function transfer(
 	amount: number,
 	note?: string | null,
 ) {
-	// Opposite transfers lock both accounts in the same order.
 	await tx.$queryRaw`
 		SELECT "id" FROM "User"
 		WHERE "id" IN (${from.id}, ${to.id})

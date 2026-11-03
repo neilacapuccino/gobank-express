@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { goalIcons, iconForGoal, type GoalIcon } from "./goal-art";
 
-// Icons are presentation preferences on this device, never financial data.
 export function saveGoalIcon(id: string, icon: GoalIcon) {
 	try {
 		localStorage.setItem(`gobank:goal-icon:${id}`, icon);
 	} catch {
-		/* Storage may be disabled. */
+		return;
 	}
 }
 export function useGoalIcon(id: string, name: string) {

@@ -62,7 +62,6 @@ export function mergeLiveCandle(
 	).slice(-limit);
 }
 
-// A delayed REST response cannot replace a more complete streamed candle.
 export function mergeCandleHistory(
 	history: BitcoinCandle[],
 	updates: BitcoinCandle[],
@@ -77,7 +76,6 @@ export function mergeCandleHistory(
 	return [...points.values()].sort((a, b) => a.time - b.time).slice(-limit);
 }
 
-// Combine real OHLC bars so short views have readable candle bodies and wicks.
 export function groupCandles(points: BitcoinCandle[], intervalMs: number) {
 	const groups = new Map<number, BitcoinCandle>();
 	for (const point of points) {

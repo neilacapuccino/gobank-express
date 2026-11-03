@@ -46,7 +46,6 @@ export async function tradeBitcoin(
 	if (duplicate) return duplicate;
 	const quote = await getBitcoinQuote();
 
-	// Only server prices can settle a trade. Serialization prevents double spending.
 	for (let attempt = 0; attempt < 4; attempt++) {
 		try {
 			return await db.$transaction(

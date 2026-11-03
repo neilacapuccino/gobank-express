@@ -1,4 +1,3 @@
-// Optional network check: live market data and one temporary user's trades.
 import "dotenv/config";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";

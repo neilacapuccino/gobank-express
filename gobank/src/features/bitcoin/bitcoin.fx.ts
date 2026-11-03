@@ -16,7 +16,6 @@ const fresh = (date: string) => {
 	return Number.isFinite(age) && age > -86_400_000 && age < 7 * 86_400_000;
 };
 
-// Pricing only: this never creates a USD balance or converts account money.
 export async function getPhpRate(): Promise<PhpRate> {
 	const value = await rateCache("USD/PHP", async () => {
 		try {
