@@ -213,7 +213,7 @@ function CandleTooltip({
 	range: BitcoinRange;
 }) {
 	return (
-		<div className="pointer-events-none absolute top-0 left-2 rounded-lg border border-white/10 bg-[#242427] px-2.5 py-1.5 text-[10px] shadow-lg">
+		<div className="bg-tile pointer-events-none absolute top-0 left-2 rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] shadow-lg">
 			<p className="font-semibold text-white">
 				{money(centavos(candle.close))} PHP
 			</p>

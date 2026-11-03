@@ -73,7 +73,7 @@ function NewGoalButton({
 				wide && "col-span-2",
 			)}
 		>
-			<span className="text-sky grid h-20 w-20 place-items-center rounded-full border border-white/10 bg-[#242426] transition-transform group-hover:scale-105">
+			<span className="text-sky bg-tile grid h-20 w-20 place-items-center rounded-full border border-white/10 transition-transform group-hover:scale-105">
 				<Plus size={28} strokeWidth={1.7} aria-hidden />
 			</span>
 			<span className="text-[13px] font-semibold">New goal</span>

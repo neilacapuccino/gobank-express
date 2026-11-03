@@ -127,7 +127,7 @@ export function GoalTabs({ goal }: { goal: Goal }) {
 						className={cn(
 							"focus-visible:outline-sky h-11 flex-1 rounded-xl text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
 							tab === id
-								? "bg-[#303034] text-white"
+								? "bg-tile-hover text-white"
 								: "text-ink-muted hover:text-white",
 						)}
 					>

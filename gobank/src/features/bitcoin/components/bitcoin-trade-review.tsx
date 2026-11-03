@@ -153,7 +153,7 @@ export function TradeReviewDialog({
 					type="button"
 					onClick={onConfirm}
 					disabled={!preview || !fresh || pending}
-					className="bg-mint mt-5 min-h-12 w-full rounded-xl text-[13px] font-bold text-[#0a211a] disabled:opacity-40"
+					className="bg-mint text-on-mint mt-5 min-h-12 w-full rounded-xl text-[13px] font-bold disabled:opacity-40"
 				>
 					{pending ? "Completing trade…" : `Confirm ${action}`}
 				</button>

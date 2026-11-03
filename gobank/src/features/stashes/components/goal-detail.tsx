@@ -45,8 +45,8 @@ function ActionButtons({
 				>
 					<span
 						className={cn(
-							"grid h-14 w-14 place-items-center rounded-full border border-white/[.08] bg-[#242426] transition-colors group-hover:bg-[#303034]",
-							id === "in" ? "text-sky" : "text-[#e4e4e7]",
+							"bg-tile group-hover:bg-tile-hover grid h-14 w-14 place-items-center rounded-full border border-white/[.08] transition-colors",
+							id === "in" ? "text-sky" : "text-ink-bright",
 						)}
 					>
 						<Icon size={25} aria-hidden />
@@ -152,7 +152,7 @@ export function GoalDetail({ id }: { id: string }) {
 				<button
 					type="button"
 					onClick={() => void query.refetch()}
-					className="mt-5 rounded-xl border border-white/10 bg-[#242426] px-5 py-3 text-[#e4e4e7] focus-visible:outline-2 focus-visible:outline-offset-4"
+					className="bg-tile text-ink-bright mt-5 rounded-xl border border-white/10 px-5 py-3 focus-visible:outline-2 focus-visible:outline-offset-4"
 				>
 					Try again
 				</button>

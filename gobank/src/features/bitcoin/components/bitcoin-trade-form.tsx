@@ -32,7 +32,7 @@ const ACTION_STYLE: Record<TradeAction, string> = {
 };
 
 const SUBMIT_STYLE: Record<TradeAction, string> = {
-	buy: "bg-mint text-[#0a211a] hover:bg-[#75edc3]",
+	buy: "bg-mint text-on-mint hover:bg-[#75edc3]",
 	sell: "bg-rose-300 text-[#35151d] hover:bg-rose-200",
 };
 

@@ -9,11 +9,15 @@
   --color-surface-sunken: #101012;
   --color-surface-raised: #29292c;
   --color-card: #171719;
+  --color-tile: #242426;
+  --color-tile-hover: #303034;
+  --color-tile-sunken: #202022;
 
   --color-line: #353539;
   --color-line-strong: #515158;
 
   --color-ink: #f4f4f5;
+  --color-ink-bright: #e4e4e7;
   --color-ink-soft: #c4c4cc;
   --color-ink-muted: #a1a1ad;
   --color-ink-faint: #878792;
@@ -28,6 +32,8 @@
   --color-sky: #71d5f3;
   --color-gold: #e6c17a;
   --color-violet: #bda0fa;
+  --color-cyan: #48e4e9;
+  --color-on-mint: #0a211a;
 
   --color-danger: #f87171;
   --color-danger-soft: #351d21;

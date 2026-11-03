@@ -27,7 +27,7 @@ export function GoalBubble({
 	return (
 		<div
 			className={cn(
-				"relative mx-auto grid aspect-square w-full place-items-center rounded-full bg-[#202022] text-[#e4e4e7]",
+				"bg-tile-sunken text-ink-bright relative mx-auto grid aspect-square w-full place-items-center rounded-full",
 				large ? "max-w-64" : "max-w-40",
 			)}
 		>

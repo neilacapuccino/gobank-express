@@ -41,7 +41,7 @@ const SHORTCUTS: Shortcut[] = [
 ];
 
 const ROUND_CONTROL =
-	"grid h-20 w-20 place-items-center rounded-full transition-transform duration-200 hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#48e4e9] active:scale-95";
+	"grid h-20 w-20 place-items-center rounded-full transition-transform duration-200 hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan active:scale-95";
 
 const PETAL_ANGLES = [0, 60, 120, 180, 240, 300];
 
@@ -190,7 +190,7 @@ function ShortcutTile({
 			style={{ animationDelay: `${110 + position * 30}ms` }}
 			className={cn(
 				styles.tile,
-				"group flex min-h-[88px] items-center gap-3 rounded-[20px] border border-white/[.07] bg-linear-to-br from-[#232327] to-[#17171a] px-3 py-4 shadow-[inset_0_1px_0_#ffffff04] transition-colors hover:border-white/20 hover:from-[#29292f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#48e4e9]",
+				"group focus-visible:outline-cyan flex min-h-[88px] items-center gap-3 rounded-[20px] border border-white/[.07] bg-linear-to-br from-[#232327] to-[#17171a] px-3 py-4 shadow-[inset_0_1px_0_#ffffff04] transition-colors hover:border-white/20 hover:from-[#29292f] focus-visible:outline-2 focus-visible:outline-offset-2",
 			)}
 		>
 			<span
@@ -201,7 +201,7 @@ function ShortcutTile({
 			>
 				<Icon size={23} strokeWidth={1.8} aria-hidden />
 			</span>
-			<span className="text-[12px] font-semibold text-[#e4e4e8]">{label}</span>
+			<span className="text-ink-bright text-[12px] font-semibold">{label}</span>
 		</Link>
 	);
 }

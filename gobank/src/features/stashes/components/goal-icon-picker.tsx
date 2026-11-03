@@ -25,7 +25,7 @@ function IconOption({
 		>
 			<span
 				className={cn(
-					"relative grid aspect-square w-full place-items-center rounded-full border-2 bg-[#242426] transition-colors",
+					"bg-tile relative grid aspect-square w-full place-items-center rounded-full border-2 transition-colors",
 					selected
 						? "border-sky text-white"
 						: "text-ink-soft border-transparent group-hover:border-white/20",
@@ -70,10 +70,10 @@ export function GoalIconPicker({
 				aria-haspopup="dialog"
 				disabled={disabled}
 				onClick={open}
-				className="hover:border-sky/40 focus-visible:outline-sky relative mx-auto grid h-28 w-28 place-items-center rounded-full border border-white/10 bg-[#242426] text-[#e4e4e7] transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
+				className="hover:border-sky/40 focus-visible:outline-sky bg-tile text-ink-bright relative mx-auto grid h-28 w-28 place-items-center rounded-full border border-white/10 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50"
 			>
 				<GoalArt icon={value} className="h-11 w-11" />
-				<span className="absolute right-0 bottom-0 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-[#303034] text-[#e4e4e7]">
+				<span className="bg-tile-hover text-ink-bright absolute right-0 bottom-0 grid h-8 w-8 place-items-center rounded-full border border-white/10">
 					<Pencil size={12} aria-hidden />
 				</span>
 			</button>
@@ -93,7 +93,7 @@ export function GoalIconPicker({
 						type="button"
 						aria-label="Close icon picker"
 						onClick={close}
-						className="text-ink focus-visible:outline-sky grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#252529] transition-colors hover:bg-[#303036] focus-visible:outline-2 focus-visible:outline-offset-4"
+						className="text-ink focus-visible:outline-sky bg-tile hover:bg-tile-hover grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-offset-4"
 					>
 						<X size={18} aria-hidden />
 					</button>
