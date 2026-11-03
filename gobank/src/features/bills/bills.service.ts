@@ -1,4 +1,5 @@
 import { db } from "~/server/db";
+import { fail } from "~/server/errors";
 import { spend } from "~/server/ledger";
 
 export const listBillers = () =>
@@ -13,9 +14,10 @@ export async function payBill(
 	accountNumber: string,
 	amount: number,
 ) {
-	const biller = await db.biller.findUniqueOrThrow({
+	const biller = await db.biller.findFirst({
 		where: { id: billerId, active: true },
 	});
+	if (!biller) return fail("NOT_FOUND", "This biller is not available.");
 	return db.$transaction((tx) =>
 		spend(tx, {
 			userId,
