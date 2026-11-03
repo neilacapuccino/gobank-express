@@ -8,7 +8,7 @@ export const createQueryClient = () => {
 			},
 		},
 		mutationCache: new MutationCache({
-			onSuccess: (_data, _variables, _context, mutation) => {
+			onSettled: (_data, _error, _variables, _context, mutation) => {
 				const [path] = mutation.options.mutationKey ?? [];
 				if (Array.isArray(path) && path[0] === "auth") return;
 				void queryClient.invalidateQueries();

@@ -9,9 +9,9 @@ export function CardLockedNotice() {
 		>
 			<Lock size={18} className="text-ink-muted mt-0.5 shrink-0" aria-hidden />
 			<p className="text-ink-soft text-[13px] leading-relaxed">
-				Your card is locked, so spending is paused.{" "}
+				Both of your cards are locked, so spending is paused.{" "}
 				<Link href="/card" className="text-brand font-medium hover:underline">
-					Unlock in My card
+					Unlock one in My card
 				</Link>
 			</p>
 		</div>
