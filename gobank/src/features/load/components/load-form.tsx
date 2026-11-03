@@ -57,7 +57,6 @@ export function LoadForm() {
 						{ label: "Mobile", value: formatMobile(mobile) },
 						{ label: "Reference", value: load.data.reference },
 						{ label: "Date", value: dateTime(load.data.createdAt) },
-						{ label: "Points earned", value: `+${load.data.points}` },
 						{ label: "Balance", value: peso(load.data.balanceAfter) },
 					]}
 				/>

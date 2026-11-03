@@ -30,6 +30,7 @@ type Entry = {
 };
 
 const SPENDING: TransactionKind[] = ["transfer", "bill", "load"];
+const EARNS_POINTS: TransactionKind[] = ["transfer", "bill"];
 
 const startOfManilaDay = (now: Date) =>
 	new Date(
@@ -121,7 +122,7 @@ export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
 	return post(tx, {
 		...entry,
 		amount: -entry.amount,
-		points: pointsEarned(entry.amount),
+		points: EARNS_POINTS.includes(entry.kind) ? pointsEarned(entry.amount) : 0,
 	});
 }
 

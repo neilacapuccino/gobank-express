@@ -147,7 +147,7 @@ try {
 	const bill = await payBill(owner.id, biller.id, "00112233", 5_000);
 	await buyLoad(owner.id, "09123456789", 10_000);
 	assert.equal(await balance(owner.id), 85_000);
-	assert.equal((await getOverview(owner.id)).points, 3);
+	assert.equal((await getOverview(owner.id)).points, 1);
 	assert.equal((await getTransaction(owner.id, bill.reference)).id, bill.id);
 	await assert.rejects(
 		getTransaction(other.id, bill.reference),
