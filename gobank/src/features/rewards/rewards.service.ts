@@ -31,7 +31,7 @@ export async function getRewardsSummary(userId: string) {
 	return {
 		points: user.points,
 		lifetimeEarned: earned._sum.points ?? 0,
-		lifetimeRedeemed: -(redeemed._sum.points ?? 0),
+		lifetimeRedeemed: Math.abs(redeemed._sum.points ?? 0),
 		cashBackReceived: redeemed._sum.amount ?? 0,
 	};
 }

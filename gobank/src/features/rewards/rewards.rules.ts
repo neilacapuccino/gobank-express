@@ -4,8 +4,6 @@ import {
 	pointsValue,
 } from "~/shared/lib/money";
 
-export const EARN_RULE = "1 point for every ₱50 you spend";
-export const REDEEM_RULE = "100 points = ₱1.00 cash back";
 export const REDEEM_PRESETS = [100, 500, 1000, 5000] as const;
 
 export const pointsToNextPeso = (points: number) =>
