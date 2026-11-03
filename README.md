@@ -93,7 +93,110 @@ React screen ──► tRPC client ──► /api/trpc ──► router (Zod inp
 | GoalSave | 5 goals, names up to 40 characters |
 | Redeem points | multiples of 100 |
 
-The data model is described in [docs/database-erd.md](docs/database-erd.md).
+## Database
+
+PostgreSQL through Prisma (`gobank/prisma/schema.prisma`). Key fields only; `PK` primary key, `FK` foreign key, `UK` unique.
+
+```mermaid
+erDiagram
+    User ||--o{ Card : has
+    User ||--o{ Session : signs_in
+    User ||--o{ SavingsGoal : saves
+    User ||--o{ BitcoinTrade : trades
+    User ||--o{ Transaction : owns
+    User |o--o{ Transaction : counterparty
+    User ||--o{ MoneyRequest : requests
+    User ||--o{ MoneyRequest : pays
+    SavingsGoal |o--o{ Transaction : savings_movement
+    Biller |o--o{ Transaction : bill_payment
+
+    User {
+        string id PK
+        string username UK
+        string accountNumber UK
+        int balance
+        int points
+        boolean cardLocked
+        int cardDailyLimit
+    }
+    Card {
+        string id PK
+        string userId FK
+        enum kind
+        enum brand
+        string number UK
+        string cvvEncrypted
+        datetime expiresAt
+    }
+    Session {
+        string id PK
+        string userId FK
+        datetime expiresAt
+    }
+    SavingsGoal {
+        string id PK
+        string userId FK
+        string name
+        int targetAmount
+        int balance
+        float annualInterestRate
+        float interestRemainder
+        datetime interestCalculatedAt
+    }
+    BitcoinTrade {
+        string id PK
+        string userId FK
+        string submissionId
+        string reference UK
+        string action
+        bigint bitcoinUnits
+        int amountCentavos
+        int unitPriceCentavos
+        datetime createdAt
+    }
+    Transaction {
+        string id PK
+        string userId FK
+        string counterpartyId FK
+        string savingsGoalId FK
+        string billerId FK
+        string reference
+        enum kind
+        int amount
+        int balanceAfter
+        datetime createdAt
+    }
+    MoneyRequest {
+        string id PK
+        string requesterId FK
+        string payerId FK
+        int amount
+        enum status
+        string reference
+    }
+    Biller {
+        string id PK
+        string code UK
+        string name
+        enum category
+        boolean active
+    }
+    RegistrationCard {
+        string id PK
+        enum brand
+        string number UK
+        string cvvEncrypted
+        datetime validUntil
+    }
+```
+
+- **Money** is stored in whole centavos (₱100.00 = 10,000). Transaction amounts are signed: negative leaves the account, positive enters it, and `balanceAfter` is the snapshot.
+- **Cards**: each user has one physical and one virtual card (unique by `userId + kind`); both spend from `User.balance` and share its lock and daily limit.
+- **Transfers** write two `Transaction` rows with the same reference, one per user; `counterpartyId` points to the other person. Transactions are unique by `reference + userId`.
+- **Money requests** store requester, payer, amount and status; paying one creates a transfer and keeps its reference.
+- **GoalSave** is the `SavingsGoal` model (unique by `userId + name`). `annualInterestRate` is 0.04, `interestCalculatedAt` is the last settlement and `interestRemainder` carries fractions of a centavo.
+- **Registration cards** are 30-minute reservations shown during sign-up; registering moves them to the user's physical card.
+- **Bitcoin** trades are stored in whole units (1 BTC = 100,000,000), and holdings are calculated from the trade history.
 
 ## Scripts
 
