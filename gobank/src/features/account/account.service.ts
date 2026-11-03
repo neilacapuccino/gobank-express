@@ -1,6 +1,9 @@
 import { db } from "~/server/db";
 import { spentToday } from "~/server/ledger";
-import { activityFields } from "~/features/activity/activity.fields";
+import {
+	activityFields,
+	MAIN_ACCOUNT_KINDS,
+} from "~/features/activity/activity.fields";
 import { normalizeProfilePhoto } from "./profile-photo.server";
 
 export const getOverview = (userId: string) =>
@@ -15,6 +18,7 @@ export const getOverview = (userId: string) =>
 			points: true,
 			_count: { select: { savingsGoals: true } },
 			transactions: {
+				where: { kind: MAIN_ACCOUNT_KINDS },
 				select: activityFields,
 				orderBy: [{ createdAt: "desc" }, { id: "desc" }],
 				take: 5,

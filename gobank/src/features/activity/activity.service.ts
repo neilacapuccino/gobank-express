@@ -1,5 +1,5 @@
 import { db } from "~/server/db";
-import { activityFields } from "./activity.fields";
+import { activityFields, MAIN_ACCOUNT_KINDS } from "./activity.fields";
 import { filterWhere, type ActivityFilter } from "./activity.rules";
 
 export async function listActivity(
@@ -9,7 +9,7 @@ export async function listActivity(
 	filter: ActivityFilter = "all",
 ) {
 	const items = await db.transaction.findMany({
-		where: { userId, ...filterWhere(filter) },
+		where: { userId, kind: MAIN_ACCOUNT_KINDS, ...filterWhere(filter) },
 		select: activityFields,
 		orderBy: [{ createdAt: "desc" }, { id: "desc" }],
 		take: limit + 1,

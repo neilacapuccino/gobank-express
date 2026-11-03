@@ -10,6 +10,8 @@ export const activityFields = {
 	createdAt: true,
 } as const;
 
+export const MAIN_ACCOUNT_KINDS = { not: "interest" } as const;
+
 export type ActivityEntry = Prisma.TransactionGetPayload<{
 	select: typeof activityFields;
 }>;
