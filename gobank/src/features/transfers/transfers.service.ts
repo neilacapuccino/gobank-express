@@ -19,7 +19,7 @@ export async function findRecipient(handle: string, self: string) {
 		? { username: value }
 		: {
 				OR: [
-					{ accountNumber: value },
+					{ accountNumber: value.replace(/[\s-]/g, "") },
 					{ username: value },
 					...(gmail ? [{ gmail, googleId: { not: null } }] : []),
 					...(mobile && /^09\d{9}$/.test(mobile) ? [{ mobile }] : []),
