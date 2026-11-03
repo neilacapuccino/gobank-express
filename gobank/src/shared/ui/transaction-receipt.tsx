@@ -19,7 +19,9 @@ export function TransactionReceipt({
 				<CheckCircle2 className="text-brand shrink-0" size={28} aria-hidden />
 				<h1 className="text-ink text-[20px] font-semibold">{title}</h1>
 			</header>
+
 			{children}
+
 			<div className="mt-auto pt-4">
 				<Button onClick={onDone}>Done</Button>
 			</div>

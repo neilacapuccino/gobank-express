@@ -30,6 +30,13 @@ const COPY: Record<Step, { title: string; subtitle: string }> = {
 
 const EMPTY = { current: "", next: "", confirm: "" };
 
+function checkNewPin(newPin: string, currentPin: string) {
+	const problem = validatePin(newPin);
+	if (problem) return problem;
+
+	return newPin === currentPin ? "Choose a different PIN" : null;
+}
+
 export function ChangePinFlow() {
 	const [step, setStep] = useState<Step>("current");
 	const [pins, setPins] = useState(EMPTY);
@@ -50,21 +57,29 @@ export function ChangePinFlow() {
 	const enter = (value: string) => {
 		if (change.isPending) return;
 		if (change.isError) change.reset();
+
 		const entered = { ...pins, [step]: value };
 		setProblem(null);
 		setPins(entered);
 		if (value.length < PIN_LENGTH) return;
 
-		if (step === "current") return setStep("next");
+		if (step === "current") {
+			setStep("next");
+			return;
+		}
+
 		if (step === "next") {
-			const weak =
-				validatePin(value) ??
-				(value === entered.current ? "Choose a different PIN" : null);
-			return weak ? restart(weak, "next") : setStep("confirm");
+			const problem = checkNewPin(value, entered.current);
+			if (problem) restart(problem, "next");
+			else setStep("confirm");
+			return;
 		}
+
 		if (value !== entered.next) {
-			return restart("Those did not match. Start again.", "next");
+			restart("Those did not match. Start again.", "next");
+			return;
 		}
+
 		change.mutate({ currentPin: entered.current, newPin: value });
 	};
 

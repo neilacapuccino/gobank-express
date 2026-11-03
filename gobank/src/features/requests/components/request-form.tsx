@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
 import {
 	AmountFields,
@@ -15,38 +14,50 @@ import { useRecipientSearch } from "~/shared/hooks/use-recipient-search";
 import { dateTime, peso } from "~/shared/lib/format";
 import { toCentavos } from "~/shared/lib/money";
 import { Button } from "~/shared/ui/button";
+import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { MAX_REQUEST_CENTAVOS } from "../requests.rules";
 
 export function RequestForm() {
 	const router = useRouter();
-	const utils = api.useUtils();
 	const [step, setStep] = useState<MoneyStep>("recipient");
 	const [amount, setAmount] = useState("");
 	const [note, setNote] = useState("");
+
 	const search = useRecipientSearch(() => setStep("amount"));
-	const request = api.requests.create.useMutation({
-		onSuccess: () => utils.notifications.invalidate(),
-	});
+	const request = api.requests.create.useMutation();
+
 	const amountCentavos = toCentavos(Number(amount));
-	const validAmount =
-		amountCentavos > 0 && amountCentavos <= MAX_REQUEST_CENTAVOS;
+	const overLimit = amountCentavos > MAX_REQUEST_CENTAVOS;
+	const validAmount = amountCentavos > 0 && !overLimit;
+	const payer = search.recipient;
 
 	const back = () => {
 		request.reset();
 		setStep(step === "review" ? "amount" : "recipient");
 	};
-	const done = () => {
+
+	const sendRequest = () => {
+		if (!payer || !validAmount || request.isPending) return;
+
+		request.mutate({
+			from: `@${payer.username}`,
+			amount: amountCentavos,
+			note: note.trim(),
+		});
+	};
+
+	const finish = () => {
 		router.push("/dashboard");
 		router.refresh();
 	};
 
-	if (request.data && search.recipient) {
+	if (request.data && payer) {
 		return (
-			<TransactionReceipt title="Request sent" onDone={done}>
+			<TransactionReceipt title="Request sent" onDone={finish}>
 				<MoneySummary
-					recipient={search.recipient}
+					recipient={payer}
 					amount={request.data.amount}
 					note={note.trim()}
 					details={[
@@ -66,6 +77,7 @@ export function RequestForm() {
 				disabled={request.isPending}
 				onBack={back}
 			/>
+
 			{step === "recipient" ? (
 				<RecipientPicker
 					label="Request from"
@@ -77,17 +89,15 @@ export function RequestForm() {
 					onContinue={search.find}
 					onRetry={search.retry}
 				/>
-			) : step === "amount" && search.recipient ? (
+			) : null}
+
+			{step === "amount" && payer ? (
 				<AmountFields
-					recipient={search.recipient}
+					recipient={payer}
 					amount={amount}
 					note={note}
 					hint={`Up to ${peso(MAX_REQUEST_CENTAVOS)}`}
-					error={
-						amountCentavos > MAX_REQUEST_CENTAVOS
-							? `Maximum ${peso(MAX_REQUEST_CENTAVOS)}`
-							: null
-					}
+					error={overLimit ? `Maximum ${peso(MAX_REQUEST_CENTAVOS)}` : null}
 					canContinue={validAmount}
 					onAmountChange={setAmount}
 					onNoteChange={setNote}
@@ -95,29 +105,20 @@ export function RequestForm() {
 						if (validAmount) setStep("review");
 					}}
 				/>
-			) : step === "review" && search.recipient ? (
+			) : null}
+
+			{step === "review" && payer ? (
 				<div className="flex flex-1 flex-col pt-7">
 					<MoneySummary
-						recipient={search.recipient}
+						recipient={payer}
 						amount={amountCentavos}
 						note={note.trim()}
 					/>
-					<FormError
-						error={request.error ? errorMessage(request.error) : null}
-					/>
+
+					<FormError error={errorMessage(request.error)} />
+
 					<div className="mt-auto pt-8">
-						<Button
-							disabled={request.isPending}
-							onClick={() => {
-								if (!search.recipient || !validAmount || request.isPending)
-									return;
-								request.mutate({
-									from: `@${search.recipient.username}`,
-									amount: amountCentavos,
-									note: note.trim(),
-								});
-							}}
-						>
+						<Button disabled={request.isPending} onClick={sendRequest}>
 							{request.isPending
 								? "Sending…"
 								: `Request ${peso(amountCentavos)}`}

@@ -1,21 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { useState } from "react";
-import { FormError } from "~/shared/ui/money-form-ui";
 import { isPesoInput } from "~/shared/lib/amount-input";
+import { cn } from "~/shared/lib/cn";
 import {
 	formatMobile,
 	normalizeMobile,
 	validateMobile,
 } from "~/shared/lib/contact";
-import { cn } from "~/shared/lib/cn";
-import { dateTime, peso, digitsOnly } from "~/shared/lib/format";
+import { dateTime, digitsOnly, peso } from "~/shared/lib/format";
 import { toCentavos } from "~/shared/lib/money";
 import { BackButton } from "~/shared/ui/back-button";
 import { Button } from "~/shared/ui/button";
+import { FormError } from "~/shared/ui/money-form-ui";
 import { TextField } from "~/shared/ui/text-field";
+import { TransactionReceipt } from "~/shared/ui/transaction-receipt";
 import { TransactionSummary } from "~/shared/ui/transaction-summary";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
@@ -26,31 +26,75 @@ import { paidWithDetail } from "~/features/card/card-label";
 import { MAX_LOAD_CENTAVOS, MIN_LOAD_CENTAVOS } from "../load.rules";
 
 const LOAD_PRESETS = [10, 15, 20, 50, 100, 300, 500, 1000];
+const MOBILE_LENGTH = 11;
+
+function LoadPresets({
+	selectedCentavos,
+	onPick,
+}: {
+	selectedCentavos: number;
+	onPick: (pesos: number) => void;
+}) {
+	return (
+		<div className="mt-4 grid grid-cols-4 gap-2" aria-label="Load amounts">
+			{LOAD_PRESETS.map((pesos) => {
+				const selected = selectedCentavos === toCentavos(pesos);
+
+				return (
+					<button
+						key={pesos}
+						type="button"
+						aria-pressed={selected}
+						onClick={() => onPick(pesos)}
+						className={cn(
+							"h-12 rounded-xl border px-2 text-[13px] font-medium transition-colors",
+							selected
+								? "border-brand bg-brand-soft text-brand"
+								: "border-line bg-surface-sunken text-ink hover:bg-surface-raised",
+						)}
+					>
+						₱{pesos.toLocaleString("en-PH")}
+					</button>
+				);
+			})}
+		</div>
+	);
+}
 
 export function LoadForm() {
 	const router = useRouter();
-	const utils = api.useUtils();
 	const [mobile, setMobile] = useState("");
 	const [amount, setAmount] = useState("");
 	const [reviewing, setReviewing] = useState(false);
-	const load = api.load.buy.useMutation({
-		onSuccess: () => utils.account.invalidate(),
-	});
-	const limit = useSpendLimit(MAX_LOAD_CENTAVOS, MIN_LOAD_CENTAVOS);
-	const amountCentavos = toCentavos(Number(amount));
-	const mobileError = mobile.length === 11 ? validateMobile(mobile) : null;
-	const validDetails =
-		mobile.length === 11 && !mobileError && limit.valid(amountCentavos);
-	const amountError = limit.check(amountCentavos);
 
-	const done = () => {
+	const load = api.load.buy.useMutation();
+	const limit = useSpendLimit(MAX_LOAD_CENTAVOS, MIN_LOAD_CENTAVOS);
+
+	const amountCentavos = toCentavos(Number(amount));
+	const mobileComplete = mobile.length === MOBILE_LENGTH;
+	const mobileError = mobileComplete ? validateMobile(mobile) : null;
+	const validDetails =
+		mobileComplete && !mobileError && limit.valid(amountCentavos);
+
+	const leaveReview = () => {
+		load.reset();
+		setReviewing(false);
+	};
+
+	const buyLoad = () => {
+		if (!validDetails || load.isPending) return;
+
+		load.mutate({ mobile, amount: amountCentavos, card: limit.card });
+	};
+
+	const finish = () => {
 		router.push("/dashboard");
 		router.refresh();
 	};
 
 	if (load.data) {
 		return (
-			<TransactionReceipt title="Load successful" onDone={done}>
+			<TransactionReceipt title="Load successful" onDone={finish}>
 				<TransactionSummary
 					amount={Math.abs(load.data.amount)}
 					details={[
@@ -70,10 +114,7 @@ export function LoadForm() {
 			<header className="relative flex h-14 shrink-0 items-center justify-center">
 				{reviewing ? (
 					<BackButton
-						onClick={() => {
-							load.reset();
-							setReviewing(false);
-						}}
+						onClick={leaveReview}
 						disabled={load.isPending}
 						className="absolute left-0"
 					/>
@@ -84,32 +125,27 @@ export function LoadForm() {
 					{reviewing ? "Review load" : "Buy load"}
 				</h1>
 			</header>
+
 			{limit.locked && !load.isPending ? <CardLockedNotice /> : null}
+
 			{reviewing ? (
 				<div className="flex flex-1 flex-col pt-7">
 					<TransactionSummary
 						amount={amountCentavos}
 						details={[{ label: "Mobile", value: formatMobile(mobile) }]}
 					/>
+
 					<CardPicker
 						cards={limit.cards}
 						value={limit.card}
 						onChange={limit.setCard}
 						disabled={load.isPending}
 					/>
-					<FormError error={load.error ? errorMessage(load.error) : null} />
+
+					<FormError error={errorMessage(load.error)} />
+
 					<div className="mt-auto pt-8">
-						<Button
-							disabled={load.isPending}
-							onClick={() => {
-								if (!validDetails || load.isPending) return;
-								load.mutate({
-									mobile,
-									amount: amountCentavos,
-									card: limit.card,
-								});
-							}}
-						>
+						<Button disabled={load.isPending} onClick={buyLoad}>
 							{load.isPending ? "Buying…" : `Buy ${peso(amountCentavos)}`}
 						</Button>
 					</div>
@@ -130,9 +166,12 @@ export function LoadForm() {
 						hint="11 digits, like 09171234567"
 						error={mobileError}
 						onChange={(event) =>
-							setMobile(digitsOnly(normalizeMobile(event.target.value), 11))
+							setMobile(
+								digitsOnly(normalizeMobile(event.target.value), MOBILE_LENGTH),
+							)
 						}
 					/>
+
 					<section>
 						<TextField
 							label="Amount"
@@ -140,34 +179,19 @@ export function LoadForm() {
 							value={amount}
 							prefix="₱"
 							hint={limit.hint}
-							error={amountError}
+							error={limit.check(amountCentavos)}
 							onChange={(event) => {
-								if (isPesoInput(event.target.value))
+								if (isPesoInput(event.target.value)) {
 									setAmount(event.target.value);
+								}
 							}}
 						/>
-						<div
-							className="mt-4 grid grid-cols-4 gap-2"
-							aria-label="Load amounts"
-						>
-							{LOAD_PRESETS.map((value) => (
-								<button
-									key={value}
-									type="button"
-									aria-pressed={amountCentavos === toCentavos(value)}
-									onClick={() => setAmount(String(value))}
-									className={cn(
-										"h-12 rounded-xl border px-2 text-[13px] font-medium transition-colors",
-										amountCentavos === toCentavos(value)
-											? "border-brand bg-brand-soft text-brand"
-											: "border-line bg-surface-sunken text-ink hover:bg-surface-raised",
-									)}
-								>
-									₱{value.toLocaleString("en-PH")}
-								</button>
-							))}
-						</div>
+						<LoadPresets
+							selectedCentavos={amountCentavos}
+							onPick={(pesos) => setAmount(String(pesos))}
+						/>
 					</section>
+
 					<div className="mt-auto pt-2">
 						<Button type="submit" disabled={!validDetails}>
 							Review

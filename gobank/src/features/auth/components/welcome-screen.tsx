@@ -34,14 +34,15 @@ export function WelcomeScreen({ googleEnabled, notice }: WelcomeScreenProps) {
 
 				<div className="min-h-6 flex-1" />
 
-				{notice && (
+				{notice ? (
 					<p
 						role="alert"
 						className="border-danger/40 bg-danger-soft text-danger mb-4 rounded-xl border px-4 py-3 text-center text-[13px]"
 					>
 						{notice}
 					</p>
-				)}
+				) : null}
+
 				<WelcomeActions googleEnabled={googleEnabled} />
 			</main>
 		</div>

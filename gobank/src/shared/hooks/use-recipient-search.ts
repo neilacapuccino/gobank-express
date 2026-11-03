@@ -6,6 +6,8 @@ import { api, type RouterOutputs } from "~/trpc/react";
 
 export type Recipient = RouterOutputs["transfers"]["recipient"];
 
+const TYPING_PAUSE_MS = 300;
+
 export function useRecipientSearch(onFound: () => void) {
 	const [value, setValue] = useState("");
 	const [lookup, setLookup] = useState("");
@@ -13,7 +15,7 @@ export function useRecipientSearch(onFound: () => void) {
 	const latestValue = useRef("");
 
 	useEffect(() => {
-		const timer = setTimeout(() => setLookup(value.trim()), 300);
+		const timer = setTimeout(() => setLookup(value.trim()), TYPING_PAUSE_MS);
 		return () => clearTimeout(timer);
 	}, [value]);
 
@@ -21,13 +23,19 @@ export function useRecipientSearch(onFound: () => void) {
 		{ to: lookup },
 		{ enabled: Boolean(lookup) && !recipient, retry: false },
 	);
-	const current = Boolean(value.trim()) && lookup === value.trim();
-	const loading =
-		Boolean(value.trim()) && !recipient && (!current || result.isFetching);
-	const match =
-		recipient ?? (current && !result.isError ? (result.data ?? null) : null);
-	const error =
-		current && !loading && !recipient ? errorMessage(result.error) : null;
+
+	const typed = value.trim();
+	const lookupMatchesTyping = typed !== "" && lookup === typed;
+	const waitingForResult = !lookupMatchesTyping || result.isFetching;
+
+	const loading = typed !== "" && !recipient && waitingForResult;
+
+	const foundNow =
+		lookupMatchesTyping && !result.isError ? (result.data ?? null) : null;
+	const match = recipient ?? foundNow;
+
+	const showError = lookupMatchesTyping && !loading && !recipient;
+	const error = showError ? errorMessage(result.error) : null;
 
 	const change = (next: string) => {
 		latestValue.current = next;
@@ -37,15 +45,19 @@ export function useRecipientSearch(onFound: () => void) {
 
 	const select = (found: Recipient) => {
 		const handle = `@${found.username}`;
+
 		latestValue.current = handle;
 		setValue(handle);
 		setLookup(handle);
 		setRecipient(found);
+
 		onFound();
 	};
 
 	const find = () => {
-		if (loading || !match || latestValue.current.trim() !== lookup) return;
+		const stillTheSameSearch = latestValue.current.trim() === lookup;
+		if (loading || !match || !stillTheSameSearch) return;
+
 		select(match);
 	};
 

@@ -42,10 +42,10 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
 				<Link
 					href="/settings/profile"
 					aria-label="Change profile photo"
-					className="relative rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#71d5f3]"
+					className="focus-visible:outline-sky relative rounded-full focus-visible:outline-2 focus-visible:outline-offset-4"
 				>
 					<ProfileAvatar photo={profile.profilePhoto} />
-					<span className="border-surface absolute right-0 bottom-0 grid h-6 w-6 place-items-center rounded-full border-2 bg-[#2b373d] text-[#71d5f3]">
+					<span className="border-surface text-sky absolute right-0 bottom-0 grid h-6 w-6 place-items-center rounded-full border-2 bg-[#2b373d]">
 						<Camera size={12} aria-hidden />
 					</span>
 				</Link>
@@ -61,21 +61,7 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
 
 			<dl className="divide-line border-line mt-8 divide-y rounded-2xl border">
 				{details.map((row) => (
-					<div
-						key={row.label}
-						className="flex items-baseline justify-between gap-4 px-4 py-3.5"
-					>
-						<dt className="text-ink-muted shrink-0 text-[13px]">{row.label}</dt>
-						<dd
-							className={
-								row.value
-									? "text-ink min-w-0 truncate text-[14px] font-medium tabular-nums"
-									: "text-ink-faint text-[14px]"
-							}
-						>
-							{row.value ?? "Not set"}
-						</dd>
-					</div>
+					<DetailRow key={row.label} label={row.label} value={row.value} />
 				))}
 			</dl>
 
@@ -95,6 +81,23 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
 			<div className="mt-10">
 				<SignOutButton />
 			</div>
+		</div>
+	);
+}
+
+function DetailRow({ label, value }: { label: string; value: string | null }) {
+	return (
+		<div className="flex items-baseline justify-between gap-4 px-4 py-3.5">
+			<dt className="text-ink-muted shrink-0 text-[13px]">{label}</dt>
+			<dd
+				className={
+					value
+						? "text-ink min-w-0 truncate text-[14px] font-medium tabular-nums"
+						: "text-ink-faint text-[14px]"
+				}
+			>
+				{value ?? "Not set"}
+			</dd>
 		</div>
 	);
 }

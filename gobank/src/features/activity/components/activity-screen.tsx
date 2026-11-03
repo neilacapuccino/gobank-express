@@ -1,27 +1,82 @@
 "use client";
 
 import { ReceiptText } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 import { cn } from "~/shared/lib/cn";
-import { dateTime, peso } from "~/shared/lib/format";
+import { dateTime } from "~/shared/lib/format";
 import { Button } from "~/shared/ui/button";
 import { FormError } from "~/shared/ui/money-form-ui";
 import { PageHeader } from "~/shared/ui/page-header";
 import { errorMessage } from "~/trpc/error-message";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api } from "~/trpc/react";
+import type { ActivityEntry } from "../activity.fields";
 import {
 	ACTIVITY_FILTERS,
 	FILTER_LABELS,
 	groupByDay,
 	type ActivityFilter,
 } from "../activity.rules";
-import { activityIcon } from "./activity-icon";
+import { ActivityRow } from "./activity-row";
 
-type Entry = RouterOutputs["activity"]["list"]["items"][number];
+function pointsNote(points: number) {
+	if (!points) return "";
+
+	const sign = points > 0 ? "+" : "";
+	return ` · ${sign}${points.toLocaleString("en-PH")} pts`;
+}
+
+const entryDetail = (entry: ActivityEntry) =>
+	`${dateTime(entry.createdAt)}${pointsNote(entry.points)}`;
+
+function FilterSwitch({
+	selected,
+	onSelect,
+}: {
+	selected: ActivityFilter;
+	onSelect: (filter: ActivityFilter) => void;
+}) {
+	return (
+		<div
+			className="border-line bg-surface-sunken mb-5 grid grid-cols-3 gap-1 rounded-2xl border p-1"
+			aria-label="Activity filter"
+		>
+			{ACTIVITY_FILTERS.map((filter) => (
+				<button
+					key={filter}
+					type="button"
+					aria-pressed={selected === filter}
+					onClick={() => onSelect(filter)}
+					className={cn(
+						"h-11 rounded-xl text-[13px] font-medium transition-colors",
+						selected === filter
+							? "bg-surface-raised text-ink"
+							: "text-ink-muted hover:text-ink",
+					)}
+				>
+					{FILTER_LABELS[filter]}
+				</button>
+			))}
+		</div>
+	);
+}
+
+function NoActivity({ filter }: { filter: ActivityFilter }) {
+	const message =
+		filter === "all"
+			? "No activity yet"
+			: `No ${FILTER_LABELS[filter].toLowerCase()} yet`;
+
+	return (
+		<div className="border-line flex flex-col items-center gap-4 rounded-2xl border px-5 py-10">
+			<ReceiptText size={28} className="text-ink-muted" aria-hidden />
+			<p className="text-ink-muted text-center text-[14px]">{message}</p>
+		</div>
+	);
+}
 
 export function ActivityScreen() {
 	const [filter, setFilter] = useState<ActivityFilter>("all");
+
 	const activity = api.activity.list.useInfiniteQuery(
 		{ filter, limit: 20 },
 		{
@@ -30,34 +85,22 @@ export function ActivityScreen() {
 			refetchOnMount: "always",
 		},
 	);
+
 	const items = activity.data?.pages.flatMap((page) => page.items) ?? [];
 	const groups = groupByDay(items);
+	const isEmpty = !activity.isLoading && !activity.error && items.length === 0;
+
+	const retry = () => {
+		if (activity.isFetchNextPageError) void activity.fetchNextPage();
+		else void activity.refetch();
+	};
 
 	return (
 		<div className="flex flex-1 flex-col">
 			<PageHeader title="Transactions" back="/dashboard" />
+
 			<div className="pt-7">
-				<div
-					className="border-line bg-surface-sunken mb-5 grid grid-cols-3 gap-1 rounded-2xl border p-1"
-					aria-label="Activity filter"
-				>
-					{ACTIVITY_FILTERS.map((value) => (
-						<button
-							key={value}
-							type="button"
-							aria-pressed={filter === value}
-							onClick={() => setFilter(value)}
-							className={cn(
-								"h-11 rounded-xl text-[13px] font-medium transition-colors",
-								filter === value
-									? "bg-surface-raised text-ink"
-									: "text-ink-muted hover:text-ink",
-							)}
-						>
-							{FILTER_LABELS[value]}
-						</button>
-					))}
-				</div>
+				<FilterSwitch selected={filter} onSelect={setFilter} />
 
 				{activity.isLoading ? (
 					<p
@@ -66,16 +109,11 @@ export function ActivityScreen() {
 					>
 						Loading activity…
 					</p>
-				) : !items.length && !activity.error ? (
-					<div className="border-line flex flex-col items-center gap-4 rounded-2xl border px-5 py-10">
-						<ReceiptText size={28} className="text-ink-muted" aria-hidden />
-						<p className="text-ink-muted text-center text-[14px]">
-							{filter === "all"
-								? "No activity yet"
-								: `No ${FILTER_LABELS[filter].toLowerCase()} yet`}
-						</p>
-					</div>
-				) : (
+				) : null}
+
+				{isEmpty ? <NoActivity filter={filter} /> : null}
+
+				{items.length > 0 ? (
 					<div className="space-y-6">
 						{groups.map((group) => (
 							<section key={group.key}>
@@ -85,14 +123,14 @@ export function ActivityScreen() {
 								<ul className="space-y-4">
 									{group.items.map((entry) => (
 										<li key={entry.id}>
-											<ActivityRow entry={entry} />
+											<ActivityRow entry={entry} detail={entryDetail(entry)} />
 										</li>
 									))}
 								</ul>
 							</section>
 						))}
 					</div>
-				)}
+				) : null}
 
 				{activity.error ? (
 					<div className="mt-5">
@@ -100,16 +138,14 @@ export function ActivityScreen() {
 						<Button
 							variant="ghost"
 							disabled={activity.isFetching}
-							onClick={() => {
-								if (activity.isFetchNextPageError)
-									void activity.fetchNextPage();
-								else void activity.refetch();
-							}}
+							onClick={retry}
 						>
 							{activity.isFetching ? "Retrying…" : "Retry"}
 						</Button>
 					</div>
-				) : activity.hasNextPage ? (
+				) : null}
+
+				{!activity.error && activity.hasNextPage ? (
 					<Button
 						variant="outline"
 						className="mt-5"
@@ -121,40 +157,5 @@ export function ActivityScreen() {
 				) : null}
 			</div>
 		</div>
-	);
-}
-
-function ActivityRow({ entry }: { entry: Entry }) {
-	const incoming = entry.amount > 0;
-	const Icon = activityIcon(entry);
-	return (
-		<Link
-			href={`/transactions/${entry.reference}`}
-			className="group flex items-center gap-3.5"
-		>
-			<span className="bg-surface-sunken text-ink-soft grid h-10 w-10 shrink-0 place-items-center rounded-full">
-				<Icon size={16} strokeWidth={1.9} aria-hidden />
-			</span>
-			<span className="min-w-0 flex-1">
-				<span className="text-ink group-hover:text-brand block truncate text-[14px] font-medium transition-colors">
-					{entry.title}
-				</span>
-				<span className="text-ink-muted block text-[12px]">
-					{dateTime(entry.createdAt)}
-					{entry.points
-						? ` · ${entry.points > 0 ? "+" : ""}${entry.points.toLocaleString("en-PH")} pts`
-						: ""}
-				</span>
-			</span>
-			<span
-				className={cn(
-					"shrink-0 text-[14px] font-semibold tabular-nums",
-					incoming ? "text-brand" : "text-danger",
-				)}
-			>
-				{incoming ? "+" : "−"}
-				{peso(Math.abs(entry.amount))}
-			</span>
-		</Link>
 	);
 }

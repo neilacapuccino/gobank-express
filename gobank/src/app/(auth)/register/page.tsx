@@ -12,6 +12,7 @@ export default async function RegisterPage({
 	searchParams: Promise<{ google?: string }>;
 }) {
 	const { google } = await searchParams;
+
 	const pending = google === "new" ? await pendingGoogleIdentity() : null;
 	return (
 		<RegistrationFlow

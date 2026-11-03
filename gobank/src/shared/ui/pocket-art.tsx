@@ -12,6 +12,7 @@ type PocketIconName =
 	| "chart"
 	| "bill"
 	| "phone";
+
 const paths: Record<PocketIconName, string> = {
 	home: "M4 11 12 4l8 7v9h-6v-6h-4v6H4z",
 	send: "m3 10 18-7-7 18-3-8-8-3Zm8 3 5-5",
@@ -25,6 +26,7 @@ const paths: Record<PocketIconName, string> = {
 	bill: "M5 3h14v18l-3-2-4 2-4-2-3 2V3Zm4 5h6m-6 4h6",
 	phone: "M7 2h10v20H7zM10 5h4m-3 14h2",
 };
+
 export function PocketIcon({
 	name,
 	...props

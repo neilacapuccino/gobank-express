@@ -29,6 +29,7 @@ export function TextField({
 }: TextFieldProps) {
 	const id = useId();
 	const descriptionId = `${id}-description`;
+	const description = error ?? hint;
 
 	return (
 		<div className="flex flex-col gap-1.5">
@@ -63,7 +64,7 @@ export function TextField({
 					autoComplete="off"
 					placeholder={inputMode === "decimal" ? "0.00" : undefined}
 					aria-invalid={Boolean(error)}
-					aria-describedby={error || hint ? descriptionId : undefined}
+					aria-describedby={description ? descriptionId : undefined}
 					className={cn(
 						"text-ink placeholder:text-ink-faint h-13 min-w-0 flex-1 bg-transparent px-3.5 text-[16px] outline-none disabled:opacity-60",
 						prefix ? "pl-1.5" : null,
@@ -74,17 +75,16 @@ export function TextField({
 				{trailing ? <span className="pr-3.5">{trailing}</span> : null}
 			</div>
 
-			{error ? (
+			{description ? (
 				<p
 					id={descriptionId}
-					role="alert"
-					className="text-danger text-[12.5px]"
+					role={error ? "alert" : undefined}
+					className={cn(
+						"text-[12.5px]",
+						error ? "text-danger" : "text-ink-muted",
+					)}
 				>
-					{error}
-				</p>
-			) : hint ? (
-				<p id={descriptionId} className="text-ink-muted text-[12.5px]">
-					{hint}
+					{description}
 				</p>
 			) : null}
 		</div>

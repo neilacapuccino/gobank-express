@@ -11,5 +11,6 @@ export default async function StashDetailPage({
 	params: Promise<{ id: string }>;
 }) {
 	const { id } = await params;
+
 	return <GoalDetail id={id} />;
 }

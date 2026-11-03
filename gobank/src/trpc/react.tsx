@@ -9,7 +9,7 @@ import SuperJSON from "superjson";
 
 import { type AppRouter } from "~/server/root";
 import { createQueryClient } from "./query-client";
-import { clientSessionId } from "~/features/auth/session-client";
+import { clientSessionId } from "~/features/auth/session.client";
 import { SESSION_HEADER } from "~/features/auth/session.rules";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;

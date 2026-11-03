@@ -4,6 +4,38 @@ import { Check, Copy, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatAccount, peso } from "~/shared/lib/format";
 
+type CopyStatus = "idle" | "copied" | "error";
+
+const COPIED_RESET_MS = 2000;
+
+const COPY_MESSAGE: Record<CopyStatus, string> = {
+	idle: "",
+	copied: "Account number copied.",
+	error: "Couldn't copy. Select the account number to copy it.",
+};
+
+function HiddenBalance() {
+	return (
+		<span
+			role="img"
+			aria-label="Balance hidden"
+			className="inline-flex items-center gap-2 leading-none"
+		>
+			<span className="block" aria-hidden>
+				₱
+			</span>
+			<span className="flex items-center gap-2" aria-hidden>
+				{Array.from({ length: 6 }, (_, index) => (
+					<span
+						key={index}
+						className="h-[7px] w-[7px] shrink-0 rounded-full bg-current"
+					/>
+				))}
+			</span>
+		</span>
+	);
+}
+
 export function BalanceCard({
 	balance,
 	accountNumber,
@@ -14,13 +46,12 @@ export function BalanceCard({
 	points: number;
 }) {
 	const [visible, setVisible] = useState(true);
-	const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
-		"idle",
-	);
+	const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
 
 	useEffect(() => {
 		if (copyStatus !== "copied") return;
-		const timer = setTimeout(() => setCopyStatus("idle"), 2000);
+
+		const timer = setTimeout(() => setCopyStatus("idle"), COPIED_RESET_MS);
 		return () => clearTimeout(timer);
 	}, [copyStatus]);
 
@@ -39,31 +70,12 @@ export function BalanceCard({
 
 			<div className="mt-2 flex min-h-12 items-center gap-2">
 				<p className="flex min-w-0 items-center text-[clamp(1.6rem,8vw,2.35rem)] leading-tight font-semibold tracking-tight break-all tabular-nums">
-					{visible ? (
-						peso(balance)
-					) : (
-						<span
-							role="img"
-							aria-label="Balance hidden"
-							className="inline-flex items-center gap-2 leading-none"
-						>
-							<span className="block" aria-hidden>
-								₱
-							</span>
-							<span className="flex items-center gap-2" aria-hidden>
-								{Array.from({ length: 6 }, (_, index) => (
-									<span
-										key={index}
-										className="h-[7px] w-[7px] shrink-0 rounded-full bg-current"
-									/>
-								))}
-							</span>
-						</span>
-					)}
+					{visible ? peso(balance) : <HiddenBalance />}
 				</p>
+
 				<button
 					type="button"
-					onClick={() => setVisible((value) => !value)}
+					onClick={() => setVisible((shown) => !shown)}
 					aria-label={visible ? "Hide balance" : "Show balance"}
 					aria-pressed={!visible}
 					className="text-ink-muted hover:text-ink grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -83,7 +95,7 @@ export function BalanceCard({
 					</span>
 					<button
 						type="button"
-						onClick={copyAccountNumber}
+						onClick={() => void copyAccountNumber()}
 						aria-label="Copy account number"
 						title={copyStatus === "copied" ? "Copied" : "Copy account number"}
 						className="text-ink-muted hover:bg-line hover:text-ink grid h-9 w-9 shrink-0 place-items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
@@ -95,21 +107,19 @@ export function BalanceCard({
 						)}
 					</button>
 				</div>
+
 				<span className="shrink-0 tabular-nums">
-					{points.toLocaleString()} points
+					{points.toLocaleString("en-PH")} points
 				</span>
 			</div>
+
 			<p
 				role="status"
 				className={
 					copyStatus === "error" ? "text-danger mt-2 text-[11px]" : "sr-only"
 				}
 			>
-				{copyStatus === "copied"
-					? "Account number copied."
-					: copyStatus === "error"
-						? "Couldn't copy. Select the account number to copy it."
-						: ""}
+				{COPY_MESSAGE[copyStatus]}
 			</p>
 		</section>
 	);

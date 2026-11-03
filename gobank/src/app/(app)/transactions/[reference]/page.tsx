@@ -14,6 +14,7 @@ export default async function ReceiptPage({
 	params: Promise<{ reference: string }>;
 }) {
 	const { reference } = await params;
+
 	try {
 		return (
 			<ReceiptScreen

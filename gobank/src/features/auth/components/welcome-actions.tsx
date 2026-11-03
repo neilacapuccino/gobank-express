@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buttonClass } from "~/shared/ui/button";
 import { GoogleButton } from "./google-button";
+import { OrDivider } from "./or-divider";
 
 export function WelcomeActions({ googleEnabled }: { googleEnabled: boolean }) {
 	return (
@@ -11,16 +12,13 @@ export function WelcomeActions({ googleEnabled }: { googleEnabled: boolean }) {
 			<Link href="/signin" className={buttonClass("outline")}>
 				Log in
 			</Link>
-			{googleEnabled && (
+
+			{googleEnabled ? (
 				<>
-					<div className="text-ink-faint flex items-center gap-3 text-[12px]">
-						<span aria-hidden className="bg-line h-px flex-1" />
-						<span>or</span>
-						<span aria-hidden className="bg-line h-px flex-1" />
-					</div>
+					<OrDivider className="text-ink-faint text-[12px]" />
 					<GoogleButton />
 				</>
-			)}
+			) : null}
 		</nav>
 	);
 }

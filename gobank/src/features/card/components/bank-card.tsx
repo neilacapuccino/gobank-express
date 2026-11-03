@@ -17,6 +17,8 @@ import { CardBrandLogo } from "./card-brand-logo";
 
 export type { CardKind } from "../../../../generated/prisma";
 
+type CopyStatus = "idle" | "copied" | "error";
+
 type BankCardProps = {
 	brand: CardBrandId;
 	fullName: string;
@@ -29,6 +31,93 @@ type BankCardProps = {
 	securityDetails?: ReactNode;
 };
 
+const HIDDEN_NUMBER = "•••• •••• •••• ••••";
+
+const COPY_LABEL: Record<CopyStatus, string> = {
+	idle: "Copy card number",
+	copied: "Card number copied",
+	error: "Copy failed. Try again.",
+};
+
+const CARD_ICON_BUTTON =
+	"flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60";
+
+function expiryLabel(expiresAt?: Date | string) {
+	const expiry = expiresAt ? new Date(expiresAt) : null;
+	if (!expiry || !Number.isFinite(expiry.getTime())) return "••/••";
+
+	const month = String(expiry.getUTCMonth() + 1).padStart(2, "0");
+	const year = String(expiry.getUTCFullYear()).slice(-2);
+
+	return `${month}/${year}`;
+}
+
+function numberDescription(number: string | undefined, hidden: boolean) {
+	if (!number) return "Card number not issued";
+	return hidden ? "Card number hidden" : `Card number ${number}`;
+}
+
+function CopyIcon({ status }: { status: CopyStatus }) {
+	if (status === "copied") return <Check size={14} aria-hidden />;
+	if (status === "error") {
+		return <CircleAlert size={14} className="text-danger" aria-hidden />;
+	}
+
+	return <Copy size={14} aria-hidden />;
+}
+
+function CardField({
+	label,
+	value,
+	compact,
+	align = "left",
+}: {
+	label: string;
+	value: string;
+	compact: boolean;
+	align?: "left" | "right";
+}) {
+	return (
+		<div
+			className={cn(
+				align === "right" ? "shrink-0 text-right" : "min-w-0 flex-1",
+			)}
+		>
+			<p className="text-[9px] tracking-[0.18em] text-white/55 uppercase">
+				{label}
+			</p>
+			<p
+				className={cn(
+					"truncate font-medium text-white uppercase tabular-nums",
+					compact ? "text-[11px]" : "h-7 text-[13px] leading-7",
+				)}
+			>
+				{value}
+			</p>
+		</div>
+	);
+}
+
+function KindMark({ kind, compact }: { kind: CardKind; compact: boolean }) {
+	if (kind === "virtual") {
+		return (
+			<Smartphone
+				size={25}
+				strokeWidth={1.5}
+				className="text-white/60"
+				aria-hidden
+			/>
+		);
+	}
+
+	return (
+		<div className="flex items-center gap-2.5">
+			<Chip className={compact ? "h-6 w-8" : "h-8 w-10"} />
+			<Contactless className="h-5 w-5 text-white/60" />
+		</div>
+	);
+}
+
 export function BankCard({
 	brand,
 	fullName,
@@ -40,24 +129,25 @@ export function BankCard({
 	compact = false,
 	securityDetails,
 }: BankCardProps) {
-	const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">(
-		"idle",
-	);
-	const expiry = expiresAt ? new Date(expiresAt) : null;
-	const expiryLabel =
-		expiry && Number.isFinite(expiry.getTime())
-			? `${String(expiry.getUTCMonth() + 1).padStart(2, "0")}/${String(expiry.getUTCFullYear()).slice(-2)}`
-			: "••/••";
-	const numberLabel =
-		hideNumber || !number ? "•••• •••• •••• ••••" : formatAccount(number);
+	const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
+
+	const canCopy = !hideNumber && Boolean(number);
+	const shownNumber = canCopy && number ? formatAccount(number) : HIDDEN_NUMBER;
+
 	const copyNumber = async () => {
-		if (hideNumber || !number) return;
+		if (!canCopy || !number) return;
+
 		try {
 			await navigator.clipboard.writeText(number);
 			setCopyStatus("copied");
 		} catch {
 			setCopyStatus("error");
 		}
+	};
+
+	const toggleNumber = () => {
+		setCopyStatus("idle");
+		onToggleNumber?.();
 	};
 
 	return (
@@ -71,19 +161,8 @@ export function BankCard({
 		>
 			<div className="relative flex h-full flex-col justify-between">
 				<div className="flex items-start justify-between gap-3">
-					{kind === "physical" ? (
-						<div className="flex items-center gap-2.5">
-							<Chip className={compact ? "h-6 w-8" : "h-8 w-10"} />
-							<Contactless className="h-5 w-5 text-white/60" />
-						</div>
-					) : (
-						<Smartphone
-							size={25}
-							strokeWidth={1.5}
-							className="text-white/60"
-							aria-hidden
-						/>
-					)}
+					<KindMark kind={kind} compact={compact} />
+
 					<div className="flex flex-col items-end gap-0.5">
 						<span className="text-[11px] font-medium tracking-wide text-white/60">
 							GoBank Express
@@ -97,53 +176,34 @@ export function BankCard({
 				<div className="flex flex-col gap-3">
 					<div className="flex items-center gap-1">
 						<p
-							aria-label={
-								!number
-									? "Card number not issued"
-									: hideNumber
-										? "Card number hidden"
-										: `Card number ${number}`
-							}
+							aria-label={numberDescription(number, hideNumber)}
 							className={cn(
 								"min-w-0 font-medium tracking-[0.12em] whitespace-nowrap text-white/90 tabular-nums",
 								compact ? "text-[12px]" : "text-[clamp(12px,3.4vw,16px)]",
 							)}
 						>
-							<span aria-hidden>{numberLabel}</span>
+							<span aria-hidden>{shownNumber}</span>
 						</p>
+
 						<button
 							type="button"
-							disabled={hideNumber || !number}
-							onClick={copyNumber}
-							aria-label={
-								copyStatus === "copied"
-									? "Card number copied"
-									: copyStatus === "error"
-										? "Copy failed. Try again."
-										: "Copy card number"
-							}
-							className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60 disabled:opacity-30"
+							disabled={!canCopy}
+							onClick={() => void copyNumber()}
+							aria-label={COPY_LABEL[copyStatus]}
+							className={cn(CARD_ICON_BUTTON, "disabled:opacity-30")}
 						>
-							{copyStatus === "copied" ? (
-								<Check size={14} aria-hidden />
-							) : copyStatus === "error" ? (
-								<CircleAlert size={14} className="text-danger" aria-hidden />
-							) : (
-								<Copy size={14} aria-hidden />
-							)}
+							<CopyIcon status={copyStatus} />
 						</button>
+
 						{onToggleNumber && number ? (
 							<button
 								type="button"
-								onClick={() => {
-									setCopyStatus("idle");
-									onToggleNumber();
-								}}
+								onClick={toggleNumber}
 								aria-label={
 									hideNumber ? "Show card number" : "Hide card number"
 								}
 								aria-pressed={!hideNumber}
-								className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/60"
+								className={CARD_ICON_BUTTON}
 							>
 								{hideNumber ? (
 									<Eye size={15} aria-hidden />
@@ -153,6 +213,7 @@ export function BankCard({
 							</button>
 						) : null}
 					</div>
+
 					{copyStatus === "error" && !hideNumber ? (
 						<p role="alert" className="text-danger -mt-2 text-[11px]">
 							Could not copy card number. Try again.
@@ -164,33 +225,20 @@ export function BankCard({
 								: ""}
 						</span>
 					)}
+
 					<div className="flex items-end justify-between gap-4">
-						<div className="min-w-0 flex-1">
-							<p className="text-[9px] tracking-[0.18em] text-white/55 uppercase">
-								Cardholder
-							</p>
-							<p
-								className={cn(
-									"truncate font-medium text-white uppercase",
-									compact ? "text-[11px]" : "h-7 text-[13px] leading-7",
-								)}
-							>
-								{fullName || "YOUR NAME"}
-							</p>
-						</div>
-						<div className="shrink-0 text-right">
-							<p className="text-[9px] tracking-[0.18em] text-white/55 uppercase">
-								Expires
-							</p>
-							<p
-								className={cn(
-									"font-medium text-white tabular-nums",
-									compact ? "text-[11px]" : "h-7 text-[13px] leading-7",
-								)}
-							>
-								{expiryLabel}
-							</p>
-						</div>
+						<CardField
+							label="Cardholder"
+							value={fullName || "YOUR NAME"}
+							compact={compact}
+						/>
+						<CardField
+							label="Expires"
+							value={expiryLabel(expiresAt)}
+							compact={compact}
+							align="right"
+						/>
+
 						{securityDetails ?? (
 							<CardBrandLogo
 								id={brand}

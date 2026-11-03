@@ -1,30 +1,22 @@
-import type { LucideIcon } from "lucide-react";
-import {
-	ArrowDownLeft,
-	ArrowDownToLine,
-	ArrowUpRight,
-	ArrowLeftRight,
-	PiggyBank,
-	Receipt,
-	Smartphone,
-	Sparkles,
-	TrendingUp,
-} from "lucide-react";
 import Link from "next/link";
-import { peso, shortDate } from "~/shared/lib/format";
-import type { ActivityEntry } from "../activity.fields";
+import { shortDate } from "~/shared/lib/format";
 import { SectionHeader } from "~/shared/ui/section-header";
+import type { ActivityEntry } from "../activity.fields";
+import { ActivityRow } from "./activity-row";
 
-const ICONS: Record<ActivityEntry["kind"], LucideIcon> = {
-	deposit: ArrowDownToLine,
-	transfer: ArrowUpRight,
-	bill: Receipt,
-	load: Smartphone,
-	stash: PiggyBank,
-	reward: Sparkles,
-	interest: TrendingUp,
-	exchange: ArrowLeftRight,
-};
+function NoTransactions() {
+	return (
+		<div className="bg-surface-sunken flex flex-col items-center gap-1 rounded-2xl px-6 py-8 text-center">
+			<p className="text-ink text-[14px] font-medium">No transactions yet</p>
+			<Link
+				href="/deposit"
+				className="text-brand hover:text-brand-hover mt-2 text-[13px] font-medium transition-colors"
+			>
+				Make a deposit
+			</Link>
+		</div>
+	);
+}
 
 export function RecentActivity({ entries }: { entries: ActivityEntry[] }) {
 	return (
@@ -32,56 +24,14 @@ export function RecentActivity({ entries }: { entries: ActivityEntry[] }) {
 			<SectionHeader title="Recent transactions" href="/transactions" />
 
 			{entries.length === 0 ? (
-				<div className="bg-surface-sunken flex flex-col items-center gap-1 rounded-2xl px-6 py-8 text-center">
-					<p className="text-ink text-[14px] font-medium">
-						No transactions yet
-					</p>
-					<Link
-						href="/deposit"
-						className="text-brand hover:text-brand-hover mt-2 text-[13px] font-medium transition-colors"
-					>
-						Make a deposit
-					</Link>
-				</div>
+				<NoTransactions />
 			) : (
 				<ul className="flex flex-col gap-4">
-					{entries.map((entry) => {
-						const incoming = entry.amount > 0;
-						const Icon =
-							entry.kind === "transfer" && incoming
-								? ArrowDownLeft
-								: ICONS[entry.kind];
-						return (
-							<li key={entry.reference}>
-								<Link
-									href={`/transactions/${entry.reference}`}
-									className="group flex items-center gap-3.5"
-								>
-									<span className="bg-surface-sunken text-ink-soft grid h-10 w-10 shrink-0 place-items-center rounded-full">
-										<Icon size={16} strokeWidth={1.9} aria-hidden />
-									</span>
-									<span className="min-w-0 flex-1">
-										<span className="text-ink group-hover:text-brand block truncate text-[14px] font-medium transition-colors">
-											{entry.title}
-										</span>
-										<span className="text-ink-muted block text-[12px]">
-											{shortDate(entry.createdAt)}
-										</span>
-									</span>
-									<span
-										className={
-											incoming
-												? "text-brand shrink-0 text-[14px] font-semibold tabular-nums"
-												: "text-danger shrink-0 text-[14px] font-semibold tabular-nums"
-										}
-									>
-										{incoming ? "+" : "−"}
-										{peso(Math.abs(entry.amount))}
-									</span>
-								</Link>
-							</li>
-						);
-					})}
+					{entries.map((entry) => (
+						<li key={entry.reference}>
+							<ActivityRow entry={entry} detail={shortDate(entry.createdAt)} />
+						</li>
+					))}
 				</ul>
 			)}
 		</section>

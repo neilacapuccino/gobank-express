@@ -8,20 +8,26 @@ export const metadata: Metadata = {
 	title: "Log in",
 };
 
+async function pendingGoogleUsername() {
+	const pending = await getPendingGoogleAccount();
+
+	if (pending.status === "missing") redirect("/?google=failed");
+	if (pending.status === "register") redirect("/register?google=new");
+	if (pending.status === "email-in-use") redirect("/?google=email-in-use");
+
+	return pending.account.username;
+}
+
 export default async function SignInPage({
 	searchParams,
 }: {
 	searchParams: Promise<{ google?: string }>;
 }) {
 	const { google } = await searchParams;
-	let googleUsername: string | undefined;
-	if (google === "pin") {
-		const pending = await getPendingGoogleAccount();
-		if (pending.status === "missing") redirect("/?google=failed");
-		if (pending.status === "register") redirect("/register?google=new");
-		if (pending.status === "email-in-use") redirect("/?google=email-in-use");
-		googleUsername = pending.account.username;
-	}
+
+	const googleUsername =
+		google === "pin" ? await pendingGoogleUsername() : undefined;
+
 	return (
 		<SignInFlow
 			key={googleUsername ?? "manual"}

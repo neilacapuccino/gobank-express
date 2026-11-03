@@ -13,6 +13,7 @@ export default async function WelcomePage({
 	searchParams: Promise<{ google?: string }>;
 }) {
 	const { google } = await searchParams;
+
 	const notice =
 		google && Object.hasOwn(GOOGLE_NOTICES, google)
 			? (GOOGLE_NOTICES[google] ?? null)

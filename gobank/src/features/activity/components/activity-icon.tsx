@@ -23,9 +23,10 @@ const ICONS: Record<ActivityEntry["kind"], LucideIcon> = {
 	exchange: ArrowLeftRight,
 };
 
-export const activityIcon = (
+export function activityIcon(
 	entry: Pick<ActivityEntry, "kind" | "amount">,
-): LucideIcon =>
-	entry.kind === "transfer" && entry.amount > 0
-		? ArrowDownLeft
-		: ICONS[entry.kind];
+): LucideIcon {
+	const receivedTransfer = entry.kind === "transfer" && entry.amount > 0;
+
+	return receivedTransfer ? ArrowDownLeft : ICONS[entry.kind];
+}

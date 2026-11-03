@@ -34,9 +34,22 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
 		},
 	});
 
+	const busy = preparingPhoto || save.isPending || save.isSuccess;
+
+	const submit = () => {
+		if (preparingPhoto || save.isPending) return;
+		save.mutate({ ...value, profilePhoto: photo });
+	};
+
+	const removePhoto = () => {
+		setPhoto(null);
+		setPhotoError(null);
+	};
+
 	const selectPhoto = async (file: File) => {
 		setPreparingPhoto(true);
 		setPhotoError(null);
+
 		try {
 			setPhoto(await prepareProfilePhoto(file));
 		} catch (error) {
@@ -52,8 +65,7 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
 		<form
 			onSubmit={(event) => {
 				event.preventDefault();
-				if (!preparingPhoto && !save.isPending)
-					save.mutate({ ...value, profilePhoto: photo });
+				submit();
 			}}
 			className="flex flex-1 flex-col"
 		>
@@ -62,13 +74,10 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
 			<div className="mt-8 flex flex-col gap-5">
 				<ProfilePhotoPicker
 					photo={photo}
-					busy={preparingPhoto || save.isPending || save.isSuccess}
+					busy={busy}
 					error={photoError}
 					onSelect={(file) => void selectPhoto(file)}
-					onRemove={() => {
-						setPhoto(null);
-						setPhotoError(null);
-					}}
+					onRemove={removePhoto}
 				/>
 				<ProfileFields
 					value={value}
@@ -93,12 +102,7 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
 			<Button
 				type="submit"
 				className="mt-8"
-				disabled={
-					!profileIsValid(value) ||
-					preparingPhoto ||
-					save.isPending ||
-					save.isSuccess
-				}
+				disabled={busy || !profileIsValid(value)}
 			>
 				{save.isPending || save.isSuccess ? "Saving" : "Save changes"}
 			</Button>

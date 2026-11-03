@@ -25,8 +25,10 @@ export function TransactionSummary({
 			>
 				{peso(amount)}
 			</p>
+
 			{children ? <div className="mt-5">{children}</div> : null}
-			{details.length ? (
+
+			{details.length > 0 ? (
 				<dl className="border-line mt-5 space-y-3 border-t pt-4">
 					{details.map(({ label, value }) => (
 						<div

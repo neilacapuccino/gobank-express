@@ -206,11 +206,11 @@ export function WelcomeMascot() {
 				₱500 sent
 			</Chip>
 			<Chip className="top-24 right-0" delay="1.2s">
-				<Gem size={13} className="text-[#e6c17a]" aria-hidden />
+				<Gem size={13} className="text-gold" aria-hidden />
 				+10 points
 			</Chip>
 			<Chip className="right-0 bottom-1" delay="2.1s">
-				<PiggyBank size={13} className="text-[#71d5f3]" aria-hidden />
+				<PiggyBank size={13} className="text-sky" aria-hidden />
 				GoalSave 4% p.a.
 			</Chip>
 		</div>

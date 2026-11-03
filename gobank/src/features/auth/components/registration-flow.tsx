@@ -13,9 +13,8 @@ import { StepDetails } from "./step-details";
 import { StepIdentity } from "./step-identity";
 import { StepReview } from "./step-review";
 import type { CardBrandId } from "~/features/card/card-brands";
-import { activateClientSession } from "../session-client";
+import { activateClientSession } from "../session.client";
 
-const TOTAL_STEPS = 4;
 type CardPreview = RouterOutputs["auth"]["prepareCard"];
 
 type RegistrationFlowProps = {
@@ -24,6 +23,66 @@ type RegistrationFlowProps = {
 	withGoogle: boolean;
 };
 
+const STEP = { identity: 1, card: 2, details: 3, review: 4 } as const;
+const TOTAL_STEPS = 4;
+
+const stillValid = (card: CardPreview | null, brand: CardBrandId) =>
+	card?.brand === brand && Date.parse(card.validUntil) > Date.now();
+
+function RegistrationHeader({
+	step,
+	busy,
+}: {
+	step: number;
+	busy: () => boolean;
+}) {
+	return (
+		<header className="flex flex-col gap-5">
+			<div className="flex items-center justify-between">
+				<Link
+					href="/"
+					aria-disabled={busy()}
+					onClick={(event) => {
+						if (busy()) event.preventDefault();
+					}}
+					className="text-ink-muted hover:text-ink text-[13px] transition-colors"
+				>
+					GoBank Express
+				</Link>
+				<span className="text-ink-muted text-[12px] tabular-nums">
+					Step {step} of {TOTAL_STEPS}
+				</span>
+			</div>
+
+			<StepBar current={step} total={TOTAL_STEPS} />
+		</header>
+	);
+}
+
+function PrepareError({
+	message,
+	retrying,
+	onRetry,
+}: {
+	message: string | null;
+	retrying: boolean;
+	onRetry: () => void;
+}) {
+	return (
+		<div role="alert" className="mt-4">
+			<p className="text-danger text-[13px]">{message}</p>
+			<button
+				type="button"
+				onClick={onRetry}
+				disabled={retrying}
+				className="text-brand mt-2 min-h-10 text-[13px] font-medium disabled:opacity-45"
+			>
+				Try again
+			</button>
+		</div>
+	);
+}
+
 export function RegistrationFlow({
 	initialFullName,
 	gmail,
@@ -31,13 +90,15 @@ export function RegistrationFlow({
 }: RegistrationFlowProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
+
 	const [draft, setDraft] = useState<RegistrationDraft>({
 		...EMPTY_DRAFT,
 		fullName: initialFullName,
 	});
-	const [step, setStep] = useState(1);
+	const [step, setStep] = useState<number>(STEP.identity);
 	const [card, setCard] = useState<CardPreview | null>(null);
-	const preparationPending = useRef(false);
+	const preparingCard = useRef(false);
+
 	const prepare = api.auth.prepareCard.useMutation();
 	const register = api.auth.register.useMutation({
 		onSuccess: ({ sessionId }) => {
@@ -47,77 +108,76 @@ export function RegistrationFlow({
 			router.refresh();
 		},
 	});
+
+	const busy = () => preparingCard.current || register.isPending;
+
 	const patch = (next: Partial<RegistrationDraft>) => {
 		setDraft((current) => ({ ...current, ...next }));
 		register.reset();
 	};
-	const prepareCard = (advance: boolean) => {
-		if (preparationPending.current || register.isPending) return;
-		if (
-			advance &&
-			card?.brand === draft.brand &&
-			Date.parse(card.validUntil) > Date.now()
-		) {
+
+	const prepareCard = (goToDetails: boolean) => {
+		if (busy()) return;
+
+		if (goToDetails && stillValid(card, draft.brand)) {
 			prepare.reset();
-			setStep(3);
+			setStep(STEP.details);
 			return;
 		}
-		preparationPending.current = true;
+
+		preparingCard.current = true;
 		setCard(null);
 		register.reset();
+
 		prepare.mutate(
 			{ brand: draft.brand },
 			{
 				onSuccess: (preview) => {
 					setCard(preview);
-					if (advance) setStep(3);
+					if (goToDetails) setStep(STEP.details);
 				},
 				onSettled: () => {
-					preparationPending.current = false;
+					preparingCard.current = false;
 				},
 			},
 		);
 	};
+
 	const selectBrand = (brand: CardBrandId) => {
-		if (preparationPending.current || brand === draft.brand) return;
+		if (preparingCard.current || brand === draft.brand) return;
+
 		patch({ brand });
 		setCard(null);
 		prepare.reset();
 	};
+
+	const submit = () =>
+		register.mutate({
+			username: draft.username,
+			pin: draft.pin,
+			brand: draft.brand,
+			fullName: draft.fullName,
+			mobile: draft.mobile,
+			withGoogle,
+		});
+
 	return (
 		<div className="flex flex-1 flex-col">
-			<header className="flex flex-col gap-5">
-				<div className="flex items-center justify-between">
-					<Link
-						href="/"
-						aria-disabled={prepare.isPending || register.isPending}
-						onClick={(event) => {
-							if (preparationPending.current || register.isPending) {
-								event.preventDefault();
-							}
-						}}
-						className="text-ink-muted hover:text-ink text-[13px] transition-colors"
-					>
-						GoBank Express
-					</Link>
-					<span className="text-ink-muted text-[12px] tabular-nums">
-						Step {step} of {TOTAL_STEPS}
-					</span>
-				</div>
-				<StepBar current={step} total={TOTAL_STEPS} />
-			</header>
+			<RegistrationHeader step={step} busy={busy} />
+
 			<div key={step} className="animate-step-in mt-10 flex flex-1 flex-col">
-				{step === 1 && (
+				{step === STEP.identity ? (
 					<StepIdentity
 						username={draft.username}
 						onUsernameChange={(username) => patch({ username })}
 						onComplete={(pin) => {
 							patch({ pin });
-							setStep(2);
+							setStep(STEP.card);
 						}}
 					/>
-				)}
-				{step === 2 && (
+				) : null}
+
+				{step === STEP.card ? (
 					<StepCard
 						brand={draft.brand}
 						fullName={draft.fullName.trim()}
@@ -125,63 +185,50 @@ export function RegistrationFlow({
 						onBrandChange={selectBrand}
 						onNext={() => prepareCard(true)}
 						onBack={() => {
-							if (!preparationPending.current) setStep(1);
+							if (!preparingCard.current) setStep(STEP.identity);
 						}}
 					/>
-				)}
-				{step === 3 && (
+				) : null}
+
+				{step === STEP.details ? (
 					<StepDetails
 						fullName={draft.fullName}
 						mobile={draft.mobile}
 						gmail={gmail}
 						onChange={patch}
-						onNext={() => setStep(4)}
-						onBack={() => setStep(2)}
+						onNext={() => setStep(STEP.review)}
+						onBack={() => setStep(STEP.card)}
 					/>
-				)}
-				{step === 4 && card && (
+				) : null}
+
+				{step === STEP.review && card ? (
 					<StepReview
 						draft={draft}
 						card={card}
 						pending={register.isPending || register.isSuccess}
 						error={errorMessage(register.error)}
-						onBack={() => setStep(3)}
+						onBack={() => setStep(STEP.details)}
 						onRefreshCard={() => prepareCard(false)}
-						onSubmit={() =>
-							register.mutate({
-								username: draft.username,
-								pin: draft.pin,
-								brand: draft.brand,
-								fullName: draft.fullName,
-								mobile: draft.mobile,
-								withGoogle,
-							})
-						}
+						onSubmit={submit}
 					/>
-				)}
-				{step === 4 && !card && prepare.isPending && (
+				) : null}
+
+				{step === STEP.review && !card && prepare.isPending ? (
 					<p
 						role="status"
 						className="text-ink-muted py-8 text-center text-[14px]"
 					>
 						Preparing your card details…
 					</p>
-				)}
-				{prepare.isError && step > 1 && (
-					<div role="alert" className="mt-4">
-						<p className="text-danger text-[13px]">
-							{errorMessage(prepare.error)}
-						</p>
-						<button
-							type="button"
-							onClick={() => prepareCard(step === 2)}
-							disabled={prepare.isPending}
-							className="text-brand mt-2 min-h-10 text-[13px] font-medium disabled:opacity-45"
-						>
-							Try again
-						</button>
-					</div>
-				)}
+				) : null}
+
+				{prepare.isError && step > STEP.identity ? (
+					<PrepareError
+						message={errorMessage(prepare.error)}
+						retrying={prepare.isPending}
+						onRetry={() => prepareCard(step === STEP.card)}
+					/>
+				) : null}
 			</div>
 		</div>
 	);

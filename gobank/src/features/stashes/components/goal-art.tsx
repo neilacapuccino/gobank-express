@@ -9,6 +9,7 @@ import {
 import { PocketIcon } from "~/shared/ui/pocket-art";
 
 export type GoalIcon = "safe" | "travel" | "home" | "gift" | "car" | "heart";
+
 export const goalIcons: {
 	value: GoalIcon;
 	label: string;
@@ -21,14 +22,20 @@ export const goalIcons: {
 	{ value: "car", label: "Car", Icon: CarFront },
 	{ value: "heart", label: "Health", Icon: Heart },
 ];
+
+const NAME_HINTS: [RegExp, GoalIcon][] = [
+	[/trip|travel|holiday|vacation/i, "travel"],
+	[/home|house|rent/i, "home"],
+	[/car|drive/i, "car"],
+	[/birthday|gift|wedding|party/i, "gift"],
+	[/health|emergency|family/i, "heart"],
+];
+
 export function iconForGoal(name: string): GoalIcon {
-	if (/trip|travel|holiday|vacation/i.test(name)) return "travel";
-	if (/home|house|rent/i.test(name)) return "home";
-	if (/car|drive/i.test(name)) return "car";
-	if (/birthday|gift|wedding|party/i.test(name)) return "gift";
-	if (/health|emergency|family/i.test(name)) return "heart";
-	return "safe";
+	const match = NAME_HINTS.find(([pattern]) => pattern.test(name));
+	return match ? match[1] : "safe";
 }
+
 export function GoalArt({
 	icon = "safe",
 	className,
@@ -36,12 +43,11 @@ export function GoalArt({
 	icon?: GoalIcon;
 	className?: string;
 }) {
-	if (icon === "safe") {
+	const Icon = goalIcons.find((item) => item.value === icon)?.Icon;
+
+	if (!Icon) {
 		return <PocketIcon name="goal" className={className} strokeWidth={1.7} />;
 	}
-	const { Icon } =
-		goalIcons.find((item) => item.value === icon) ?? goalIcons[0]!;
-	if (!Icon)
-		return <PocketIcon name="goal" className={className} strokeWidth={1.7} />;
+
 	return <Icon className={className} strokeWidth={1.6} aria-hidden />;
 }

@@ -1,95 +1,358 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type PointerEvent, type ReactNode } from "react";
 import { CandlestickChart, ChartNoAxesCombined, RefreshCw } from "lucide-react";
+import { cn } from "~/shared/lib/cn";
 import { useBitcoinCandles } from "../hooks/use-bitcoin-candles";
-import { groupCandles } from "../bitcoin.candles";
+import { groupCandles } from "../bitcoin-candles";
 import {
-	BITCOIN_RANGES,
 	BITCOIN_CANDLES,
+	BITCOIN_RANGES,
 	money,
 	type BitcoinCandle,
-	type BitcoinRange,
 	type BitcoinQuote,
+	type BitcoinRange,
 } from "../bitcoin.types";
+import {
+	candleShape,
+	CHART,
+	createScale,
+	DOWN_COLOR,
+	FLAT_COLOR,
+	gapPath,
+	linePath,
+	nearestIndex,
+	PLOT_BOTTOM,
+	timeAtPointer,
+	toPhp,
+	UP_COLOR,
+	type ChartMode,
+	type ChartScale,
+} from "../bitcoin-chart-geometry";
 
-const W = 360,
-	H = 216,
-	LEFT = 12,
-	RIGHT = 68,
-	TOP = 16,
-	BOTTOM = 26;
+const AXIS_COLOR = "#878792";
+const GRID_LINES = [0, 1, 2, 3];
+const ONE_MINUTE_BUCKET_MS = 3_000;
+
+const RANGE_BUTTON: Record<BitcoinRange, string> = {
+	"1MIN": "1 min",
+	"1H": "1 hr",
+	"1W": "1 wk",
+	"1M": "1 mo",
+	"1Y": "1 yr",
+};
+
+const RANGE_PERIOD: Record<BitcoinRange, string> = {
+	"1MIN": "minute",
+	"1H": "hour",
+	"1W": "week",
+	"1M": "30 days",
+	"1Y": "year",
+};
+
+const MODES: { id: ChartMode; label: string }[] = [
+	{ id: "line", label: "Line chart" },
+	{ id: "candles", label: "Candlestick chart" },
+];
+
+const CLOCK_TIME: Intl.DateTimeFormatOptions = {
+	hour: "2-digit",
+	minute: "2-digit",
+	second: "2-digit",
+};
+
+const centavos = (pesos: number) => Math.round(pesos * 100);
+
+function timeLabel(time: number, range: BitcoinRange) {
+	if (range === "1MIN") {
+		return new Date(time).toLocaleString("en-US", {
+			hour: "numeric",
+			minute: "2-digit",
+			second: "2-digit",
+		});
+	}
+
+	if (range === "1H") {
+		return new Date(time).toLocaleString("en-US", {
+			hour: "numeric",
+			minute: "2-digit",
+		});
+	}
+
+	return new Date(time).toLocaleString("en-US", {
+		month: "short",
+		day: "numeric",
+	});
+}
+
+function priceAxisLabel(price: number, range: BitcoinRange) {
+	const compact = new Intl.NumberFormat("en-US", {
+		notation: "compact",
+		maximumFractionDigits: range === "1MIN" ? 6 : 3,
+	});
+
+	return `₱${compact.format(price)}`;
+}
+
+function PriceGrid({
+	scale,
+	range,
+}: {
+	scale: ChartScale;
+	range: BitcoinRange;
+}) {
+	return GRID_LINES.map((index) => {
+		const price = scale.maximum - ((scale.maximum - scale.minimum) * index) / 3;
+		const lineY = scale.y(price);
+
+		return (
+			<g key={index}>
+				<line
+					x1={CHART.left}
+					x2={CHART.width - CHART.right}
+					y1={lineY}
+					y2={lineY}
+					stroke="#ffffff"
+					strokeOpacity=".065"
+				/>
+				<text
+					x={CHART.width - CHART.right + 8}
+					y={lineY + 3}
+					fill={AXIS_COLOR}
+					fontSize="9"
+				>
+					{priceAxisLabel(price, range)}
+				</text>
+			</g>
+		);
+	});
+}
+
+function LineSeries({
+	points,
+	scale,
+	color,
+	gradientId,
+}: {
+	points: BitcoinCandle[];
+	scale: ChartScale;
+	color: string;
+	gradientId: string;
+}) {
+	const first = points[0];
+	const last = points.at(-1);
+	if (!first || !last) return null;
+
+	const path = linePath(points, scale);
+	const area = `${path} L${scale.x(last)},${PLOT_BOTTOM} L${scale.x(first)},${PLOT_BOTTOM} Z`;
+
+	return (
+		<>
+			<path d={area} fill={`url(#${gradientId})`} />
+			<path
+				d={path}
+				fill="none"
+				stroke={color}
+				strokeWidth="2"
+				strokeLinejoin="round"
+			/>
+		</>
+	);
+}
+
+function CandleSeries({
+	points,
+	scale,
+}: {
+	points: BitcoinCandle[];
+	scale: ChartScale;
+}) {
+	return (
+		<>
+			<path
+				d={gapPath(points, scale)}
+				fill="none"
+				stroke={FLAT_COLOR}
+				strokeWidth="1.5"
+				strokeOpacity=".8"
+				strokeLinejoin="round"
+			/>
+
+			{points.map((point) => {
+				const shape = candleShape(point, scale);
+				const centerX = scale.x(point);
+
+				return (
+					<g key={point.time} stroke={shape.color} fill={shape.color}>
+						<line
+							x1={centerX}
+							x2={centerX}
+							y1={scale.y(point.high)}
+							y2={scale.y(point.low)}
+							strokeWidth="1"
+						/>
+						<rect
+							x={centerX - shape.bodyWidth / 2}
+							y={shape.bodyTop}
+							width={shape.bodyWidth}
+							height={shape.bodyHeight}
+							stroke="none"
+						/>
+					</g>
+				);
+			})}
+		</>
+	);
+}
+
+function CandleTooltip({
+	candle,
+	range,
+}: {
+	candle: BitcoinCandle;
+	range: BitcoinRange;
+}) {
+	return (
+		<div className="pointer-events-none absolute top-0 left-2 rounded-lg border border-white/10 bg-[#242427] px-2.5 py-1.5 text-[10px] shadow-lg">
+			<p className="font-semibold text-white">
+				{money(centavos(candle.close))} PHP
+			</p>
+			<p className="text-ink-muted">{timeLabel(candle.time, range)}</p>
+			<p className="text-ink-muted mt-1 text-[9px]">
+				O {money(centavos(candle.open))} · H {money(centavos(candle.high))}
+				<br />L {money(centavos(candle.low))} · C{" "}
+				{money(centavos(candle.close))}
+			</p>
+			{candle.volume === 0 ? (
+				<p className="text-ink-faint mt-1 text-[9px]">
+					No trades in this candle
+				</p>
+			) : null}
+		</div>
+	);
+}
+
+function ModeSwitch({
+	selected,
+	onSelect,
+}: {
+	selected: ChartMode;
+	onSelect: (mode: ChartMode) => void;
+}) {
+	return (
+		<div className="flex rounded-lg bg-white/[.04] p-0.5">
+			{MODES.map(({ id, label }) => (
+				<button
+					key={id}
+					type="button"
+					aria-label={label}
+					aria-pressed={selected === id}
+					onClick={() => onSelect(id)}
+					className={cn(
+						"grid h-8 w-8 place-items-center rounded-md",
+						selected === id ? "bg-white/10 text-white" : "text-ink-muted",
+					)}
+				>
+					{id === "line" ? (
+						<ChartNoAxesCombined size={15} />
+					) : (
+						<CandlestickChart size={15} />
+					)}
+				</button>
+			))}
+		</div>
+	);
+}
+
+function RangeSwitch({
+	selected,
+	onSelect,
+}: {
+	selected: BitcoinRange;
+	onSelect: (range: BitcoinRange) => void;
+}) {
+	return (
+		<div
+			className="mt-1 flex justify-between gap-1"
+			aria-label="Chart time range"
+		>
+			{BITCOIN_RANGES.map((range) => (
+				<button
+					key={range}
+					type="button"
+					onClick={() => onSelect(range)}
+					aria-pressed={selected === range}
+					className={cn(
+						"min-h-10 flex-1 rounded-xl text-[11px] font-semibold transition-colors",
+						selected === range
+							? "bg-mint/10 text-mint"
+							: "text-ink-muted hover:bg-white/5",
+					)}
+				>
+					{RANGE_BUTTON[range]}
+				</button>
+			))}
+		</div>
+	);
+}
+
+function ChartMessage({ children }: { children: ReactNode }) {
+	return (
+		<div className="text-ink-muted grid h-[216px] place-items-center text-center text-[12px]">
+			{children}
+		</div>
+	);
+}
 
 export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
 	const [range, setRange] = useState<BitcoinRange>("1H");
-	const [mode, setMode] = useState<"line" | "candles">("candles");
+	const [mode, setMode] = useState<ChartMode>("candles");
 	const [cursor, setCursor] = useState<number | null>(null);
-	const id = useId().replaceAll(":", "");
+	const gradientId = useId().replaceAll(":", "");
+
 	const { chart, points: history, updatedAt } = useBitcoinCandles(range);
-	const candles = range === "1MIN" ? groupCandles(history, 3_000) : history;
-	const points = quote
-		? candles.map((point) => ({
-				...point,
-				open: point.open * quote.phpPerQuote,
-				high: point.high * quote.phpPerQuote,
-				low: point.low * quote.phpPerQuote,
-				close: point.close * quote.phpPerQuote,
-			}))
-		: [];
+
+	const candles =
+		range === "1MIN" ? groupCandles(history, ONE_MINUTE_BUCKET_MS) : history;
+	const points = quote ? toPhp(candles, quote.phpPerQuote) : [];
 	const first = points[0];
 	const last = points.at(-1);
-	const low = Math.min(
-		...points.map((p) => (mode === "candles" ? p.low : p.close)),
-	);
-	const high = Math.max(
-		...points.map((p) => (mode === "candles" ? p.high : p.close)),
-	);
-	const spread = Math.max(high - low, high * 0.00001, 0.01);
-	const minimum = low - spread * 0.12;
-	const maximum = high + spread * 0.12;
-	const y = (value: number) =>
-		TOP + ((maximum - value) / (maximum - minimum)) * (H - TOP - BOTTOM);
-	const x = (point: BitcoinCandle) =>
-		LEFT +
-		((point.time - (first?.time ?? 0)) /
-			Math.max(1, (last?.time ?? 0) - (first?.time ?? 0))) *
-			(W - LEFT - RIGHT);
-	const path = points
-		.map(
-			(p, i) => `${i ? "L" : "M"}${x(p).toFixed(2)},${y(p.close).toFixed(2)}`,
-		)
-		.join(" ");
-	const flatPath = points
-		.slice(1)
-		.map((point, index) => {
-			const previous = points[index]!;
-			if (Math.abs(y(point.open) - y(previous.close)) >= 1.5) return "";
-			return `M${x(previous)},${y(previous.close)} L${x(point)},${y(point.open)}`;
-		})
-		.join(" ");
-	const up = !!first && !!last && last.close >= first.close;
-	const color = up ? "#56e3b1" : "#fb7185";
-	const selected =
-		cursor === null ? undefined : points[Math.min(cursor, points.length - 1)];
+
+	const scale = createScale(points, mode);
+	const rising = Boolean(first && last && last.close >= first.close);
+	const color = rising ? UP_COLOR : DOWN_COLOR;
 	const change =
 		first && last ? ((last.close - first.open) / first.open) * 100 : null;
-	const labelTime = (time: number) =>
-		new Date(time).toLocaleString(
-			"en-US",
-			range === "1MIN" || range === "1H"
-				? {
-						hour: "numeric",
-						minute: "2-digit",
-						...(range === "1MIN" ? { second: "2-digit" } : {}),
-					}
-				: { month: "short", day: "numeric" },
-		);
-	const slot = (W - LEFT - RIGHT) / Math.max(points.length - 1, 1);
-	const width = Math.min(12, Math.max(1, slot * 0.72));
+	const selected =
+		cursor === null ? undefined : points[Math.min(cursor, points.length - 1)];
+
+	const loading = chart.isPending || (!quote && !chart.isError);
+	const subtitle =
+		range === "1MIN"
+			? "3-second candles · last 60 seconds"
+			: BITCOIN_CANDLES[range].label;
+
+	const changeRange = (next: BitcoinRange) => {
+		setRange(next);
+		setCursor(null);
+	};
+
+	const changeMode = (next: ChartMode) => {
+		setMode(next);
+		setCursor(null);
+	};
+
+	const followPointer = (event: PointerEvent<SVGSVGElement>) => {
+		if (!first || !last) return;
+
+		const bounds = event.currentTarget.getBoundingClientRect();
+		const time = timeAtPointer(event.clientX, bounds, first.time, last.time);
+		setCursor(nearestIndex(points, time));
+	};
 
 	return (
 		<section
-			className="rounded-[24px] border border-white/[.07] bg-[#171719] p-4"
+			className="bg-card rounded-[24px] border border-white/[.07] p-4"
 			aria-label="Bitcoin price chart"
 		>
 			<div className="mb-3 flex items-center justify-between gap-2">
@@ -102,284 +365,119 @@ export function BitcoinChart({ quote }: { quote?: BitcoinQuote }) {
 								{change >= 0 ? "+" : ""}
 								{change.toFixed(2)}%
 							</span>{" "}
-							<span className="ml-1">
-								past{" "}
-								{range === "1MIN"
-									? "minute"
-									: range === "1H"
-										? "hour"
-										: range === "1W"
-											? "week"
-											: range === "1M"
-												? "30 days"
-												: "year"}
-							</span>
+							<span className="ml-1">past {RANGE_PERIOD[range]}</span>
 						</>
 					)}
 				</p>
-				<div className="flex rounded-lg bg-white/[.04] p-0.5">
-					{(["line", "candles"] as const).map((value) => (
-						<button
-							key={value}
-							type="button"
-							aria-label={value === "line" ? "Line chart" : "Candlestick chart"}
-							aria-pressed={mode === value}
-							onClick={() => {
-								setMode(value);
-								setCursor(null);
-							}}
-							className={`grid h-8 w-8 place-items-center rounded-md ${mode === value ? "bg-white/10 text-white" : "text-ink-muted"}`}
-						>
-							{value === "line" ? (
-								<ChartNoAxesCombined size={15} />
-							) : (
-								<CandlestickChart size={15} />
-							)}
-						</button>
-					))}
-				</div>
+				<ModeSwitch selected={mode} onSelect={changeMode} />
 			</div>
+
 			<div className="mb-3 flex items-center justify-between gap-2 text-[9px]">
-				<span className="text-ink-faint">
-					{range === "1MIN"
-						? "3-second candles · last 60 seconds"
-						: BITCOIN_CANDLES[range].label}
-				</span>
+				<span className="text-ink-faint">{subtitle}</span>
 			</div>
+
 			<div className="relative min-h-[216px]">
-				{chart.isPending || (!quote && !chart.isError) ? (
-					<div className="text-ink-muted grid h-[216px] animate-pulse place-items-center text-[12px]">
-						Loading PHP market history…
-					</div>
-				) : !first || !last ? (
-					<div className="text-ink-muted grid h-[216px] place-items-center text-center text-[12px]">
+				{loading ? (
+					<ChartMessage>
+						<span className="animate-pulse">Loading PHP market history…</span>
+					</ChartMessage>
+				) : null}
+
+				{!loading && (!first || !last) ? (
+					<ChartMessage>
 						<div>
 							<p>Chart unavailable</p>
 							<button
 								type="button"
 								onClick={() => void chart.refetch()}
-								className="mt-3 inline-flex items-center gap-2 text-[#56e3b1]"
+								className="text-mint mt-3 inline-flex items-center gap-2"
 							>
 								<RefreshCw size={14} /> Retry chart
 							</button>
 						</div>
-					</div>
-				) : (
+					</ChartMessage>
+				) : null}
+
+				{!loading && first && last ? (
 					<>
 						<svg
-							viewBox={`0 0 ${W} ${H}`}
+							viewBox={`0 0 ${CHART.width} ${CHART.height}`}
 							className="w-full touch-pan-y"
 							role="img"
-							aria-label={`Bitcoin ${range} ${mode} chart. First close ${money(Math.round(first.close * 100))}, latest close ${money(Math.round(last.close * 100))} PHP.`}
+							aria-label={`Bitcoin ${range} ${mode} chart. First close ${money(centavos(first.close))}, latest close ${money(centavos(last.close))} PHP.`}
 							onPointerLeave={() => setCursor(null)}
-							onPointerMove={(event) => {
-								const bounds = event.currentTarget.getBoundingClientRect();
-								const position = Math.max(
-									0,
-									Math.min(
-										1,
-										(((event.clientX - bounds.left) / bounds.width) * W -
-											LEFT) /
-											(W - LEFT - RIGHT),
-									),
-								);
-								const time = first.time + position * (last.time - first.time);
-								let nearest = 0;
-								for (let index = 1; index < points.length; index++)
-									if (
-										Math.abs(points[index]!.time - time) <
-										Math.abs(points[nearest]!.time - time)
-									)
-										nearest = index;
-								setCursor(nearest);
-							}}
+							onPointerMove={followPointer}
 						>
 							<defs>
-								<linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+								<linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
 									<stop offset="0%" stopColor={color} stopOpacity=".22" />
 									<stop offset="100%" stopColor={color} stopOpacity="0" />
 								</linearGradient>
 							</defs>
-							{[0, 1, 2, 3].map((index) => {
-								const value = maximum - ((maximum - minimum) * index) / 3;
-								return (
-									<g key={index}>
-										<line
-											x1={LEFT}
-											x2={W - RIGHT}
-											y1={y(value)}
-											y2={y(value)}
-											stroke="#ffffff"
-											strokeOpacity=".065"
-										/>
-										<text
-											x={W - RIGHT + 8}
-											y={y(value) + 3}
-											fill="#878792"
-											fontSize="9"
-										>
-											₱
-											{new Intl.NumberFormat("en-US", {
-												notation: "compact",
-												maximumFractionDigits: range === "1MIN" ? 6 : 3,
-											}).format(value)}
-										</text>
-									</g>
-								);
-							})}
+
+							<PriceGrid scale={scale} range={range} />
+
 							{mode === "line" ? (
-								<>
-									<path
-										d={`${path} L${x(last)},${H - BOTTOM} L${x(first)},${H - BOTTOM} Z`}
-										fill={`url(#${id})`}
-									/>
-									<path
-										d={path}
-										fill="none"
-										stroke={color}
-										strokeWidth="2"
-										strokeLinejoin="round"
-									/>
-								</>
+								<LineSeries
+									points={points}
+									scale={scale}
+									color={color}
+									gradientId={gradientId}
+								/>
 							) : (
-								<>
-									<path
-										d={flatPath}
-										fill="none"
-										stroke="#87b9a5"
-										strokeWidth="1.5"
-										strokeOpacity=".8"
-										strokeLinejoin="round"
-									/>
-									{points.map((point) => {
-										const openY = y(point.open),
-											closeY = y(point.close);
-										const flat =
-											Math.abs(openY - closeY) < 1.5 &&
-											Math.abs(y(point.high) - y(point.low)) < 3;
-										const bodyWidth = flat ? Math.min(20, slot + 0.5) : width;
-										const bodyHeight = flat
-											? 1.5
-											: Math.max(3, Math.abs(openY - closeY));
-										const candleColor = flat
-											? "#87b9a5"
-											: point.close >= point.open
-												? "#56e3b1"
-												: "#fb7185";
-										return (
-											<g
-												key={point.time}
-												stroke={candleColor}
-												fill={candleColor}
-											>
-												<line
-													x1={x(point)}
-													x2={x(point)}
-													y1={y(point.high)}
-													y2={y(point.low)}
-													strokeWidth="1"
-												/>
-												<rect
-													x={x(point) - bodyWidth / 2}
-													y={(openY + closeY - bodyHeight) / 2}
-													width={bodyWidth}
-													height={bodyHeight}
-													stroke="none"
-												/>
-											</g>
-										);
-									})}
-								</>
+								<CandleSeries points={points} scale={scale} />
 							)}
-							<text x={LEFT} y={H - 4} fill="#878792" fontSize="9">
-								{labelTime(first.time)}
-							</text>
+
 							<text
-								x={W - RIGHT}
-								y={H - 4}
-								textAnchor="end"
-								fill="#878792"
+								x={CHART.left}
+								y={CHART.height - 4}
+								fill={AXIS_COLOR}
 								fontSize="9"
 							>
-								{labelTime(last.time)}
+								{timeLabel(first.time, range)}
 							</text>
-							{selected && (
-								<g>
-									<line
-										x1={x(selected)}
-										x2={x(selected)}
-										y1={TOP}
-										y2={H - BOTTOM}
-										stroke="#ffffff"
-										strokeOpacity=".4"
-									/>
-								</g>
-							)}
+							<text
+								x={CHART.width - CHART.right}
+								y={CHART.height - 4}
+								textAnchor="end"
+								fill={AXIS_COLOR}
+								fontSize="9"
+							>
+								{timeLabel(last.time, range)}
+							</text>
+
+							{selected ? (
+								<line
+									x1={scale.x(selected)}
+									x2={scale.x(selected)}
+									y1={CHART.top}
+									y2={PLOT_BOTTOM}
+									stroke="#ffffff"
+									strokeOpacity=".4"
+								/>
+							) : null}
 						</svg>
-						{selected && (
-							<div className="pointer-events-none absolute top-0 left-2 rounded-lg border border-white/10 bg-[#242427] px-2.5 py-1.5 text-[10px] shadow-lg">
-								<p className="font-semibold text-white">
-									{money(Math.round(selected.close * 100))} PHP
-								</p>
-								<p className="text-ink-muted">{labelTime(selected.time)}</p>
-								<p className="text-ink-muted mt-1 text-[9px]">
-									O {money(Math.round(selected.open * 100))} · H{" "}
-									{money(Math.round(selected.high * 100))}
-									<br />L {money(Math.round(selected.low * 100))} · C{" "}
-									{money(Math.round(selected.close * 100))}
-								</p>
-								{selected.volume === 0 && (
-									<p className="text-ink-faint mt-1 text-[9px]">
-										No trades in this candle
-									</p>
-								)}
-							</div>
-						)}
+
+						{selected ? (
+							<CandleTooltip candle={selected} range={range} />
+						) : null}
 					</>
-				)}
+				) : null}
 			</div>
-			<div
-				className="mt-1 flex justify-between gap-1"
-				aria-label="Chart time range"
-			>
-				{BITCOIN_RANGES.map((value) => (
-					<button
-						key={value}
-						type="button"
-						onClick={() => {
-							setRange(value);
-							setCursor(null);
-						}}
-						aria-pressed={range === value}
-						className={`min-h-10 flex-1 rounded-xl text-[11px] font-semibold transition-colors ${range === value ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "text-ink-muted hover:bg-white/5"}`}
-					>
-						{value === "1MIN"
-							? "1 min"
-							: value === "1H"
-								? "1 hr"
-								: value === "1W"
-									? "1 wk"
-									: value === "1M"
-										? "1 mo"
-										: "1 yr"}
-					</button>
-				))}
-			</div>
-			{updatedAt > 0 && (
+
+			<RangeSwitch selected={range} onSelect={changeRange} />
+
+			{updatedAt > 0 ? (
 				<p className="text-ink-faint mt-2 text-[9px]">
-					Updated{" "}
-					{new Date(updatedAt).toLocaleTimeString("en-US", {
-						hour: "2-digit",
-						minute: "2-digit",
-						second: "2-digit",
-					})}
+					Updated {new Date(updatedAt).toLocaleTimeString("en-US", CLOCK_TIME)}
 				</p>
-			)}
-			{chart.isError && chart.data && (
+			) : null}
+
+			{chart.isError && chart.data ? (
 				<p className="mt-2 text-[10px] text-amber-300">
 					Chart refresh failed. Showing the last loaded history.
 				</p>
-			)}
+			) : null}
 		</section>
 	);
 }

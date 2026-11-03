@@ -1,21 +1,116 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, Check, X } from "lucide-react";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { ArrowDownLeft, ArrowUpRight, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { calculateTrade } from "../bitcoin.rules";
+import { useRef, useState } from "react";
+import { cn } from "~/shared/lib/cn";
+import { api, type RouterOutputs } from "~/trpc/react";
 import {
-	btc,
 	BITCOIN_FEE_CENTAVOS,
-	MAX_CENTAVOS,
-	parseUnits,
+	btc,
 	money,
 	type BitcoinQuote,
 } from "../bitcoin.types";
+import {
+	parseTradeInput,
+	presetAmount,
+	previewTrade,
+	type TradeAction,
+	type TradePreview,
+} from "../bitcoin-trade-input";
+import { TradeReviewDialog } from "./bitcoin-trade-review";
 
 type Portfolio = RouterOutputs["bitcoin"]["portfolio"];
 type Order = RouterOutputs["bitcoin"]["trade"];
+
+const ACTIONS: TradeAction[] = ["buy", "sell"];
+const PRESET_PERCENTS = [25, 50, 75, 100];
+
+const ACTION_STYLE: Record<TradeAction, string> = {
+	buy: "bg-mint/10 text-mint",
+	sell: "bg-rose-400/10 text-rose-300",
+};
+
+const SUBMIT_STYLE: Record<TradeAction, string> = {
+	buy: "bg-mint text-[#0a211a] hover:bg-[#75edc3]",
+	sell: "bg-rose-300 text-[#35151d] hover:bg-rose-200",
+};
+
+function availableLabel(portfolio: Portfolio | undefined, action: TradeAction) {
+	if (!portfolio) return "Loading balance…";
+
+	return action === "buy"
+		? `${money(portfolio.cashCentavos)} PHP available`
+		: `${btc(portfolio.bitcoinUnits)} BTC available`;
+}
+
+function previewLabel(preview: TradePreview, action: TradeAction) {
+	if (action === "sell") {
+		return `You receive ≈ ${money(preview.cashCentavos)} PHP`;
+	}
+
+	return `You receive ≈ ${btc(preview.bitcoinUnits)} BTC · Total ${money(preview.cashCentavos)} PHP`;
+}
+
+function idleHint(action: TradeAction) {
+	return action === "sell"
+		? "You can sell any fraction of your Bitcoin."
+		: "Buy directly with PHP from your account.";
+}
+
+function ActionSwitch({
+	selected,
+	disabled,
+	onSelect,
+}: {
+	selected: TradeAction;
+	disabled: boolean;
+	onSelect: (action: TradeAction) => void;
+}) {
+	return (
+		<div className="bg-surface-sunken mb-5 flex rounded-xl p-1">
+			{ACTIONS.map((action) => (
+				<button
+					key={action}
+					type="button"
+					disabled={disabled}
+					aria-pressed={selected === action}
+					onClick={() => onSelect(action)}
+					className={cn(
+						"flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg text-[13px] font-semibold",
+						selected === action ? ACTION_STYLE[action] : "text-ink-muted",
+					)}
+				>
+					{action === "buy" ? (
+						<ArrowDownLeft size={16} />
+					) : (
+						<ArrowUpRight size={16} />
+					)}
+					{action === "buy" ? "Buy Bitcoin" : "Sell Bitcoin"}
+				</button>
+			))}
+		</div>
+	);
+}
+
+function TradeSuccess({ order }: { order: Order }) {
+	return (
+		<div
+			role="status"
+			className="bg-mint/10 text-mint mt-4 flex items-start gap-2 rounded-xl p-3 text-[12px]"
+		>
+			<Check size={16} className="mt-0.5 shrink-0" />
+			<div>
+				<p className="font-semibold">
+					{order.action === "buy" ? "Bitcoin bought" : "Bitcoin sold"}
+				</p>
+				<p className="mt-1 text-[11px]">
+					{btc(order.bitcoinUnits)} BTC · {money(order.amountCentavos)} PHP
+				</p>
+			</div>
+		</div>
+	);
+}
 
 export function BitcoinTradeForm({
 	portfolio,
@@ -26,114 +121,92 @@ export function BitcoinTradeForm({
 	quote?: BitcoinQuote;
 	fresh: boolean;
 }) {
-	const utils = api.useUtils();
 	const router = useRouter();
-	const [action, setAction] = useState<"buy" | "sell">("buy");
+	const [action, setAction] = useState<TradeAction>("buy");
 	const [amount, setAmount] = useState("");
 	const [attempted, setAttempted] = useState(false);
-	const [review, setReview] = useState(false);
-	const [success, setSuccess] = useState<Order | null>(null);
-	const request = useRef<string | null>(null);
-	const mutation = api.bitcoin.trade.useMutation({
+	const [reviewing, setReviewing] = useState(false);
+	const [lastOrder, setLastOrder] = useState<Order | null>(null);
+	const submissionId = useRef<string | null>(null);
+
+	const tradeMutation = api.bitcoin.trade.useMutation({
 		onSuccess: (order) => {
-			setSuccess(order);
-			setReview(false);
-			request.current = null;
+			setLastOrder(order);
+			setReviewing(false);
 			setAmount("");
 			setAttempted(false);
-			void utils.bitcoin.portfolio.invalidate();
-			void utils.account.invalidate();
+			submissionId.current = null;
 			router.refresh();
 		},
 	});
-	const parsed = parseUnits(amount, action === "buy" ? 2 : 8);
-	const trade =
-		parsed !== null &&
-		parsed > 0n &&
-		(action === "sell" || parsed <= BigInt(MAX_CENTAVOS))
-			? action === "buy"
-				? ({ action, cashCentavos: Number(parsed) } as const)
-				: ({ action, bitcoinUnits: parsed } as const)
-			: null;
-	let preview: ReturnType<typeof calculateTrade> | null = null;
-	let problem = "";
-	if (portfolio && quote && trade) {
-		try {
-			preview = calculateTrade(portfolio, trade, quote.unitPriceCentavos);
-		} catch (error) {
-			if (attempted)
-				problem = error instanceof Error ? error.message : "Check this amount.";
-		}
-	} else if (amount && !trade) {
-		problem =
-			parsed === null
-				? `Use up to ${action === "buy" ? 2 : 8} decimal places.`
-				: action === "buy"
-					? parsed === 0n
-						? "Enter at least ₱1.00."
-						: "This amount exceeds the account limit."
-					: "Enter a Bitcoin amount greater than zero.";
-	}
-	if (action === "sell" && portfolio?.bitcoinUnits === 0n) {
-		problem = "Buy some Bitcoin before making your first sale.";
-	}
 
-	const change = (value: string) => {
+	const input = parseTradeInput(amount, action);
+	const checked =
+		portfolio && quote && input.trade
+			? previewTrade(portfolio, input.trade, quote.unitPriceCentavos)
+			: null;
+	const preview = checked?.preview ?? null;
+
+	const nothingToSell = action === "sell" && portfolio?.bitcoinUnits === 0n;
+	let problem = input.problem;
+	if (checked?.problem && attempted) problem = checked.problem;
+	if (nothingToSell)
+		problem = "Buy some Bitcoin before making your first sale.";
+
+	const busy = tradeMutation.isPending;
+	const canReview =
+		Boolean(input.trade && portfolio && quote && fresh) && !busy;
+
+	const changeAmount = (value: string) => {
 		setAmount(value);
 		setAttempted(false);
-		setSuccess(null);
-		mutation.reset();
-		request.current = null;
+		setLastOrder(null);
+		tradeMutation.reset();
+		submissionId.current = null;
 	};
+
+	const switchAction = (next: TradeAction) => {
+		setAction(next);
+		changeAmount("");
+	};
+
+	const openReview = () => {
+		setAttempted(true);
+		if (!preview || !fresh) return;
+
+		tradeMutation.reset();
+		setReviewing(true);
+	};
+
 	const confirm = () => {
-		if (!trade || !preview || !fresh || mutation.isPending) return;
-		request.current ??= crypto.randomUUID();
-		mutation.mutate(
+		const trade = input.trade;
+		if (!trade || !preview || !fresh || busy) return;
+
+		submissionId.current ??= crypto.randomUUID();
+		const id = submissionId.current;
+
+		tradeMutation.mutate(
 			trade.action === "buy"
-				? { ...trade, submissionId: request.current }
+				? { ...trade, submissionId: id }
 				: {
 						action: "sell",
 						bitcoinUnits: trade.bitcoinUnits.toString(),
-						submissionId: request.current,
+						submissionId: id,
 					},
 		);
 	};
 
 	return (
 		<section
-			className="rounded-[24px] border border-white/[.07] bg-[#171719] p-5"
+			className="bg-card rounded-[24px] border border-white/[.07] p-5"
 			aria-label="Bitcoin trading"
 		>
-			<div className="mb-5 flex rounded-xl bg-[#101012] p-1">
-				{(["buy", "sell"] as const).map((value) => (
-					<button
-						key={value}
-						type="button"
-						disabled={mutation.isPending}
-						aria-pressed={action === value}
-						onClick={() => {
-							setAction(value);
-							change("");
-						}}
-						className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg text-[13px] font-semibold ${action === value ? (value === "buy" ? "bg-[#56e3b1]/10 text-[#56e3b1]" : "bg-rose-400/10 text-rose-300") : "text-ink-muted"}`}
-					>
-						{value === "buy" ? (
-							<ArrowDownLeft size={16} />
-						) : (
-							<ArrowUpRight size={16} />
-						)}
-						{value === "buy" ? "Buy Bitcoin" : "Sell Bitcoin"}
-					</button>
-				))}
-			</div>
+			<ActionSwitch selected={action} disabled={busy} onSelect={switchAction} />
+
 			<form
 				onSubmit={(event) => {
 					event.preventDefault();
-					setAttempted(true);
-					if (preview && fresh) {
-						mutation.reset();
-						setReview(true);
-					}
+					openReview();
 				}}
 			>
 				<div className="mb-2 flex items-center justify-between gap-2 text-[11px]">
@@ -141,12 +214,11 @@ export function BitcoinTradeForm({
 						{action === "buy" ? "Bitcoin purchase amount" : "Bitcoin to sell"}
 					</label>
 					<span className="text-ink-muted">
-						{portfolio
-							? `${action === "buy" ? money(portfolio.cashCentavos) + " PHP" : btc(portfolio.bitcoinUnits) + " BTC"} available`
-							: "Loading balance…"}
+						{availableLabel(portfolio, action)}
 					</span>
 				</div>
-				<div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#101012] px-4 focus-within:border-[#56e3b1]/50">
+
+				<div className="bg-surface-sunken focus-within:border-mint/50 flex items-center gap-3 rounded-xl border border-white/10 px-4">
 					<input
 						id="bitcoin-amount"
 						type="text"
@@ -154,8 +226,8 @@ export function BitcoinTradeForm({
 						autoComplete="off"
 						placeholder={action === "buy" ? "0.00" : "0.00000000"}
 						value={amount}
-						disabled={!portfolio || mutation.isPending}
-						onChange={(event) => change(event.target.value)}
+						disabled={!portfolio || busy}
+						onChange={(event) => changeAmount(event.target.value)}
 						aria-describedby="bitcoin-amount-help"
 						className="placeholder:text-ink-faint min-w-0 flex-1 bg-transparent py-4 text-[25px] font-medium text-white tabular-nums outline-none"
 					/>
@@ -163,28 +235,17 @@ export function BitcoinTradeForm({
 						{action === "buy" ? "PHP" : "BTC"}
 					</span>
 				</div>
+
 				<div className="mt-3 grid grid-cols-4 gap-2">
-					{[25, 50, 75, 100].map((percent) => (
+					{PRESET_PERCENTS.map((percent) => (
 						<button
 							type="button"
 							key={percent}
-							disabled={!portfolio || mutation.isPending}
+							disabled={!portfolio || busy}
 							onClick={() => {
-								if (portfolio)
-									change(
-										action === "buy"
-											? (
-													Math.floor(
-														(Math.max(
-															0,
-															portfolio.cashCentavos - BITCOIN_FEE_CENTAVOS,
-														) *
-															percent) /
-															100,
-													) / 100
-												).toFixed(2)
-											: btc((portfolio.bitcoinUnits * BigInt(percent)) / 100n),
-									);
+								if (portfolio) {
+									changeAmount(presetAmount(portfolio, action, percent));
+								}
 							}}
 							className="text-ink-soft min-h-9 rounded-lg bg-white/[.04] text-[11px] font-medium hover:bg-white/10 disabled:opacity-40"
 						>
@@ -192,6 +253,7 @@ export function BitcoinTradeForm({
 						</button>
 					))}
 				</div>
+
 				<div id="bitcoin-amount-help" className="mt-4 min-h-5 text-[11px]">
 					{problem ? (
 						<span
@@ -200,150 +262,42 @@ export function BitcoinTradeForm({
 						>
 							{problem}
 						</span>
-					) : preview ? (
-						<span className="text-ink-muted">
-							{action === "buy"
-								? `You receive ≈ ${btc(preview.bitcoinUnits)} BTC · Total ${money(preview.cashCentavos)} PHP`
-								: "You receive ≈ " + money(preview.cashCentavos) + " PHP"}
-						</span>
 					) : (
 						<span className="text-ink-muted">
-							{action === "sell"
-								? "You can sell any fraction of your Bitcoin."
-								: "Buy directly with PHP from your account."}
+							{preview ? previewLabel(preview, action) : idleHint(action)}
 						</span>
 					)}
 				</div>
+
 				<button
 					type="submit"
-					disabled={
-						!trade || !portfolio || !quote || !fresh || mutation.isPending
-					}
-					className={`mt-3 min-h-12 w-full rounded-xl text-[13px] font-bold transition-opacity disabled:opacity-35 ${action === "buy" ? "bg-[#56e3b1] text-[#0a211a] hover:bg-[#75edc3]" : "bg-rose-300 text-[#35151d] hover:bg-rose-200"}`}
+					disabled={!canReview}
+					className={cn(
+						"mt-3 min-h-12 w-full rounded-xl text-[13px] font-bold transition-opacity disabled:opacity-35",
+						SUBMIT_STYLE[action],
+					)}
 				>
 					{fresh ? `Review ${action}` : "Waiting for a fresh price"}
 				</button>
 			</form>
+
 			<p className="text-ink-faint mt-3 text-center text-[10px] leading-relaxed">
 				Fixed {money(BITCOIN_FEE_CENTAVOS)} PHP fee per trade
 			</p>
-			{success && (
-				<div
-					role="status"
-					className="mt-4 flex items-start gap-2 rounded-xl bg-[#56e3b1]/10 p-3 text-[12px] text-[#56e3b1]"
-				>
-					<Check size={16} className="mt-0.5 shrink-0" />
-					<div>
-						<p className="font-semibold">
-							{success.action === "buy" ? "Bitcoin bought" : "Bitcoin sold"}
-						</p>
-						<p className="mt-1 text-[11px]">
-							{btc(success.bitcoinUnits)} BTC · {money(success.amountCentavos)}{" "}
-							PHP
-						</p>
-					</div>
-				</div>
-			)}
-			{review && (
-				<div
-					className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-3 pb-3 backdrop-blur-sm sm:items-center"
-					onClick={(event) => {
-						if (event.target === event.currentTarget && !mutation.isPending)
-							setReview(false);
-					}}
-				>
-					<div
-						role="dialog"
-						aria-modal="true"
-						aria-labelledby="bitcoin-review-title"
-						onKeyDown={(event) => {
-							if (event.key === "Escape" && !mutation.isPending)
-								setReview(false);
-							if (event.key === "Tab") {
-								const buttons =
-									event.currentTarget.querySelectorAll<HTMLButtonElement>(
-										"button:not(:disabled)",
-									);
-								const first = buttons[0];
-								const last = buttons[buttons.length - 1];
-								if (!first || !last) event.preventDefault();
-								else if (event.shiftKey && document.activeElement === first) {
-									event.preventDefault();
-									last.focus();
-								} else if (!event.shiftKey && document.activeElement === last) {
-									event.preventDefault();
-									first.focus();
-								}
-							}
-						}}
-						className="w-full max-w-[416px] rounded-[26px] border border-white/10 bg-[#1b1b1d] p-6 shadow-2xl"
-					>
-						<div className="flex items-center justify-between">
-							<h2 id="bitcoin-review-title" className="text-lg font-semibold">
-								Review {action}
-							</h2>
-							<button
-								autoFocus
-								type="button"
-								aria-label="Close trade review"
-								disabled={mutation.isPending}
-								onClick={() => setReview(false)}
-								className="text-ink-muted grid h-10 w-10 place-items-center"
-							>
-								<X size={20} />
-							</button>
-						</div>
-						<dl className="mt-6 space-y-4 text-[13px]">
-							<div className="flex justify-between">
-								<dt className="text-ink-muted">Bitcoin</dt>
-								<dd className="font-semibold tabular-nums">
-									{preview ? btc(preview.bitcoinUnits) : "—"} BTC
-								</dd>
-							</div>
-							<div className="flex justify-between">
-								<dt className="text-ink-muted">Estimated Bitcoin value</dt>
-								<dd className="font-semibold tabular-nums">
-									{preview ? money(preview.tradeCentavos) : "—"} PHP
-								</dd>
-							</div>
-							<div className="flex justify-between">
-								<dt className="text-ink-muted">Trading fee</dt>
-								<dd>{money(BITCOIN_FEE_CENTAVOS)} PHP</dd>
-							</div>
-							<div className="flex justify-between border-t border-white/10 pt-4">
-								<dt className="text-ink-muted">
-									{action === "buy" ? "Total to pay" : "Net proceeds"}
-								</dt>
-								<dd className="font-semibold tabular-nums">
-									{preview ? money(preview.cashCentavos) : "—"} PHP
-								</dd>
-							</div>
-						</dl>
-						<p className="text-ink-muted mt-5 rounded-xl bg-white/5 p-3 text-[11px] leading-relaxed">
-							Your final fill uses the latest PHP quote when confirmed. Buying
-							debits your PHP account. Selling credits PHP back to your account.
-						</p>
-						{mutation.error && (
-							<p role="alert" className="mt-4 text-[12px] text-rose-300">
-								{mutation.error.message}
-							</p>
-						)}
-						{!fresh && (
-							<p role="alert" className="mt-4 text-[12px] text-amber-300">
-								The price is stale. Wait for the feed to reconnect.
-							</p>
-						)}
-						<button
-							type="button"
-							onClick={confirm}
-							disabled={!preview || !fresh || mutation.isPending}
-							className="mt-5 min-h-12 w-full rounded-xl bg-[#56e3b1] text-[13px] font-bold text-[#0a211a] disabled:opacity-40"
-						>
-							{mutation.isPending ? "Completing trade…" : `Confirm ${action}`}
-						</button>
-					</div>
-				</div>
-			)}
+
+			{lastOrder ? <TradeSuccess order={lastOrder} /> : null}
+
+			{reviewing ? (
+				<TradeReviewDialog
+					action={action}
+					preview={preview}
+					fresh={fresh}
+					pending={busy}
+					error={tradeMutation.error?.message ?? null}
+					onClose={() => setReviewing(false)}
+					onConfirm={confirm}
+				/>
+			) : null}
 		</section>
 	);
 }

@@ -6,7 +6,21 @@ import {
 	activateClientSession,
 	clearClientSession,
 	clientSessionId,
-} from "../session-client";
+} from "../session.client";
+
+const CHECK_EVERY_MS = 60_000;
+
+const postSession = (body: Record<string, string>, keepalive = false) =>
+	fetch("/api/session", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+		cache: "no-store",
+		keepalive,
+	});
+
+const isSignedOut = (response: Response) =>
+	response.status === 401 || response.status === 403;
 
 export function SessionGuard({
 	sessionId,
@@ -23,24 +37,22 @@ export function SessionGuard({
 		let renewing = false;
 		let expiresAt: string | null = null;
 
-		const leave = () => {
+		const signOutHere = () => {
 			if (!active) return;
+
 			active = false;
 			clearClientSession();
 			queryClient.clear();
 			setReady(false);
 			window.location.replace("/signin");
 		};
-		const post = (action: "end" | "resume") =>
-			fetch("/api/session", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ action, sessionId }),
-				cache: "no-store",
-			});
 
-		if (clientSessionId() !== sessionId) {
-			void post("end").then(leave, leave);
+		const openedInAnotherTab = clientSessionId() !== sessionId;
+		if (openedInAnotherTab) {
+			void postSession({ action: "end", sessionId }).then(
+				signOutHere,
+				signOutHere,
+			);
 			return () => {
 				active = false;
 			};
@@ -48,57 +60,63 @@ export function SessionGuard({
 
 		activateClientSession(sessionId);
 		setReady(true);
-		const resume = async () => {
+
+		const renew = async () => {
 			if (!active || renewing) return;
 			renewing = true;
+
 			try {
-				const response = await post("resume");
+				const response = await postSession({ action: "resume", sessionId });
 				if (!active) return;
-				if (response.status === 401 || response.status === 403) {
-					leave();
+
+				if (isSignedOut(response)) {
+					signOutHere();
 					return;
 				}
+
 				if (!response.ok) throw new Error("Session check failed");
+
 				const result = (await response.json()) as { expiresAt: string };
 				expiresAt = result.expiresAt;
 			} catch {
-				if (expiresAt && Date.parse(expiresAt) <= Date.now()) leave();
+				const expired =
+					expiresAt !== null && Date.parse(expiresAt) <= Date.now();
+				if (expired) signOutHere();
 			} finally {
 				renewing = false;
 			}
 		};
 
-		const close = () => {
+		const shortenOnLeave = () => {
 			if (!expiresAt) return;
-			const body = new Blob(
-				[JSON.stringify({ action: "close", sessionId, expiresAt })],
-				{ type: "application/json" },
+
+			void postSession({ action: "close", sessionId, expiresAt }, true).catch(
+				() => undefined,
 			);
-			void fetch("/api/session", {
-				method: "POST",
-				body,
-				keepalive: true,
-			}).catch(() => undefined);
 		};
-		const onVisible = () => {
-			if (document.visibilityState === "visible") void resume();
+
+		const renewIfVisible = () => {
+			if (document.visibilityState === "visible") void renew();
 		};
-		void resume();
-		const timer = window.setInterval(onVisible, 60_000);
-		window.addEventListener("pagehide", close);
-		window.addEventListener("pageshow", onVisible);
-		document.addEventListener("visibilitychange", onVisible);
+
+		void renew();
+		const timer = window.setInterval(renewIfVisible, CHECK_EVERY_MS);
+		window.addEventListener("pagehide", shortenOnLeave);
+		window.addEventListener("pageshow", renewIfVisible);
+		document.addEventListener("visibilitychange", renewIfVisible);
+
 		return () => {
-			close();
+			shortenOnLeave();
 			active = false;
 			window.clearInterval(timer);
-			window.removeEventListener("pagehide", close);
-			window.removeEventListener("pageshow", onVisible);
-			document.removeEventListener("visibilitychange", onVisible);
+			window.removeEventListener("pagehide", shortenOnLeave);
+			window.removeEventListener("pageshow", renewIfVisible);
+			document.removeEventListener("visibilitychange", renewIfVisible);
 		};
 	}, [sessionId, queryClient]);
 
 	if (ready) return children;
+
 	return (
 		<p role="status" className="text-ink-muted py-8 text-center text-sm">
 			Checking your session…

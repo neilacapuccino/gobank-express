@@ -1,5 +1,11 @@
 "use client";
+
+import { cn } from "~/shared/lib/cn";
 import { GoalArt, type GoalIcon } from "./goal-art";
+
+const progressOf = (balance: number, target: number | null) =>
+	target ? Math.max(0, Math.min(1, balance / target)) : 0;
+
 export function GoalBubble({
 	icon,
 	balance,
@@ -13,18 +19,23 @@ export function GoalBubble({
 	label: string;
 	large?: boolean;
 }) {
-	const progress = target ? Math.max(0, Math.min(1, balance / target)) : 0;
+	const progress = progressOf(balance, target);
+	const description = target
+		? `${label}: ${Math.round(progress * 100)}% of target`
+		: label;
+
 	return (
 		<div
-			className={`relative mx-auto grid aspect-square w-full place-items-center rounded-full bg-[#202022] text-[#e4e4e7] ${large ? "max-w-64" : "max-w-40"}`}
+			className={cn(
+				"relative mx-auto grid aspect-square w-full place-items-center rounded-full bg-[#202022] text-[#e4e4e7]",
+				large ? "max-w-64" : "max-w-40",
+			)}
 		>
 			<svg
 				viewBox="0 0 120 120"
 				className="absolute inset-0 h-full w-full -rotate-90"
 				role="img"
-				aria-label={
-					target ? `${label}: ${Math.round(progress * 100)}% of target` : label
-				}
+				aria-label={description}
 			>
 				<circle
 					cx="60"
@@ -39,13 +50,14 @@ export function GoalBubble({
 					cy="60"
 					r="55"
 					fill="none"
-					stroke="#71d5f3"
+					className="stroke-sky"
 					strokeWidth="4"
 					strokeLinecap="round"
 					pathLength="100"
 					strokeDasharray={`${progress * 100} 100`}
 				/>
 			</svg>
+
 			<GoalArt icon={icon} className="h-[42%] w-[42%]" />
 		</div>
 	);

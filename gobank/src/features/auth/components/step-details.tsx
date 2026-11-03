@@ -26,17 +26,21 @@ export function StepDetails({
 	onBack,
 }: StepDetailsProps) {
 	const blocked = !profileIsValid({ fullName, mobile });
+
 	return (
 		<div className="flex flex-1 flex-col">
 			<AuthHeading
 				title="Your details"
 				subtitle="Full name is required. Mobile number is optional."
 			/>
+
 			<div className="mt-8 flex flex-col gap-5">
 				<ProfileFields value={{ fullName, mobile }} onChange={onChange} />
 				{gmail ? <GmailLink gmail={gmail} /> : null}
 			</div>
+
 			<div className="flex-1" />
+
 			<div className="mt-8 flex flex-col gap-1.5">
 				<Button onClick={onNext} disabled={blocked}>
 					Continue

@@ -14,7 +14,7 @@ export function ProfileAvatar({
 	return (
 		<span
 			className={cn(
-				"relative grid shrink-0 overflow-hidden rounded-full border border-white/10 bg-[#252529] text-[#c4c4cc]",
+				"text-ink-soft relative grid shrink-0 overflow-hidden rounded-full border border-white/10 bg-[#252529]",
 				className,
 			)}
 			style={{ width: size, height: size }}
