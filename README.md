@@ -1,126 +1,117 @@
 # GoBank Express
 
-A mobile banking project built with Next.js, TypeScript, tRPC and Prisma. Amounts are in Philippine pesos; database money values are whole centavos.
+A mobile-first student banking app built with **Next.js 15, TypeScript, tRPC 11, Prisma 6 and PostgreSQL**. All amounts are Philippine pesos (₱); the database stores money as whole centavos.
 
 ## Features
 
-- Main account, deposits, transfers, money requests, bills and mobile load.
-- Physical and virtual cards with different networks, unique numbers and separate CVVs. Both use the main balance and shared spending controls.
-- Up to five named GoalSave savings pockets. Settings let users rename, change the target or close a goal and return its savings to the main account.
-- Savings earn 4% annually, compounded daily using server system time: `A = P × (1 + r / 365)^d`. Fractional centavos carry forward, and moving the clock backward cannot credit the same time twice.
-- Required full name and optional profile photo. Google sign-in connects a verified Google identity during registration; there is no separate Email field.
-- Registration generates the physical card number, expiry and CVV on Continue, preserves them at confirmation, then opens the dashboard directly.
-- Dashboard activity shows signed amounts and receipts. Rewards and Activity links remain available, with blank destination pages reserved for another member.
+- **Main account and cards** — account number, spending balance, a physical and a virtual card, lock/unlock and a daily spending limit.
+- **GoalSave (Stashes)** — up to 5 named savings goals earning 4% p.a., compounded daily.
+- **Transfers and bills** — send money by username, account number, mobile or linked Gmail; request money; pay billers; buy mobile load. Every movement gets a reference number, timestamp and balance snapshot.
+- **Rewards** — 1 point per ₱50 on transfers and bill payments; 100 points = ₱1.00 cash back.
+- **Sign-in** — username + 6-digit PIN, or Continue with Google followed by the PIN.
+- **Extra** — Bitcoin practice trading at `/stocks`.
 
-Eligible transfers and bills earn one point per ₱50; the existing reward service converts 100 points to ₱1.
+## Run it locally
 
-### Bitcoin
+Requires **Node.js 20+** and a **PostgreSQL** database (a free [Neon](https://neon.tech) project works).
 
-At `/stocks`, users can view live Bitcoin prices and buy or sell through their main PHP balance, with a fixed ₱10 fee per trade. A single `BitcoinTrade` table keeps the trade history, while server checks prevent overspending and repeated transactions.
-
-## Setup
-
-Run application commands inside `gobank/`. Use Node.js 20 or later and a PostgreSQL database.
-
-```sh
-cd gobank
+```bash
+git clone https://github.com/neilacapuccino/gobank-express.git
+cd gobank-express/gobank
 npm ci
+cp .env.example .env
 ```
 
-Copy `.env.example` to `.env` and configure `DATABASE_URL` and `DIRECT_URL`. Keep `.env` out of Git.
+Fill in `gobank/.env`:
 
-```sh
+| Variable | Needed for | How to get it |
+| --- | --- | --- |
+| `DATABASE_URL` | everything | Neon → **Connect** → copy the connection string with **pooling on** |
+| `DIRECT_URL` | migrations | Same screen with **pooling off** |
+| `CARD_ENCRYPTION_KEY` | cards | Run `npm run card:setup-key` (adds it to `.env`). Everyone sharing one database must use the **same** key. |
+| `AUTH_SECRET` | Google sign-in | Any random 32+ characters, e.g. `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google sign-in | See below. Leave empty to hide the Google button. |
+
+Then set up the database and start the app:
+
+```bash
 npm run card:setup-key
 npm run db:migrate
-npm run db:client
 npm run db:seed
 npm run dev
 ```
 
-The app opens at `http://localhost:3001`. Seeding adds billers and demo accounts `@maricel` and `@dante` with PIN `135790`.
+Open **http://localhost:3001**. The seed adds billers and two demo accounts, **@maricel** and **@dante**, both with PIN **135790**.
 
-Google sign-in is available on the welcome and Log in screens when `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `AUTH_SECRET` are configured. Its callback URL is `http://localhost:3001/api/auth/google/callback` for local development.
+### Google sign-in (optional)
 
-After Google verification, an existing account must enter its current PIN before a session starts. A new Google identity begins at "Pick your username" and completes the normal PIN, card and profile registration steps before an account is created.
+1. Open [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services** → **OAuth consent screen**, choose **External**, and add your Gmail as a test user.
+2. **Credentials** → **Create credentials** → **OAuth client ID** → **Web application**.
+3. Add the authorized redirect URI `http://localhost:3001/api/auth/google/callback`.
+4. Copy the client ID and secret into `.env`, set `AUTH_SECRET`, and restart `npm run dev`.
 
-Card CVVs are generated when cards are issued and encrypted with `CARD_ENCRYPTION_KEY`; PINs and CVV verification values are salted hashes. **Every app using the same database must use the same private encryption key.** Generate a key only for a new environment, or configure the existing team's key privately; never commit it. Older accounts automatically receive missing card credentials when their cards load.
+A Google account that matches an existing user still has to enter that user's PIN. A new Google account goes through normal registration.
 
-After pulling changes, stop the dev server before `npm ci`, `npm run db:migrate` and `npm run db:client`. Run only one dev server on port 3001. Prisma client generation is an explicit setup command; a running Windows server can otherwise lock Prisma's engine DLL.
-
-## Code and naming
-
-The request flow is **typed React component → Zod-validated tRPC router → service → Prisma**. Routes render feature screens; routers validate inputs; services handle database work; pure helpers calculate and format values.
+## How the backend works
 
 ```text
-gobank/
-  prisma/                Schema, migrations and seed
-  scripts/               Development helpers and integration checks
-  src/
-    app/                 Routes and session-protected layouts
-    features/            Components, routers, services and rules per feature
-    shared/              Reusable controls, hooks and value helpers
-    server/              Database, sessions, ledger and error handling
-    trpc/                Typed client and server callers
+React screen ──► tRPC client ──► /api/trpc ──► router (Zod input) ──► service ──► Prisma ──► PostgreSQL
+                                               protectedProcedure      ledger.ts
+                                               checks the session      (all money moves)
 ```
 
-GoalSave is the interface name for the `SavingsGoal` entity. The existing `stashes/` routes and feature folder handle that feature. A user has one physical and one virtual `Card` record, distinguished by `kind`; account balance and shared card controls belong to `User`. TypeScript files use tabs with a displayed width of two spaces.
+| Layer | Location | Job |
+| --- | --- | --- |
+| Routes | `src/app/` | Pages and API routes; `(app)/layout.tsx` redirects signed-out users |
+| Routers | `src/features/*/*.router.ts` | Validate every input with Zod (types, min/max, formats) |
+| Services | `src/features/*/*.service.ts` | Business rules and database work |
+| Rules | `src/features/*/*.rules.ts`, `src/shared/lib/` | Pure limits and calculations, unit tested |
+| Ledger | `src/server/ledger.ts` | The only place balances change |
+| Core | `src/server/` | Prisma client, sessions, tRPC setup, error mapping |
 
-Each feature lives in `gobank/src/features/`. Its `components/` folder holds the screens and controls; its router, service and rules stay alongside them when needed. Route files in `src/app/` connect those screens to URLs.
+**Money safety**
 
-The welcome screen and its entry buttons live in `auth/components/`. Google provider requests, temporary identity cookies, signed tokens and related rules live together in `auth/google/`. Google entry is available on welcome and Log in; retry messages stay on welcome. Registration screens handle the username and PIN flow and preserve any verified Google details.
+- Each money action runs in one database transaction: the balance update and its `Transaction` row commit together or not at all.
+- Balance updates are conditional (`balance >= amount`) and rows are locked with `SELECT … FOR UPDATE`, so double clicks and parallel requests cannot overdraw.
+- Transfers lock both accounts in a fixed order to avoid deadlocks and share one reference between sender and receiver.
+- Spending checks the card lock and the daily limit (Asia/Manila day) on the server; the UI shows the same limits before you submit.
 
-| Feature                  | Folder           | Main screen and route                                                                                        |
-| ------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------ |
-| Dashboard                | `dashboard/`     | `dashboard-screen.tsx` → `/dashboard`                                                                        |
-| Deposit                  | `deposit/`       | `deposit-form.tsx` → `/deposit`                                                                              |
-| Buy load                 | `load/`          | `load-form.tsx` → `/load`                                                                                    |
-| Pay bills                | `bills/`         | `bill-payment.tsx` → `/bills`                                                                                |
-| Activity and receipts    | `activity/`      | `recent-activity.tsx` on the dashboard; receipts at `/transactions/[reference]`; `/transactions` stays blank |
-| My card                  | `card/`          | `my-card-screen.tsx` → `/card`; card generation and credential helpers also live here                        |
-| Notifications            | `notifications/` | `notifications-screen.tsx` → `/notifications`; money request actions stay in `requests/`                     |
-| Rewards                  | `rewards/`       | `rewards-screen.tsx` → `/rewards`; the page stays blank for the assigned member                              |
-| Profile                  | `account/`       | Profile screens and account overview data                                                                    |
-| Registration and sign-in | `auth/`          | Enrollment, sign-in and authentication                                                                       |
-| Send money               | `transfers/`     | `transfer-form.tsx` → `/transfer`                                                                            |
-| Request money            | `requests/`      | `request-form.tsx` → `/request`                                                                              |
-| GoalSave                 | `stashes/`       | Goal screens → `/stashes`                                                                                    |
-| Bitcoin                  | `bitcoin/`       | Market and trading screens → `/stocks`                                                                       |
+**Sessions and security**
 
-Shared branding, the animated GO menu, recipient search and money form controls live under `shared/`. Deposit and load have separate routers and services so their code is easy to find.
+- PINs are hashed with scrypt; 5 wrong PINs lock the account for 15 minutes.
+- Sessions are random tokens stored hashed in the `Session` table and sent as an httpOnly cookie. They expire after 30 minutes without activity and are tied to the browser tab, so opening the app in a new tab asks you to sign in again.
+- Card CVVs are encrypted with `CARD_ENCRYPTION_KEY`; Google sign-in uses OAuth with PKCE and a signed, short-lived cookie.
 
-Money moves through `src/server/ledger.ts`: balance changes and matching transaction records commit together. Transfers share a reference between the sender's debit and recipient's credit. Card locks, daily limits, insufficient funds and database constraints are checked before spending commits.
+**Limits**
 
-## Database
+| Action | Limit |
+| --- | --- |
+| Deposit | up to ₱50,000 each |
+| Send money, bills | up to your balance and the card's remaining daily limit (default ₱20,000/day, max ₱100,000) |
+| Buy load | ₱10 – ₱10,000, counts toward the daily limit |
+| Request money | up to ₱20,000 |
+| GoalSave | 5 goals, names up to 40 characters |
+| Redeem points | multiples of 100 |
 
-| Model              | Purpose                                                                    |
-| ------------------ | -------------------------------------------------------------------------- |
-| `User`             | Profile, credentials, main balance, points and shared card controls        |
-| `Session`          | Hashed tokens for signed-in sessions                                       |
-| `Card`             | Physical or virtual kind, unique number, network, encrypted CVV and expiry |
-| `RegistrationCard` | A browser-bound card reservation that expires after 30 minutes             |
-| `SavingsGoal`      | Named savings, target and interest state                                   |
-| `Transaction`      | Reference, timestamp, signed amount and resulting balance                  |
-| `MoneyRequest`     | Requests between users and their status                                    |
-| `Biller`           | Biller catalogue                                                           |
-| `BitcoinTrade`     | Bitcoin buy and sell history                                               |
+The data model is described in [docs/database-erd.md](docs/database-erd.md).
 
-`SavingsGoal.interestCalculatedAt` records the last settled time; `interestRemainder` preserves fractions of a centavo. Both are needed for accurate daily compounding. See the [database ERD and field guide](docs/database-erd.md) for relationships and Bitcoin units.
+## Scripts
 
-## Checks
+Run inside `gobank/`.
 
-```sh
-npm run check:ci
-```
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the app on port 3001 |
+| `npm run db:migrate` | Apply committed migrations |
+| `npm run db:seed` | Add billers and demo accounts |
+| `npm run db:studio` | Browse the database |
+| `npm test` | Unit tests |
+| `npm run test:integration` | Full banking flow against the database (creates and removes its own test accounts) |
+| `npm run check:ci` | Format, lint, typecheck, unit tests and production build |
 
-This checks formatting, lint, fresh TypeScript types, unit tests and the production build. Prisma generates its client on dependency installation and before GitHub checks; install the local push hook from the repository root with `git config core.hooksPath .githooks`.
+## Troubleshooting
 
-The compact unit suite keeps representative examples for authentication, card credentials, profile photos, savings, Bitcoin calculations and amount entry. Integration checks create temporary accounts and remove their fixtures afterward:
-
-```sh
-npm run test:integration
-npm run test:bitcoin:integration
-```
-
-The core integration script follows one example of the main banking flows. The separate Bitcoin script also needs access to the live market feed.
-
-Use `npm run format:write` to format source files, `npm run db:generate` to create a migration during development, and `npm run db:migrate` to apply committed migrations.
+- **`P1001: Can't reach database server`** — Neon may be waking up; run the command again.
+- **`EPERM … query_engine` on Windows** — stop `npm run dev` before `npm ci` or `npx prisma generate`.
+- **Signed out after opening a link in a new tab** — expected; sessions belong to one tab.
+- **Port 3001 in use** — close the other dev server first.
