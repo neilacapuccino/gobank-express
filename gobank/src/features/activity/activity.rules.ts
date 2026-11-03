@@ -3,8 +3,8 @@ export type ActivityFilter = (typeof ACTIVITY_FILTERS)[number];
 
 export const FILTER_LABELS: Record<ActivityFilter, string> = {
 	all: "All",
-	in: "Money in",
-	out: "Money out",
+	in: "Incoming",
+	out: "Outgoing",
 };
 
 type AmountWhere = { amount?: { gt: number } | { lt: number } };

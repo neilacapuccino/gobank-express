@@ -1,0 +1,12 @@
+UPDATE "Transaction" SET "title" = 'Transfer to ' || substring("title" from 9) WHERE "kind" = 'transfer' AND "title" LIKE 'Sent to %';
+UPDATE "Transaction" SET "title" = 'Transfer from ' || substring("title" from 15) WHERE "kind" = 'transfer' AND "title" LIKE 'Received from %';
+UPDATE "Transaction" SET "title" = 'Cash deposit' WHERE "kind" = 'deposit' AND "title" = 'Cash in';
+UPDATE "Transaction" SET "title" = 'Cash deposit · ' || substring("title" from 12) WHERE "kind" = 'deposit' AND "title" LIKE 'Deposit to %';
+UPDATE "Transaction" SET "title" = 'Bill payment · ' || left("title", length("title") - 5) WHERE "kind" = 'bill' AND "title" LIKE '% bill';
+UPDATE "Transaction" SET "title" = 'Mobile load · ' || substring("title" from 10) WHERE "kind" = 'load' AND "title" LIKE 'Load for %';
+UPDATE "Transaction" SET "title" = 'GoalSave deposit · ' || substring("title" from 10) WHERE "kind" = 'stash' AND "title" LIKE 'Moved to %';
+UPDATE "Transaction" SET "title" = 'GoalSave withdrawal · ' || substring("title" from 12) WHERE "kind" = 'stash' AND "title" LIKE 'Moved from %';
+UPDATE "Transaction" SET "title" = 'Cash back · ' || substring("title" from 10) WHERE "kind" = 'reward' AND "title" LIKE 'Redeemed %';
+UPDATE "Transaction" SET "title" = 'Interest earned · ' || substring("title" from 13) WHERE "kind" = 'interest' AND "title" LIKE 'Interest in %';
+UPDATE "Transaction" SET "title" = 'Bitcoin purchase' WHERE "kind" = 'exchange' AND "title" = 'Bought Bitcoin';
+UPDATE "Transaction" SET "title" = 'Bitcoin sale' WHERE "kind" = 'exchange' AND "title" = 'Sold Bitcoin';

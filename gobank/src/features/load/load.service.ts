@@ -7,7 +7,7 @@ export const buyLoad = (userId: string, mobile: string, amount: number) =>
 		spend(tx, {
 			userId,
 			kind: "load",
-			title: `Load for ${formatMobile(mobile)}`,
+			title: `Mobile load · ${formatMobile(mobile)}`,
 			amount,
 			details: { mobile },
 		}),

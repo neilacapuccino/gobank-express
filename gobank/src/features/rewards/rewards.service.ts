@@ -7,7 +7,7 @@ export const redeemPoints = (userId: string, points: number) =>
 		post(tx, {
 			userId,
 			kind: "reward",
-			title: `Redeemed ${points.toLocaleString()} points`,
+			title: `Cash back · ${points.toLocaleString()} points`,
 			amount: pointsValue(points),
 			points: -points,
 		}),

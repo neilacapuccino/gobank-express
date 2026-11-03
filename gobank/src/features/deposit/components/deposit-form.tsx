@@ -29,7 +29,7 @@ export function DepositForm() {
 	if (deposit.data) {
 		return (
 			<TransactionReceipt
-				title="Deposit complete"
+				title="Deposit successful"
 				onDone={() => {
 					router.push("/dashboard");
 					router.refresh();

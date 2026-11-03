@@ -53,7 +53,7 @@ export function TransferForm() {
 
 	if (send.data && search.recipient) {
 		return (
-			<TransactionReceipt title="Money sent" onDone={done}>
+			<TransactionReceipt title="Transfer successful" onDone={done}>
 				<MoneySummary
 					recipient={search.recipient}
 					amount={Math.abs(send.data.amount)}

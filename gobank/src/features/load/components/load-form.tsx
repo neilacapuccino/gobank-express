@@ -48,7 +48,7 @@ export function LoadForm() {
 
 	if (load.data) {
 		return (
-			<TransactionReceipt title="Load purchased" onDone={done}>
+			<TransactionReceipt title="Load successful" onDone={done}>
 				<TransactionSummary
 					amount={Math.abs(load.data.amount)}
 					details={[

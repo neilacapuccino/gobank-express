@@ -35,7 +35,7 @@ export function ActivityScreen() {
 
 	return (
 		<div className="flex flex-1 flex-col">
-			<PageHeader title="Activity" back="/dashboard" />
+			<PageHeader title="Transactions" back="/dashboard" />
 			<div className="pt-7">
 				<div
 					className="border-line bg-surface-sunken mb-5 grid grid-cols-3 gap-1 rounded-2xl border p-1"

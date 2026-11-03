@@ -34,7 +34,7 @@ export function FeatureGrid({
 			href: "/stashes",
 			title: "GoalSave",
 			accent: false,
-			secondary: "Earn interest",
+			secondary: "Savings goals · 4% p.a.",
 			meta: `${stashCount} of ${stashLimit} goals`,
 			icon: (
 				<PocketIcon

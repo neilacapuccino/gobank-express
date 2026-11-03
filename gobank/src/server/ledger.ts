@@ -148,7 +148,7 @@ export async function transfer(
 	const sent = await spend(tx, {
 		userId: from.id,
 		kind: "transfer",
-		title: `Sent to @${to.username}`,
+		title: `Transfer to @${to.username}`,
 		amount,
 		reference,
 		counterpartyId: to.id,
@@ -157,7 +157,7 @@ export async function transfer(
 	await post(tx, {
 		userId: to.id,
 		kind: "transfer",
-		title: `Received from @${from.username}`,
+		title: `Transfer from @${from.username}`,
 		amount,
 		reference,
 		counterpartyId: from.id,
@@ -185,8 +185,8 @@ export async function moveStash(
 		kind: "stash",
 		title:
 			amount > 0
-				? `Moved to ${savingsGoal.name}`
-				: `Moved from ${savingsGoal.name}`,
+				? `GoalSave deposit · ${savingsGoal.name}`
+				: `GoalSave withdrawal · ${savingsGoal.name}`,
 		amount: -amount,
 		savingsGoalId,
 	});
@@ -228,7 +228,7 @@ export async function settleStashInterest(
 				savingsGoalId: savingsGoal.id,
 				reference: newReference(),
 				kind: "interest",
-				title: `Interest in ${savingsGoal.name}`,
+				title: `Interest earned · ${savingsGoal.name}`,
 				amount: result.earned,
 				balanceAfter: user.balance,
 				details: {

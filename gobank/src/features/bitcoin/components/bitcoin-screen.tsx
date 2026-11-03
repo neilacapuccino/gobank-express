@@ -262,7 +262,9 @@ export function BitcoinScreen() {
 								</span>
 								<div className="min-w-0 flex-1">
 									<p className="text-[12px] font-medium">
-										{order.action === "buy" ? "Bought Bitcoin" : "Sold Bitcoin"}
+										{order.action === "buy"
+											? "Bitcoin purchase"
+											: "Bitcoin sale"}
 									</p>
 									<p className="text-ink-faint mt-1 text-[9px]">
 										{order.createdAt.toLocaleString("en-US", {

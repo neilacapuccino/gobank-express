@@ -20,7 +20,7 @@ export async function payBill(
 		spend(tx, {
 			userId,
 			kind: "bill",
-			title: `${biller.name} bill`,
+			title: `Bill payment · ${biller.name}`,
 			amount,
 			billerId: biller.id,
 			details: { accountNumber },

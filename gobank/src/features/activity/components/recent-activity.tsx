@@ -29,16 +29,18 @@ const ICONS: Record<ActivityEntry["kind"], LucideIcon> = {
 export function RecentActivity({ entries }: { entries: ActivityEntry[] }) {
 	return (
 		<section>
-			<SectionHeader title="Activity" href="/transactions" />
+			<SectionHeader title="Recent transactions" href="/transactions" />
 
 			{entries.length === 0 ? (
 				<div className="bg-surface-sunken flex flex-col items-center gap-1 rounded-2xl px-6 py-8 text-center">
-					<p className="text-ink text-[14px] font-medium">No activity yet</p>
+					<p className="text-ink text-[14px] font-medium">
+						No transactions yet
+					</p>
 					<Link
 						href="/deposit"
 						className="text-brand hover:text-brand-hover mt-2 text-[13px] font-medium transition-colors"
 					>
-						Cash in
+						Make a deposit
 					</Link>
 				</div>
 			) : (

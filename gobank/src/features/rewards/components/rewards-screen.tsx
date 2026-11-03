@@ -32,7 +32,7 @@ export function RewardsScreen() {
 	if (redeem.data) {
 		return (
 			<TransactionReceipt
-				title="Cash back added"
+				title="Cash back credited"
 				onDone={() => {
 					redeem.reset();
 					setConverting(false);

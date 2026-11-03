@@ -50,7 +50,7 @@ export function BillPayment() {
 
 	if (pay.data) {
 		return (
-			<TransactionReceipt title="Bill paid" onDone={done}>
+			<TransactionReceipt title="Payment successful" onDone={done}>
 				<TransactionSummary
 					amount={Math.abs(pay.data.amount)}
 					details={[

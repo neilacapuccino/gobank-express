@@ -88,7 +88,7 @@ export async function tradeBitcoin(
 					await post(tx, {
 						userId,
 						kind: "exchange",
-						title: trade.action === "buy" ? "Bought Bitcoin" : "Sold Bitcoin",
+						title: trade.action === "buy" ? "Bitcoin purchase" : "Bitcoin sale",
 						amount:
 							trade.action === "buy"
 								? -result.cashCentavos
