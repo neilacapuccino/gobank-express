@@ -19,7 +19,7 @@ export const filterWhere = (filter: ActivityFilter): AmountWhere =>
 const dayKey = (date: Date) =>
 	`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 
-export function dayLabel(date: Date, now: Date = new Date()) {
+function dayLabel(date: Date, now: Date = new Date()) {
 	const yesterday = new Date(now);
 	yesterday.setDate(now.getDate() - 1);
 	if (dayKey(date) === dayKey(now)) return "Today";

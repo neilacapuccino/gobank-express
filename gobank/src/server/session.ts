@@ -61,10 +61,6 @@ export const currentSession = cache(async () => {
 	return session;
 });
 
-export const currentUserId = cache(
-	async () => (await currentSession())?.userId ?? null,
-);
-
 export async function renewSession(sessionId: string) {
 	const session = await currentSession();
 	if (session?.id !== sessionId) return null;

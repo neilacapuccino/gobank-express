@@ -21,7 +21,7 @@ export const CARD_BRANDS = [
 	},
 ] as const;
 
-export type CardBrand = (typeof CARD_BRANDS)[number];
+type CardBrand = (typeof CARD_BRANDS)[number];
 export type CardBrandId = CardBrand["id"];
 
 export const isSupportedCardBrand = (id: unknown): id is CardBrandId =>

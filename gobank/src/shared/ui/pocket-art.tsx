@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export type PocketIconName =
+type PocketIconName =
 	| "home"
 	| "send"
 	| "deposit"
