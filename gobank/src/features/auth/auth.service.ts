@@ -83,8 +83,10 @@ export async function createRegisteredAccount(
 	);
 }
 
-export async function register(profile: Registration) {
-	const google = await pendingGoogleIdentity();
+export async function register(profile: Registration, withGoogle: boolean) {
+	const google = withGoogle ? await pendingGoogleIdentity() : null;
+	if (withGoogle && !google)
+		fail("UNAUTHORIZED", "Your Google sign-in expired. Choose Google again.");
 	const user = await createRegisteredAccount(
 		google
 			? { ...profile, googleId: google.sub, gmail: google.gmail }

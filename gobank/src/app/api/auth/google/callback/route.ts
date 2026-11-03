@@ -43,6 +43,6 @@ export async function GET(request: NextRequest) {
 
 	const result = await signInWithGoogle(profile);
 	if (result.status === "pin") return go("/signin?google=pin");
-	if (result.status === "register") return go("/register");
+	if (result.status === "register") return go("/register?google=new");
 	return go("/?google=email-in-use");
 }

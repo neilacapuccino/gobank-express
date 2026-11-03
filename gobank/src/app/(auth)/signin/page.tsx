@@ -18,7 +18,7 @@ export default async function SignInPage({
 	if (google === "pin") {
 		const pending = await getPendingGoogleAccount();
 		if (pending.status === "missing") redirect("/?google=failed");
-		if (pending.status === "register") redirect("/register");
+		if (pending.status === "register") redirect("/register?google=new");
 		if (pending.status === "email-in-use") redirect("/?google=email-in-use");
 		googleUsername = pending.account.username;
 	}

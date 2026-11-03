@@ -21,11 +21,13 @@ type CardPreview = RouterOutputs["auth"]["prepareCard"];
 type RegistrationFlowProps = {
 	initialFullName: string;
 	gmail: string | null;
+	withGoogle: boolean;
 };
 
 export function RegistrationFlow({
 	initialFullName,
 	gmail,
+	withGoogle,
 }: RegistrationFlowProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
@@ -152,6 +154,7 @@ export function RegistrationFlow({
 								brand: draft.brand,
 								fullName: draft.fullName,
 								mobile: draft.mobile,
+								withGoogle,
 							})
 						}
 					/>

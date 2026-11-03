@@ -30,10 +30,13 @@ export const authRouter = createTRPCRouter({
 				username,
 				pin,
 				brand: cardBrand,
+				withGoogle: z.boolean().default(false),
 				...profileFields,
 			}),
 		)
-		.mutation(({ input }) => register(input)),
+		.mutation(({ input: { withGoogle, ...profile } }) =>
+			register(profile, withGoogle),
+		),
 
 	signIn: publicProcedure
 		.input(
