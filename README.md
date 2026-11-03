@@ -1,13 +1,33 @@
 # GoBank Express
 
-A mobile-first student banking app built with **Next.js 15, TypeScript, tRPC 11, Prisma 6 and PostgreSQL**. Amounts are in Philippine pesos (₱) and stored as whole centavos.
+GoBank Express is a mobile-first digital bank for students. It lets them pay, save toward goals and earn cash back from one app, with every peso tracked safely on the server.
 
-- **Account and cards**: one physical and one virtual card, each locks on its own, with a shared daily spending limit
-- **GoalSave**: up to 5 savings goals earning 4% a year, compounded daily
-- **Payments**: send and request money, pay bills, buy load; every payment shows the card used
-- **Rewards**: 1 point per ₱50 spent, 100 points = ₱1.00 cash back
-- **Sign-in**: username and 6-digit PIN, or Google followed by the PIN
-- **Extra**: Bitcoin practice trading
+## Features
+
+| Feature          | What it does                                                                            |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| Account and card | Main balance, a physical and a virtual card, each locked separately, shared daily limit |
+| Send and request | Pay friends by username, account number, mobile or linked Gmail; request money          |
+| Bills and load   | Pay electric, water, internet and credit card billers; buy mobile load                  |
+| GoalSave         | Up to 5 savings goals earning 4% a year, compounded daily                               |
+| Rewards          | 1 point per ₱50 spent, 100 points = ₱1.00 cash back                                     |
+| Transactions     | Full history with filters and receipts, each showing the card used                      |
+| Sign-in          | Username and 6-digit PIN, or Google followed by the PIN; link Google later in profile   |
+| Bitcoin          | Practice trading with live prices, charts and a fixed ₱10 fee                           |
+
+## Tech stack
+
+| Area         | Tools                                                    |
+| ------------ | -------------------------------------------------------- |
+| Language     | TypeScript 5                                             |
+| Framework    | Next.js 15 (App Router), React 19                        |
+| API          | tRPC 11 with Zod 3 input checks and SuperJSON            |
+| Database     | PostgreSQL on Neon (Singapore), Prisma 6 ORM             |
+| Data loading | TanStack Query 5                                         |
+| Styling      | Tailwind CSS 4, Lucide icons                             |
+| Auth         | Username + PIN (scrypt), Google OAuth with PKCE          |
+| Testing      | Node test runner, database integration tests, Playwright |
+| Quality      | ESLint 9, Prettier 3, GitHub Actions CI                  |
 
 ## Quick start
 
