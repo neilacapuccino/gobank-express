@@ -3,6 +3,8 @@
 .pnp.js
 
 /coverage
+/test-results
+/playwright-report
 
 /generated
 /prisma/db.sqlite
