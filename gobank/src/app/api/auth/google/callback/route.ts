@@ -1,6 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
-import { signInWithGoogle } from "~/features/auth/google/google.service";
+import { currentSession } from "~/server/session";
+import {
+	linkGoogle,
+	signInWithGoogle,
+} from "~/features/auth/google/google.service";
 import {
 	fetchGoogleProfile,
 	googleEnabled,
@@ -20,9 +24,12 @@ export async function GET(request: NextRequest) {
 	const saved = store.get(GOOGLE_COOKIE)?.value;
 	store.delete({ name: GOOGLE_COOKIE, path: GOOGLE_COOKIE_PATH });
 
-	if (searchParams.get("error")) return go("/?google=cancelled");
-	const [state, verifier] = saved?.split(".") ?? [];
+	const [state, verifier, mode] = saved?.split(".") ?? [];
+	const done = mode === "link" ? "/google-linked?google=" : "/?google=";
 	const code = searchParams.get("code");
+
+	if (searchParams.get("error")) return go(`${done}cancelled`);
+
 	if (
 		!googleEnabled() ||
 		!state ||
@@ -30,19 +37,28 @@ export async function GET(request: NextRequest) {
 		!code ||
 		searchParams.get("state") !== state
 	) {
-		return go("/?google=failed");
+		return go(`${done}failed`);
 	}
 
 	let profile;
 	try {
 		profile = await fetchGoogleProfile(code, verifier, origin);
 	} catch {
-		return go("/?google=failed");
+		return go(`${done}failed`);
 	}
-	if (!profile.emailVerified) return go("/?google=unverified");
+
+	if (!profile.emailVerified) return go(`${done}unverified`);
+
+	if (mode === "link") {
+		const session = await currentSession();
+		if (!session) return go(`${done}signed-out`);
+
+		return go(`${done}${await linkGoogle(session.userId, profile)}`);
+	}
 
 	const result = await signInWithGoogle(profile);
 	if (result.status === "pin") return go("/signin?google=pin");
 	if (result.status === "register") return go("/register?google=new");
+
 	return go("/?google=email-in-use");
 }

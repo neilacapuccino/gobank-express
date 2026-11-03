@@ -13,17 +13,23 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-	const { origin } = request.nextUrl;
+	const { origin, searchParams } = request.nextUrl;
+	const mode = searchParams.get("mode") === "link" ? "link" : "signin";
+
 	if (!googleEnabled()) {
-		return NextResponse.redirect(new URL("/?google=unavailable", origin));
+		const page = mode === "link" ? "/google-linked" : "/";
+		return NextResponse.redirect(new URL(`${page}?google=unavailable`, origin));
 	}
+
 	const { url, state, verifier } = startGoogleSignIn(origin);
-	(await cookies()).set(GOOGLE_COOKIE, `${state}.${verifier}`, {
+
+	(await cookies()).set(GOOGLE_COOKIE, `${state}.${verifier}.${mode}`, {
 		httpOnly: true,
 		sameSite: "lax",
 		secure: env.NODE_ENV === "production",
 		path: GOOGLE_COOKIE_PATH,
 		maxAge: 10 * 60,
 	});
+
 	return NextResponse.redirect(url);
 }
