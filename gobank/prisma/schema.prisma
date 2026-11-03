@@ -13,7 +13,6 @@ enum CardBrand {
   visa
   mastercard
   jcb
-  gobank
   discover
 }
 
@@ -109,8 +108,7 @@ model Card {
   kind         CardKind  @default(physical)
   brand        CardBrand @default(discover)
   number       String    @unique
-  cvvHash      String?
-  cvvEncrypted String?
+  cvvEncrypted String
   locked       Boolean   @default(false)
   expiresAt    DateTime
   createdAt    DateTime  @default(now())
@@ -125,8 +123,7 @@ model RegistrationCard {
   id           String    @id
   brand        CardBrand
   number       String    @unique
-  cvvHash      String
-  cvvEncrypted String?
+  cvvEncrypted String
   expiresAt    DateTime
   validUntil   DateTime
   createdAt    DateTime  @default(now())

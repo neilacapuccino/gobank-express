@@ -2,11 +2,12 @@ import { PrismaClient, type BillerCategory } from "../generated/prisma";
 import { hashPin } from "../src/features/auth/pin";
 import { newCardCredentials } from "../src/features/card/card-credentials.server";
 import { virtualCardBrand } from "../src/features/card/card-generation.server";
-import { newAccountNumber, newReference } from "../src/server/codes";
+import { newAccountNumber, newReference } from "../src/server/identifiers";
 
 const db = new PrismaClient();
 
 const DEMO_PIN = "135790";
+const OPENING_BALANCE_CENTAVOS = 500_000;
 
 const BILLERS: [string, string, BillerCategory, string][] = [
 	["meralco", "Meralco", "electric", "Power Utility Partner"],
@@ -24,9 +25,9 @@ const DEMO_USERS = [
 	{ username: "dante", fullName: "Dante Reyes", mobile: "09181234567" },
 ];
 
-const OPENING_BALANCE = 500000;
+type DemoUser = (typeof DEMO_USERS)[number];
 
-async function main() {
+async function seedBillers() {
 	for (const [code, name, category, description] of BILLERS) {
 		await db.biller.upsert({
 			where: { code },
@@ -34,43 +35,51 @@ async function main() {
 			create: { code, name, category, description },
 		});
 	}
+}
 
-	const pinHash = await hashPin(DEMO_PIN);
+async function seedDemoUser(person: DemoUser, pinHash: string) {
+	const exists = await db.user.findUnique({
+		where: { username: person.username },
+	});
+	if (exists) return;
 
-	for (const person of DEMO_USERS) {
-		const exists = await db.user.findUnique({
-			where: { username: person.username },
-		});
-		if (exists) continue;
-		const physical = await newCardCredentials("discover");
-		const virtual = await newCardCredentials(
-			virtualCardBrand(physical.card.brand),
-			physical.cvv,
-		);
+	const physical = newCardCredentials("discover");
+	const virtual = newCardCredentials(
+		virtualCardBrand(physical.card.brand),
+		physical.cvv,
+	);
 
-		await db.user.create({
-			data: {
-				...person,
-				pinHash,
-				accountNumber: newAccountNumber(),
-				balance: OPENING_BALANCE,
-				cards: {
-					create: [
-						{ ...physical.card, kind: "physical" },
-						{ ...virtual.card, kind: "virtual" },
-					],
-				},
-				transactions: {
-					create: {
-						reference: newReference(),
-						kind: "deposit",
-						title: "Opening deposit",
-						amount: OPENING_BALANCE,
-						balanceAfter: OPENING_BALANCE,
-					},
+	await db.user.create({
+		data: {
+			...person,
+			pinHash,
+			accountNumber: newAccountNumber(),
+			balance: OPENING_BALANCE_CENTAVOS,
+			cards: {
+				create: [
+					{ ...physical.card, kind: "physical" },
+					{ ...virtual.card, kind: "virtual" },
+				],
+			},
+			transactions: {
+				create: {
+					reference: newReference(),
+					kind: "deposit",
+					title: "Opening deposit",
+					amount: OPENING_BALANCE_CENTAVOS,
+					balanceAfter: OPENING_BALANCE_CENTAVOS,
 				},
 			},
-		});
+		},
+	});
+}
+
+async function main() {
+	await seedBillers();
+
+	const pinHash = await hashPin(DEMO_PIN);
+	for (const person of DEMO_USERS) {
+		await seedDemoUser(person, pinHash);
 	}
 }
 

@@ -5,26 +5,42 @@ import {
 	randomBytes,
 	randomInt,
 } from "node:crypto";
-import { hashPin } from "~/features/auth/pin";
 import { fail } from "~/server/errors";
+
+const ALGORITHM = "aes-256-gcm";
+const FORMAT_VERSION = "v1";
+const ENCRYPTED_CVV = /^v1\.[a-f0-9]{24}\.[a-f0-9]{32}\.[a-f0-9]{6}$/i;
+const THREE_DIGITS = /^\d{3}$/;
+const HEX_KEY = /^[a-f0-9]{64}$/i;
 
 const UNAVAILABLE = "Your card security details are temporarily unavailable.";
 
-const encryptionKey = (key: string | undefined) => {
-	if (!key || !/^[a-f0-9]{64}$/i.test(key)) fail("BAD_REQUEST", UNAVAILABLE);
-	return Buffer.from(key, "hex");
-};
+const additionalData = (cardNumber: string) =>
+	Buffer.from(`GoBank card CVV:${cardNumber}`);
 
-export async function newCvvCredentials(
+function encryptionKey(key: string | undefined) {
+	if (!key || !HEX_KEY.test(key)) return fail("BAD_REQUEST", UNAVAILABLE);
+
+	return Buffer.from(key, "hex");
+}
+
+function randomCvv(excludedCvv?: string) {
+	let cvv: string;
+	do {
+		cvv = randomInt(1000).toString().padStart(3, "0");
+	} while (cvv === excludedCvv);
+
+	return cvv;
+}
+
+export function newCvvCredentials(
 	cardNumber: string,
 	key: string | undefined,
 	excludedCvv?: string,
 ) {
-	let cvv: string;
-	do cvv = randomInt(1000).toString().padStart(3, "0");
-	while (cvv === excludedCvv);
-	const cvvEncrypted = encryptCvv(cvv, cardNumber, key);
-	return { cvv, cvvEncrypted, cvvHash: await hashPin(cvv) };
+	const cvv = randomCvv(excludedCvv);
+
+	return { cvv, cvvEncrypted: encryptCvv(cvv, cardNumber, key) };
 }
 
 export function encryptCvv(
@@ -32,15 +48,24 @@ export function encryptCvv(
 	cardNumber: string,
 	key: string | undefined,
 ) {
-	if (!/^\d{3}$/.test(cvv)) fail("BAD_REQUEST", UNAVAILABLE);
+	if (!THREE_DIGITS.test(cvv)) fail("BAD_REQUEST", UNAVAILABLE);
+
 	const nonce = randomBytes(12);
-	const cipher = createCipheriv("aes-256-gcm", encryptionKey(key), nonce);
-	cipher.setAAD(Buffer.from(`GoBank card CVV:${cardNumber}`));
+	const cipher = createCipheriv(ALGORITHM, encryptionKey(key), nonce);
+	cipher.setAAD(additionalData(cardNumber));
+
 	const ciphertext = Buffer.concat([
 		cipher.update(cvv, "utf8"),
 		cipher.final(),
 	]);
-	return `v1.${nonce.toString("hex")}.${cipher.getAuthTag().toString("hex")}.${ciphertext.toString("hex")}`;
+	const tag = cipher.getAuthTag();
+
+	return [
+		FORMAT_VERSION,
+		nonce.toString("hex"),
+		tag.toString("hex"),
+		ciphertext.toString("hex"),
+	].join(".");
 }
 
 export function decryptCvv(
@@ -49,22 +74,25 @@ export function decryptCvv(
 	key: string | undefined,
 ) {
 	const secret = encryptionKey(key);
-	if (!/^v1\.[a-f0-9]{24}\.[a-f0-9]{32}\.[a-f0-9]{6}$/i.test(encrypted))
-		fail("BAD_REQUEST", UNAVAILABLE);
+	if (!ENCRYPTED_CVV.test(encrypted)) fail("BAD_REQUEST", UNAVAILABLE);
+
 	const [, nonce = "", tag = "", ciphertext = ""] = encrypted.split(".");
+
 	try {
 		const decipher = createDecipheriv(
-			"aes-256-gcm",
+			ALGORITHM,
 			secret,
 			Buffer.from(nonce, "hex"),
 		);
-		decipher.setAAD(Buffer.from(`GoBank card CVV:${cardNumber}`));
+		decipher.setAAD(additionalData(cardNumber));
 		decipher.setAuthTag(Buffer.from(tag, "hex"));
+
 		const cvv = Buffer.concat([
 			decipher.update(Buffer.from(ciphertext, "hex")),
 			decipher.final(),
 		]).toString("utf8");
-		if (!/^\d{3}$/.test(cvv)) fail("BAD_REQUEST", UNAVAILABLE);
+
+		if (!THREE_DIGITS.test(cvv)) fail("BAD_REQUEST", UNAVAILABLE);
 		return cvv;
 	} catch {
 		return fail("BAD_REQUEST", UNAVAILABLE);

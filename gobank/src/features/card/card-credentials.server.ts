@@ -1,24 +1,19 @@
 import "server-only";
-import { isSupportedCardBrand, type CardBrandId } from "./card-brands";
 import { env } from "~/env";
+import type { CardBrandId } from "./card-brands";
 import { newCvvCredentials } from "./card-cvv.server";
 import { cardExpiry, newCardNumber } from "./card-generation.server";
-import { fail } from "~/server/errors";
 
-export async function newCardCredentials(
-	brand: CardBrandId,
-	excludedCvv?: string,
-) {
-	if (!isSupportedCardBrand(brand))
-		fail("BAD_REQUEST", "Choose a supported card network.");
+export function newCardCredentials(brand: CardBrandId, excludedCvv?: string) {
 	const number = newCardNumber(brand);
-	const { cvv, cvvHash, cvvEncrypted } = await newCvvCredentials(
+	const { cvv, cvvEncrypted } = newCvvCredentials(
 		number,
 		env.CARD_ENCRYPTION_KEY,
 		excludedCvv,
 	);
+
 	return {
-		card: { brand, number, cvvHash, cvvEncrypted, expiresAt: cardExpiry() },
+		card: { brand, number, cvvEncrypted, expiresAt: cardExpiry() },
 		cvv,
 	};
 }

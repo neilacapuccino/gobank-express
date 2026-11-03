@@ -8,11 +8,12 @@ import {
 	SESSION_CLOSE_GRACE_MS,
 } from "~/features/auth/session.rules";
 
-const COOKIE = "gb_session_v2";
-const LEGACY_COOKIE = "gb_session";
+const COOKIE = "gb_session";
+
 const runtime = globalThis as unknown as {
 	gobankDevelopmentSessionId?: string;
 };
+
 const developmentId =
 	env.NODE_ENV === "development"
 		? (runtime.gobankDevelopmentSessionId ??= randomUUID())
@@ -25,13 +26,18 @@ export async function startSession(userId: string) {
 	const secret = randomBytes(32).toString("base64url");
 	const token = developmentId ? `${developmentId}.${secret}` : secret;
 	const now = new Date();
+
 	const store = await cookies();
-	const previous = [store.get(COOKIE)?.value, store.get(LEGACY_COOKIE)?.value]
-		.filter((value): value is string => !!value)
-		.map(hash);
+	const previous = store.get(COOKIE)?.value;
+
 	await Promise.all([
 		db.session.deleteMany({
-			where: { OR: [{ expiresAt: { lt: now } }, { id: { in: previous } }] },
+			where: {
+				OR: [
+					{ expiresAt: { lt: now } },
+					...(previous ? [{ id: hash(previous) }] : []),
+				],
+			},
 		}),
 		db.session.create({
 			data: {
@@ -41,49 +47,57 @@ export async function startSession(userId: string) {
 			},
 		}),
 	]);
-	store.delete(LEGACY_COOKIE);
+
 	store.set(COOKIE, token, {
 		httpOnly: true,
 		sameSite: "lax",
 		secure: env.NODE_ENV === "production",
 		path: "/",
 	});
+
 	return { sessionId: hash(token) };
 }
 
 export const currentSession = cache(async () => {
 	const token = (await cookies()).get(COOKIE)?.value;
-	if (!token || (developmentId && !token.startsWith(`${developmentId}.`)))
-		return null;
+	if (!token) return null;
+	if (developmentId && !token.startsWith(`${developmentId}.`)) return null;
+
 	const session = await db.session.findUnique({
 		where: { id: hash(token) },
 		select: { id: true, userId: true, expiresAt: true },
 	});
 	if (!session) return null;
+
 	if (session.expiresAt <= new Date()) {
 		await db.session.deleteMany({
 			where: { id: session.id, expiresAt: session.expiresAt },
 		});
 		return null;
 	}
+
 	return session;
 });
 
 export async function renewSession(sessionId: string) {
 	const session = await currentSession();
 	if (session?.id !== sessionId) return null;
+
 	const now = new Date();
 	const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
+
 	const renewed = await db.session.updateMany({
 		where: { id: session.id, expiresAt: { gt: now } },
 		data: { expiresAt },
 	});
+
 	return renewed.count ? { expiresAt: expiresAt.toISOString() } : null;
 }
 
 export async function closeSession(sessionId: string, expectedExpiry: Date) {
 	const session = await currentSession();
 	if (session?.id !== sessionId) return;
+
 	const now = new Date();
 	const expiresAt = new Date(
 		Math.min(
@@ -91,11 +105,13 @@ export async function closeSession(sessionId: string, expectedExpiry: Date) {
 			now.getTime() + SESSION_CLOSE_GRACE_MS,
 		),
 	);
+
 	const closed = await db.session.updateMany({
 		where: { id: session.id, expiresAt: expectedExpiry },
 		data: { expiresAt },
 	});
 	if (!closed.count) return;
+
 	const cleanup = setTimeout(
 		() => {
 			void db.session
@@ -109,22 +125,18 @@ export async function closeSession(sessionId: string, expectedExpiry: Date) {
 
 export async function endOtherSessions(userId: string) {
 	const token = (await cookies()).get(COOKIE)?.value ?? "";
+
 	await db.session.deleteMany({ where: { userId, id: { not: hash(token) } } });
 }
 
 export async function endSession(expectedSessionId?: string | null) {
 	const store = await cookies();
-	const currentToken = store.get(COOKIE)?.value;
-	if (
-		expectedSessionId !== undefined &&
-		(!currentToken || hash(currentToken) !== expectedSessionId)
-	)
-		return;
-	const tokens = [currentToken, store.get(LEGACY_COOKIE)?.value].filter(
-		(token): token is string => !!token,
-	);
-	if (tokens.length)
-		await db.session.deleteMany({ where: { id: { in: tokens.map(hash) } } });
+	const token = store.get(COOKIE)?.value;
+
+	if (expectedSessionId !== undefined) {
+		if (!token || hash(token) !== expectedSessionId) return;
+	}
+
+	if (token) await db.session.deleteMany({ where: { id: hash(token) } });
 	store.delete(COOKIE);
-	store.delete(LEGACY_COOKIE);
 }

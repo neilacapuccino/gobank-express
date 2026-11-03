@@ -1,4 +1,4 @@
-import { newAccountNumber } from "~/server/codes";
+import { newAccountNumber } from "~/server/identifiers";
 import { virtualCardBrand } from "~/features/card/card-generation.server";
 import { newCardCredentials } from "~/features/card/card-credentials.server";
 import { decryptCvv } from "~/features/card/card-cvv.server";
@@ -40,11 +40,14 @@ type PinAccount = {
 	lockedUntil: Date | null;
 };
 
+const SLOW_TRANSACTION = { maxWait: 30_000, timeout: 30_000 };
+
 export async function isUsernameFree(username: string) {
 	const taken = await db.user.findUnique({
 		where: { username },
 		select: { id: true },
 	});
+
 	return !taken;
 }
 
@@ -53,90 +56,103 @@ export async function createRegisteredAccount(
 	token: string,
 ) {
 	const pinHash = await hashPin(pin);
-	return db.$transaction(
-		async (tx) => {
-			const card = await consumeRegistrationCard(tx, token, brand);
-			const physicalCvv = decryptCvv(
-				card.cvvEncrypted,
-				card.number,
-				env.CARD_ENCRYPTION_KEY,
-			);
-			const virtual = (
-				await newCardCredentials(virtualCardBrand(brand), physicalCvv)
-			).card;
-			return tx.user.create({
-				data: {
-					...profile,
-					pinHash,
-					accountNumber: newAccountNumber(),
-					cards: {
-						create: [
-							{ ...card, kind: "physical" },
-							{ ...virtual, kind: "virtual" },
-						],
-					},
+
+	return db.$transaction(async (tx) => {
+		const physical = await consumeRegistrationCard(tx, token, brand);
+		const physicalCvv = decryptCvv(
+			physical.cvvEncrypted,
+			physical.number,
+			env.CARD_ENCRYPTION_KEY,
+		);
+
+		const virtual = newCardCredentials(virtualCardBrand(brand), physicalCvv);
+
+		return tx.user.create({
+			data: {
+				...profile,
+				pinHash,
+				accountNumber: newAccountNumber(),
+				cards: {
+					create: [
+						{ ...physical, kind: "physical" },
+						{ ...virtual.card, kind: "virtual" },
+					],
 				},
-				select: { id: true },
-			});
-		},
-		{ maxWait: 30_000, timeout: 30_000 },
-	);
+			},
+			select: { id: true },
+		});
+	}, SLOW_TRANSACTION);
 }
 
 export async function register(profile: Registration, withGoogle: boolean) {
 	const google = withGoogle ? await pendingGoogleIdentity() : null;
-	if (withGoogle && !google)
+	if (withGoogle && !google) {
 		fail("UNAUTHORIZED", "Your Google sign-in expired. Choose Google again.");
+	}
+
+	const registration = google
+		? { ...profile, googleId: google.sub, gmail: google.gmail }
+		: profile;
+
 	const user = await createRegisteredAccount(
-		google
-			? { ...profile, googleId: google.sub, gmail: google.gmail }
-			: profile,
+		registration,
 		await registrationCardToken(),
 	);
+
 	const session = await startSession(user.id);
 	await clearRegistrationCard();
 	await forgetGoogleIdentity();
+
 	return { created: true, ...session };
+}
+
+async function checkPinAndUpdateAttempts(
+	userId: string,
+	pin: string,
+	newPinHash?: string,
+) {
+	return db.$transaction(async (tx) => {
+		const [user] = await tx.$queryRaw<PinAccount[]>`
+			SELECT "pinHash", "failedPinAttempts", "lockedUntil"
+			FROM "User" WHERE "id" = ${userId} FOR UPDATE
+		`;
+		if (!user) return fail("NOT_FOUND", MESSAGES.accountNotFound);
+
+		const now = new Date();
+		const minutesLeft = lockMinutesLeft(user.lockedUntil, now);
+		if (minutesLeft > 0) return { correct: false, minutesLeft };
+
+		const correct = await verifyPin(pin, user.pinHash);
+		const attempts = correct ? 0 : user.failedPinAttempts + 1;
+		const lockNow = attempts >= MAX_PIN_ATTEMPTS;
+
+		await tx.user.update({
+			where: { id: userId },
+			data: {
+				failedPinAttempts: lockNow ? 0 : attempts,
+				lockedUntil: lockNow ? lockExpiry(now) : null,
+				...(correct && newPinHash ? { pinHash: newPinHash } : {}),
+			},
+			select: { id: true },
+		});
+
+		return { correct, minutesLeft: lockNow ? PIN_LOCK_MINUTES : 0 };
+	}, SLOW_TRANSACTION);
 }
 
 export async function verifyAccountPin(
 	userId: string,
 	pin: string,
 	wrongMessage: string,
-	pinHash?: string,
+	newPinHash?: string,
 ) {
-	const outcome = await db.$transaction(
-		async (tx) => {
-			const [user] = await tx.$queryRaw<PinAccount[]>`
-			SELECT "pinHash", "failedPinAttempts", "lockedUntil"
-			FROM "User" WHERE "id" = ${userId} FOR UPDATE
-		`;
-			if (!user) return fail("NOT_FOUND", "This account no longer exists.");
-			const now = new Date();
-			const minutesLeft = lockMinutesLeft(user.lockedUntil, now);
-			if (minutesLeft > 0) return { correct: false, minutesLeft };
-
-			const correct = await verifyPin(pin, user.pinHash);
-			const attempts = correct ? 0 : user.failedPinAttempts + 1;
-			const locked = attempts >= MAX_PIN_ATTEMPTS;
-			await tx.user.update({
-				where: { id: userId },
-				data: {
-					failedPinAttempts: locked ? 0 : attempts,
-					lockedUntil: locked ? lockExpiry(now) : null,
-					...(correct && pinHash ? { pinHash } : {}),
-				},
-				select: { id: true },
-			});
-			return { correct, minutesLeft: locked ? PIN_LOCK_MINUTES : 0 };
-		},
-		{ maxWait: 30_000, timeout: 30_000 },
-	);
-
+	const outcome = await checkPinAndUpdateAttempts(userId, pin, newPinHash);
 	if (outcome.correct) return;
+
 	if (outcome.minutesLeft > 0) {
 		fail("TOO_MANY_REQUESTS", MESSAGES.pinLocked(outcome.minutesLeft));
 	}
+
 	fail("UNAUTHORIZED", wrongMessage);
 }
 
@@ -146,7 +162,9 @@ export async function signIn(username: string, pin: string) {
 		select: { id: true },
 	});
 	if (!user) return fail("UNAUTHORIZED", MESSAGES.wrongCredentials);
+
 	await verifyAccountPin(user.id, pin, MESSAGES.wrongCredentials);
+
 	return startSession(user.id);
 }
 
@@ -155,11 +173,8 @@ export async function changePin(
 	currentPin: string,
 	newPin: string,
 ) {
-	await verifyAccountPin(
-		userId,
-		currentPin,
-		MESSAGES.wrongPin,
-		await hashPin(newPin),
-	);
+	const newPinHash = await hashPin(newPin);
+
+	await verifyAccountPin(userId, currentPin, MESSAGES.wrongPin, newPinHash);
 	await endOtherSessions(userId);
 }
