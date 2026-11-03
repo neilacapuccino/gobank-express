@@ -13,7 +13,7 @@ import { TransactionSummary } from "~/shared/ui/transaction-summary";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import {
-	REDEEM_PRESETS,
+	convertOptions,
 	pointsToNextPeso,
 	redeemablePoints,
 } from "../rewards.rules";
@@ -55,16 +55,24 @@ export function RewardsScreen() {
 		);
 	}
 
+	const stopConverting = () => {
+		redeem.reset();
+		setConverting(false);
+	};
+
 	return (
 		<div className="flex flex-1 flex-col">
 			<PageHeader title="Rewards" back="/dashboard" />
+
 			{summary.isPending ? (
 				<div
 					role="status"
 					aria-label="Loading"
 					className="bg-surface-raised mt-6 h-56 animate-pulse rounded-[24px]"
 				/>
-			) : summary.error ? (
+			) : null}
+
+			{summary.error ? (
 				<div className="pt-7">
 					<FormError error={errorMessage(summary.error)} />
 					<Button
@@ -75,32 +83,18 @@ export function RewardsScreen() {
 						Try again
 					</Button>
 				</div>
-			) : (
+			) : null}
+
+			{summary.data ? (
 				<div className="space-y-8 pt-6">
-					<section className="rounded-[24px] bg-[linear-gradient(140deg,#2b2518_0%,#211f1a_45%,#1d1d1f_100%)] p-6 ring-1 ring-[#e6c17a]/15 ring-inset">
-						<p className="flex items-center gap-2 text-[13px] font-medium text-[#e6c17a]">
-							<Gem size={15} aria-hidden />
-							GoRewards
-						</p>
-						<p className="text-ink mt-4 text-[40px] leading-none font-semibold tracking-tight tabular-nums">
-							{formatPoints(summary.data.points)}
-							<span className="text-ink-muted ml-2 text-[15px] font-medium">
-								pts
-							</span>
-						</p>
-						<p className="text-ink-soft mt-2 text-[14px]">
-							Worth {peso(pointsValue(summary.data.points))}
-						</p>
+					<PointsCard points={summary.data.points}>
 						{converting ? (
 							<ConvertPanel
 								points={summary.data.points}
 								pending={redeem.isPending}
-								error={redeem.error ? errorMessage(redeem.error) : null}
+								error={errorMessage(redeem.error)}
 								onConfirm={(points) => redeem.mutate({ points })}
-								onCancel={() => {
-									redeem.reset();
-									setConverting(false);
-								}}
+								onCancel={stopConverting}
 							/>
 						) : (
 							<Progress points={summary.data.points}>
@@ -113,7 +107,8 @@ export function RewardsScreen() {
 								</Button>
 							</Progress>
 						)}
-					</section>
+					</PointsCard>
+
 					<section aria-labelledby="history-heading">
 						<div className="mb-3 flex items-baseline justify-between">
 							<h2
@@ -127,7 +122,49 @@ export function RewardsScreen() {
 						<RewardHistory />
 					</section>
 				</div>
-			)}
+			) : null}
+		</div>
+	);
+}
+
+function PointsCard({
+	points,
+	children,
+}: {
+	points: number;
+	children: ReactNode;
+}) {
+	const rate = `${formatPoints(MIN_REDEEM_POINTS)} pts = ${peso(pointsValue(MIN_REDEEM_POINTS))}`;
+
+	return (
+		<section className="bg-surface-raised text-ink rounded-[28px] px-6 py-6 shadow-[0_10px_26px_-12px_#00000080]">
+			<div className="flex items-center justify-between">
+				<p className="text-ink-muted text-[13px]">GoRewards points</p>
+				<Gem size={16} className="text-ink-muted" aria-hidden />
+			</div>
+
+			<p className="mt-2 text-[40px] leading-none font-semibold tracking-tight tabular-nums">
+				{formatPoints(points)}
+				<span className="text-ink-muted ml-2 text-[15px] font-medium">pts</span>
+			</p>
+
+			<dl className="border-line mt-6 grid grid-cols-2 gap-4 border-t pt-4">
+				<SummaryItem label="Cash value" value={peso(pointsValue(points))} />
+				<SummaryItem label="Conversion rate" value={rate} />
+			</dl>
+
+			{children}
+		</section>
+	);
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+	return (
+		<div className="min-w-0">
+			<dt className="text-ink-muted text-[12px]">{label}</dt>
+			<dd className="text-ink mt-1 truncate text-[14px] font-medium tabular-nums">
+				{value}
+			</dd>
 		</div>
 	);
 }
@@ -141,26 +178,29 @@ function Progress({
 }) {
 	const missing = pointsToNextPeso(points);
 	const progress = Math.min(100, (points / MIN_REDEEM_POINTS) * 100);
+
+	if (!missing) return children;
+
 	return (
 		<>
 			<div
-				className="mt-6 h-1.5 overflow-hidden rounded-full bg-white/10"
+				className="bg-line mt-6 h-1.5 overflow-hidden rounded-full"
 				role="progressbar"
-				aria-label="Points toward ₱1.00"
+				aria-label={`Points toward ${peso(pointsValue(MIN_REDEEM_POINTS))}`}
 				aria-valuemin={0}
 				aria-valuemax={100}
 				aria-valuenow={Math.round(progress)}
 			>
 				<span
-					className="block h-full rounded-full bg-[#e6c17a]"
+					className="bg-ink-soft block h-full rounded-full"
 					style={{ width: `${progress}%` }}
 				/>
 			</div>
+
 			<p className="text-ink-muted mt-2 text-[12.5px]">
-				{missing
-					? `${formatPoints(missing)} pts to your first ₱1.00`
-					: "100 pts = ₱1.00"}
+				{formatPoints(missing)} pts more to convert to cash
 			</p>
+
 			{children}
 		</>
 	);
@@ -180,12 +220,11 @@ function ConvertPanel({
 	onCancel: () => void;
 }) {
 	const max = redeemablePoints(points);
-	const options = [...REDEEM_PRESETS.filter((value) => value < max), max].slice(
-		-4,
-	);
+	const options = convertOptions(points);
 	const [selected, setSelected] = useState(max);
+
 	return (
-		<div className="mt-6 border-t border-white/10 pt-5">
+		<div className="border-line mt-6 border-t pt-5">
 			<p className="text-ink-soft mb-3 text-[13px]">Points to convert</p>
 			<div className="grid grid-cols-4 gap-2" role="radiogroup">
 				{options.map((value) => (
@@ -199,8 +238,8 @@ function ConvertPanel({
 						className={cn(
 							"h-11 rounded-xl border text-[13px] font-medium tabular-nums transition-colors",
 							selected === value
-								? "border-[#e6c17a] bg-[#e6c17a]/10 text-[#e6c17a]"
-								: "text-ink-soft border-white/10 hover:bg-white/5",
+								? "border-ink text-ink bg-white/5"
+								: "text-ink-soft border-line hover:bg-white/5",
 						)}
 					>
 						{value === max && options.length > 1 ? "All" : formatPoints(value)}

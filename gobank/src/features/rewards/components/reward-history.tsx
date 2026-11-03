@@ -21,17 +21,24 @@ export function RewardHistory() {
 		},
 	);
 	const items = history.data?.pages.flatMap((page) => page.items) ?? [];
+	const isEmpty = items.length === 0 && !history.error;
 
-	if (history.isLoading)
+	const retry = () => {
+		if (history.isFetchNextPageError) void history.fetchNextPage();
+		else void history.refetch();
+	};
+
+	if (history.isLoading) {
 		return (
 			<p role="status" className="text-ink-muted py-8 text-center text-[14px]">
 				Loading history…
 			</p>
 		);
+	}
 
 	return (
 		<div>
-			{!items.length && !history.error ? (
+			{isEmpty ? (
 				<div className="border-line flex flex-col items-center gap-3 rounded-2xl border px-5 py-9 text-center">
 					<Gem size={24} className="text-ink-faint" aria-hidden />
 					<p className="text-ink-muted text-[13.5px]">
@@ -47,21 +54,17 @@ export function RewardHistory() {
 					))}
 				</ul>
 			)}
+
 			{history.error ? (
 				<div className="mt-4">
 					<FormError error={errorMessage(history.error)} />
-					<Button
-						variant="ghost"
-						disabled={history.isFetching}
-						onClick={() => {
-							if (history.isFetchNextPageError) void history.fetchNextPage();
-							else void history.refetch();
-						}}
-					>
+					<Button variant="ghost" disabled={history.isFetching} onClick={retry}>
 						{history.isFetching ? "Retrying…" : "Retry"}
 					</Button>
 				</div>
-			) : history.hasNextPage ? (
+			) : null}
+
+			{!history.error && history.hasNextPage ? (
 				<Button
 					variant="outline"
 					className="mt-4"
@@ -75,13 +78,16 @@ export function RewardHistory() {
 	);
 }
 
+function rewardIcon(item: RewardItem) {
+	if (item.points < 0) return Banknote;
+	return item.kind === "bill" ? ReceiptText : ArrowUpRight;
+}
+
 function RewardRow({ item }: { item: RewardItem }) {
 	const redeemed = item.points < 0;
-	const Icon = redeemed
-		? Banknote
-		: item.kind === "bill"
-			? ReceiptText
-			: ArrowUpRight;
+	const Icon = rewardIcon(item);
+	const spent = redeemed ? "" : ` · ${peso(Math.abs(item.amount))} spent`;
+
 	return (
 		<Link
 			href={`/transactions/${item.reference}`}
@@ -92,7 +98,7 @@ function RewardRow({ item }: { item: RewardItem }) {
 					"grid h-9 w-9 shrink-0 place-items-center rounded-full",
 					redeemed
 						? "bg-brand-soft text-brand"
-						: "bg-[#e6c17a]/10 text-[#e6c17a]",
+						: "bg-surface-raised text-ink-soft",
 				)}
 			>
 				<Icon size={16} aria-hidden />
@@ -103,14 +109,14 @@ function RewardRow({ item }: { item: RewardItem }) {
 				</span>
 				<span className="text-ink-muted block truncate text-[12px]">
 					{shortDate(item.createdAt)}
-					{redeemed ? "" : ` · ${peso(Math.abs(item.amount))} spent`}
+					{spent}
 				</span>
 			</span>
 			<span className="shrink-0 text-right">
 				<span
 					className={cn(
 						"block text-[14px] font-semibold tabular-nums",
-						redeemed ? "text-ink-soft" : "text-[#e6c17a]",
+						redeemed ? "text-ink-soft" : "text-ink",
 					)}
 				>
 					{redeemed ? "−" : "+"}

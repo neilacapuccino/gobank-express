@@ -8,6 +8,7 @@
   --color-surface: #1b1b1d;
   --color-surface-sunken: #101012;
   --color-surface-raised: #29292c;
+  --color-card: #171719;
 
   --color-line: #353539;
   --color-line-strong: #515158;
@@ -22,8 +23,16 @@
   --color-brand-soft: #142b23;
   --color-brand-line: #285d49;
 
+  --color-mint: #56e3b1;
+  --color-mint-muted: #8da99b;
+  --color-sky: #71d5f3;
+  --color-gold: #e6c17a;
+  --color-violet: #bda0fa;
+
   --color-danger: #f87171;
   --color-danger-soft: #351d21;
+  --color-danger-strong: #e5252a;
+  --color-danger-strong-hover: #c81e24;
 
   --animate-page-in: page-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-step-in: step-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
