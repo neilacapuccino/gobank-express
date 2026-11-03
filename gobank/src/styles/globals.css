@@ -28,6 +28,35 @@
   --animate-page-in: page-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-step-in: step-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-shake: shake 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-wave: wave 2.8s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes wave {
+  0%,
+  55%,
+  100% {
+    transform: rotate(0deg);
+  }
+  65% {
+    transform: rotate(-16deg);
+  }
+  75% {
+    transform: rotate(8deg);
+  }
+  85% {
+    transform: rotate(-12deg);
+  }
 }
 
 @keyframes shake {
