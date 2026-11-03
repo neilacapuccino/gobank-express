@@ -2,10 +2,17 @@ import { z } from "zod";
 import { profileFields } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import { profilePhotoInput } from "./profile-photo.schema";
-import { getOverview, getProfile, updateProfile } from "./account.service";
+import {
+	getOverview,
+	getProfile,
+	getSpending,
+	updateProfile,
+} from "./account.service";
 
 export const accountRouter = createTRPCRouter({
 	overview: protectedProcedure.query(({ ctx }) => getOverview(ctx.userId)),
+
+	spending: protectedProcedure.query(({ ctx }) => getSpending(ctx.userId)),
 
 	profile: protectedProcedure.query(({ ctx }) => getProfile(ctx.userId)),
 

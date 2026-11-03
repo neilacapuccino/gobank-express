@@ -97,6 +97,19 @@ export async function post(
 	});
 }
 
+export async function spentToday(tx: Tx, userId: string) {
+	const today = await tx.transaction.aggregate({
+		where: {
+			userId,
+			kind: { in: SPENDING },
+			amount: { lt: 0 },
+			createdAt: { gte: startOfManilaDay(new Date()) },
+		},
+		_sum: { amount: true },
+	});
+	return -(today._sum.amount ?? 0);
+}
+
 export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
 	// Serialize spending before reading today's total.
 	await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${entry.userId} FOR UPDATE`;
@@ -106,16 +119,8 @@ export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
 	});
 	if (user.cardLocked) fail("BAD_REQUEST", MESSAGES.cardLocked);
 
-	const today = await tx.transaction.aggregate({
-		where: {
-			userId: entry.userId,
-			kind: { in: SPENDING },
-			amount: { lt: 0 },
-			createdAt: { gte: startOfManilaDay(new Date()) },
-		},
-		_sum: { amount: true },
-	});
-	if (entry.amount - (today._sum.amount ?? 0) > user.cardDailyLimit) {
+	const spent = await spentToday(tx, entry.userId);
+	if (entry.amount + spent > user.cardDailyLimit) {
 		fail("BAD_REQUEST", MESSAGES.overDailyLimit);
 	}
 

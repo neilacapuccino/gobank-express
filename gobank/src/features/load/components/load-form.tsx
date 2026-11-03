@@ -19,6 +19,8 @@ import { TextField } from "~/shared/ui/text-field";
 import { TransactionSummary } from "~/shared/ui/transaction-summary";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
+import { useSpendLimit } from "~/shared/hooks/use-spend-limit";
+import { CardLockedNotice } from "~/features/card/components/card-locked-notice";
 import { MAX_LOAD_CENTAVOS, MIN_LOAD_CENTAVOS } from "../load.rules";
 
 const LOAD_PRESETS = [10, 15, 20, 50, 100, 300, 500, 1000];
@@ -32,16 +34,12 @@ export function LoadForm() {
 	const load = api.load.buy.useMutation({
 		onSuccess: () => utils.account.invalidate(),
 	});
+	const limit = useSpendLimit(MAX_LOAD_CENTAVOS, MIN_LOAD_CENTAVOS);
 	const amountCentavos = toCentavos(Number(amount));
-	const validAmount =
-		amountCentavos >= MIN_LOAD_CENTAVOS && amountCentavos <= MAX_LOAD_CENTAVOS;
+	const mobileError = mobile.length === 11 ? validateMobile(mobile) : null;
 	const validDetails =
-		Boolean(mobile) && !validateMobile(mobile) && validAmount;
-	const amountRange = `${peso(MIN_LOAD_CENTAVOS)}–${peso(MAX_LOAD_CENTAVOS)}`;
-	const amountError =
-		amount && Number.isFinite(amountCentavos) && !validAmount
-			? `Use an amount from ${amountRange}`
-			: null;
+		mobile.length === 11 && !mobileError && limit.valid(amountCentavos);
+	const amountError = limit.check(amountCentavos);
 
 	const done = () => {
 		router.push("/dashboard");
@@ -83,6 +81,7 @@ export function LoadForm() {
 					{reviewing ? "Review load" : "Buy load"}
 				</h1>
 			</header>
+			{limit.locked && !load.isPending ? <CardLockedNotice /> : null}
 			{reviewing ? (
 				<div className="flex flex-1 flex-col pt-7">
 					<TransactionSummary
@@ -115,6 +114,8 @@ export function LoadForm() {
 						type="tel"
 						inputMode="tel"
 						value={mobile}
+						hint="11 digits, like 09171234567"
+						error={mobileError}
 						onChange={(event) =>
 							setMobile(digitsOnly(normalizeMobile(event.target.value), 11))
 						}
@@ -125,7 +126,7 @@ export function LoadForm() {
 							inputMode="decimal"
 							value={amount}
 							prefix="₱"
-							hint={amountRange}
+							hint={limit.hint}
 							error={amountError}
 							onChange={(event) => {
 								if (isPesoInput(event.target.value))

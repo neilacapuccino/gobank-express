@@ -1,4 +1,5 @@
 import { db } from "~/server/db";
+import { spentToday } from "~/server/ledger";
 import { activityFields } from "~/features/activity/activity.fields";
 import { normalizeProfilePhoto } from "./profile-photo.server";
 
@@ -20,6 +21,20 @@ export const getOverview = (userId: string) =>
 			},
 		},
 	});
+
+export const getSpending = async (userId: string) => {
+	const [account, spent] = await Promise.all([
+		db.user.findUniqueOrThrow({
+			where: { id: userId },
+			select: { balance: true, cardLocked: true, cardDailyLimit: true },
+		}),
+		spentToday(db, userId),
+	]);
+	return {
+		...account,
+		dailyLeft: Math.max(0, account.cardDailyLimit - spent),
+	};
+};
 
 export const getProfile = async (userId: string) => {
 	const profile = await db.user.findUniqueOrThrow({

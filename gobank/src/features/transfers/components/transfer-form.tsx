@@ -19,6 +19,8 @@ import {
 	type MoneyStep,
 } from "~/shared/ui/money-form-ui";
 import { useRecipientSearch } from "~/shared/hooks/use-recipient-search";
+import { useSpendLimit } from "~/shared/hooks/use-spend-limit";
+import { CardLockedNotice } from "~/features/card/components/card-locked-notice";
 
 export function TransferForm() {
 	const router = useRouter();
@@ -36,9 +38,9 @@ export function TransferForm() {
 			]);
 		},
 	});
+	const limit = useSpendLimit(MAX_TRANSACTION_CENTAVOS);
 	const amountCentavos = toCentavos(Number(amount));
-	const validAmount =
-		amountCentavos > 0 && amountCentavos <= MAX_TRANSACTION_CENTAVOS;
+	const validAmount = limit.valid(amountCentavos);
 
 	const back = () => {
 		send.reset();
@@ -74,6 +76,7 @@ export function TransferForm() {
 				disabled={send.isPending}
 				onBack={back}
 			/>
+			{limit.locked && !send.isPending ? <CardLockedNotice /> : null}
 			{step === "recipient" ? (
 				<RecipientPicker
 					value={search.value}
@@ -138,7 +141,9 @@ export function TransferForm() {
 					recipient={search.recipient}
 					amount={amount}
 					note={note}
-					maximum={MAX_TRANSACTION_CENTAVOS}
+					hint={limit.hint}
+					error={limit.check(amountCentavos)}
+					canContinue={validAmount}
 					onAmountChange={setAmount}
 					onNoteChange={setNote}
 					onContinue={() => {

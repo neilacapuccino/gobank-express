@@ -376,6 +376,12 @@ function CardSettings({
 					label="Daily spending limit"
 					prefix="₱"
 					name="cardDailyLimit"
+					hint={`Up to ${peso(MAX_DAILY_LIMIT_CENTAVOS)} a day. ₱0 blocks spending.`}
+					error={
+						limitInCentavos > MAX_DAILY_LIMIT_CENTAVOS
+							? `Maximum ${peso(MAX_DAILY_LIMIT_CENTAVOS)}`
+							: null
+					}
 					type="text"
 					inputMode="decimal"
 					required

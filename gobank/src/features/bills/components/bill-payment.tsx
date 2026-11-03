@@ -13,6 +13,8 @@ import { TextField } from "~/shared/ui/text-field";
 import { TransactionSummary } from "~/shared/ui/transaction-summary";
 import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
+import { useSpendLimit } from "~/shared/hooks/use-spend-limit";
+import { CardLockedNotice } from "~/features/card/components/card-locked-notice";
 import { CATEGORIES, findCategory, type Category } from "../bill-categories";
 import { BillerCard } from "./biller-card";
 import { CategoryCard } from "./category-card";
@@ -33,13 +35,13 @@ export function BillPayment() {
 	const billers =
 		catalogue.data?.filter((item) => item.category === categoryId) ?? [];
 	const biller = billers.find((item) => item.id === billerId);
+	const limit = useSpendLimit(MAX_TRANSACTION_CENTAVOS);
 	const amountCentavos = toCentavos(Number(amount));
-	const exceedsLimit = amountCentavos > MAX_TRANSACTION_CENTAVOS;
+	const amountError = limit.check(amountCentavos);
 	const validDetails =
 		Boolean(biller) &&
 		/^\d{4,20}$/.test(accountNumber) &&
-		amountCentavos > 0 &&
-		!exceedsLimit;
+		limit.valid(amountCentavos);
 
 	const done = () => {
 		router.push("/dashboard");
@@ -84,6 +86,7 @@ export function BillPayment() {
 					{reviewing ? "Review bill" : "Pay bills"}
 				</h1>
 			</header>
+			{limit.locked && !pay.isPending ? <CardLockedNotice /> : null}
 			{reviewing && biller ? (
 				<div className="flex flex-1 flex-col pt-7">
 					<TransactionSummary
@@ -186,6 +189,7 @@ export function BillPayment() {
 								value={accountNumber}
 								inputMode="numeric"
 								maxLength={20}
+								hint="4 to 20 digits, as printed on your bill."
 								onChange={(event) =>
 									setAccountNumber(digitsOnly(event.target.value, 20))
 								}
@@ -195,12 +199,8 @@ export function BillPayment() {
 								value={amount}
 								inputMode="decimal"
 								prefix="₱"
-								hint={`Up to ${peso(MAX_TRANSACTION_CENTAVOS)}`}
-								error={
-									exceedsLimit
-										? `Maximum ${peso(MAX_TRANSACTION_CENTAVOS)}`
-										: null
-								}
+								hint={limit.hint}
+								error={amountError}
 								onChange={(event) => {
 									if (isPesoInput(event.target.value))
 										setAmount(event.target.value);

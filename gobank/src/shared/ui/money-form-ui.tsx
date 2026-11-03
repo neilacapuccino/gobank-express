@@ -2,8 +2,6 @@ import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { ProfileAvatar } from "~/features/account/components/profile-avatar";
 import { isPesoInput } from "~/shared/lib/amount-input";
-import { peso } from "~/shared/lib/format";
-import { toCentavos } from "~/shared/lib/money";
 import { BackButton } from "~/shared/ui/back-button";
 import { Button } from "~/shared/ui/button";
 import { TransactionSummary } from "~/shared/ui/transaction-summary";
@@ -169,7 +167,9 @@ export function AmountFields({
 	recipient,
 	amount,
 	note,
-	maximum,
+	hint,
+	error,
+	canContinue,
 	onAmountChange,
 	onNoteChange,
 	onContinue,
@@ -177,14 +177,13 @@ export function AmountFields({
 	recipient: Recipient;
 	amount: string;
 	note: string;
-	maximum: number;
+	hint: string;
+	error: string | null;
+	canContinue: boolean;
 	onAmountChange: (value: string) => void;
 	onNoteChange: (value: string) => void;
 	onContinue: () => void;
 }) {
-	const centavos = toCentavos(Number(amount));
-	const exceedsLimit = centavos > maximum;
-	const validAmount = centavos > 0 && centavos <= maximum;
 	return (
 		<form
 			className="flex flex-1 flex-col gap-6 pt-7"
@@ -213,7 +212,7 @@ export function AmountFields({
 						autoComplete="off"
 						placeholder="0.00"
 						value={amount}
-						aria-invalid={exceedsLimit}
+						aria-invalid={Boolean(error)}
 						aria-describedby="amount-limit"
 						onChange={(event) => {
 							if (isPesoInput(event.target.value))
@@ -224,9 +223,10 @@ export function AmountFields({
 				</div>
 				<p
 					id="amount-limit"
-					className={`mt-2 text-[12px] ${exceedsLimit ? "text-danger" : "text-ink-muted"}`}
+					role={error ? "alert" : undefined}
+					className={`mt-2 text-[12px] ${error ? "text-danger" : "text-ink-muted"}`}
 				>
-					{exceedsLimit ? "Maximum" : "Up to"} {peso(maximum)}
+					{error ?? hint}
 				</p>
 			</div>
 			<div>
@@ -247,7 +247,7 @@ export function AmountFields({
 				/>
 			</div>
 			<div className="mt-auto pt-2">
-				<Button type="submit" disabled={!validAmount}>
+				<Button type="submit" disabled={!canContinue}>
 					Review
 				</Button>
 			</div>

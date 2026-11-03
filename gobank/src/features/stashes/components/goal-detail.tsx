@@ -40,6 +40,7 @@ function GoalContent({ savingsGoal }: { savingsGoal: SavingsGoal }) {
 	const utils = api.useUtils();
 	const router = useRouter();
 	const { icon, setIcon } = useGoalIcon(savingsGoal.id, savingsGoal.name);
+	const spending = api.account.spending.useQuery();
 	const [tab, setTab] = useState<"overview" | "transactions">("overview");
 	const [action, setAction] = useState<"in" | "out" | "settings" | null>(null);
 	const [amount, setAmount] = useState("");
@@ -75,10 +76,24 @@ function GoalContent({ savingsGoal }: { savingsGoal: SavingsGoal }) {
 		},
 	});
 	const amountCentavos = toCentavos(Number(amount));
-	const valid =
-		amountCentavos > 0 &&
-		amountCentavos <= MAX_TRANSACTION_CENTAVOS &&
-		(action !== "out" || amountCentavos <= savingsGoal.balance);
+	const available =
+		action === "out"
+			? savingsGoal.balance
+			: action === "in"
+				? (spending.data?.balance ?? MAX_TRANSACTION_CENTAVOS)
+				: MAX_TRANSACTION_CENTAVOS;
+	const amountError = !amount.trim()
+		? null
+		: !(amountCentavos > 0)
+			? "Enter an amount above ₱0.00"
+			: amountCentavos > MAX_TRANSACTION_CENTAVOS
+				? `Maximum ${peso(MAX_TRANSACTION_CENTAVOS)}`
+				: amountCentavos > available
+					? action === "out"
+						? `Only ${peso(available)} is in this goal`
+						: `Insufficient balance. You have ${peso(available)}`
+					: null;
+	const valid = amountCentavos > 0 && !amountError;
 	const pending =
 		move.isPending || update.isPending || remove.isPending || remove.isSuccess;
 	const validName =
@@ -204,13 +219,11 @@ function GoalContent({ savingsGoal }: { savingsGoal: SavingsGoal }) {
 									? "Leave blank to remove your target."
 									: action === "out"
 										? `Available: ${peso(savingsGoal.balance)}`
-										: "Move money from your spending account."
+										: spending.data
+											? `From your main balance of ${peso(spending.data.balance)}`
+											: "Move money from your main balance."
 							}
-							error={
-								amount && !valid
-									? "Enter a valid amount within the available limit."
-									: null
-							}
+							error={amountError}
 						/>
 						{(move.error ?? update.error ?? remove.error) && (
 							<p role="alert" className="text-danger text-sm">
@@ -350,7 +363,10 @@ function GoalContent({ savingsGoal }: { savingsGoal: SavingsGoal }) {
 											{shortDate(entry.createdAt)}
 										</p>
 									</div>
-									<span className="text-[13px] font-semibold tabular-nums">
+									<span
+										className={`text-[13px] font-semibold tabular-nums ${entry.kind === "stash" && entry.amount > 0 ? "text-ink" : "text-brand"}`}
+									>
+										{entry.kind === "stash" && entry.amount > 0 ? "−" : "+"}
 										{peso(Math.abs(entry.amount))}
 									</span>
 								</li>

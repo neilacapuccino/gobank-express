@@ -82,7 +82,13 @@ export function RequestForm() {
 					recipient={search.recipient}
 					amount={amount}
 					note={note}
-					maximum={MAX_REQUEST_CENTAVOS}
+					hint={`Up to ${peso(MAX_REQUEST_CENTAVOS)}`}
+					error={
+						amountCentavos > MAX_REQUEST_CENTAVOS
+							? `Maximum ${peso(MAX_REQUEST_CENTAVOS)}`
+							: null
+					}
+					canContinue={validAmount}
 					onAmountChange={setAmount}
 					onNoteChange={setNote}
 					onContinue={() => {
