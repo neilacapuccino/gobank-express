@@ -9,7 +9,7 @@ type WelcomeScreenProps = {
 
 export function WelcomeScreen({ googleEnabled, notice }: WelcomeScreenProps) {
 	return (
-		<div className="bg-surface-sunken text-ink min-h-dvh">
+		<div className="bg-surface-sunken text-ink min-h-dvh lg:bg-[radial-gradient(70%_55%_at_50%_0%,#05966924,transparent_70%)]">
 			<main className="bg-surface border-line mx-auto flex min-h-dvh w-full max-w-[440px] flex-col px-6 pt-5 pb-6 sm:border-x">
 				<header>
 					<GoBankLogo className="text-ink h-9 w-auto" />

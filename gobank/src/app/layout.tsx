@@ -19,7 +19,6 @@ export const viewport: Viewport = {
 	themeColor: "#101012",
 	width: "device-width",
 	initialScale: 1,
-	maximumScale: 1,
 };
 
 const geist = Geist({
@@ -32,7 +31,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html lang="en" className={`${geist.variable}`}>
-			<body className="bg-surface text-ink font-sans antialiased">
+			<body className="bg-surface text-ink overflow-x-clip font-sans antialiased">
 				<TRPCReactProvider>{children}</TRPCReactProvider>
 			</body>
 		</html>
