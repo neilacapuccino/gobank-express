@@ -25,16 +25,24 @@ export async function startSession(userId: string) {
 	const secret = randomBytes(32).toString("base64url");
 	const token = developmentId ? `${developmentId}.${secret}` : secret;
 	const now = new Date();
-	await endSession();
-	await db.session.deleteMany({ where: { expiresAt: { lt: now } } });
-	await db.session.create({
-		data: {
-			id: hash(token),
-			userId,
-			expiresAt: new Date(now.getTime() + SESSION_TTL_MS),
-		},
-	});
-	(await cookies()).set(COOKIE, token, {
+	const store = await cookies();
+	const previous = [store.get(COOKIE)?.value, store.get(LEGACY_COOKIE)?.value]
+		.filter((value): value is string => !!value)
+		.map(hash);
+	await Promise.all([
+		db.session.deleteMany({
+			where: { OR: [{ expiresAt: { lt: now } }, { id: { in: previous } }] },
+		}),
+		db.session.create({
+			data: {
+				id: hash(token),
+				userId,
+				expiresAt: new Date(now.getTime() + SESSION_TTL_MS),
+			},
+		}),
+	]);
+	store.delete(LEGACY_COOKIE);
+	store.set(COOKIE, token, {
 		httpOnly: true,
 		sameSite: "lax",
 		secure: env.NODE_ENV === "production",

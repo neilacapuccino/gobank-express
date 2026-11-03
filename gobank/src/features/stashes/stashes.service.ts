@@ -40,10 +40,12 @@ const settleOwnedStash = async (
 	tx: Prisma.TransactionClient,
 	userId: string,
 	id: string,
+	persist = false,
 ) =>
 	settleStashInterest(
 		tx,
 		await tx.savingsGoal.findUniqueOrThrow({ where: { id, userId } }),
+		persist,
 	);
 
 export const getStash = (userId: string, id: string) =>
@@ -81,7 +83,7 @@ export const updateStash = (
 	fields: SavingsGoalFields,
 ) =>
 	savingsTransaction(async (tx) => {
-		await settleOwnedStash(tx, userId, id);
+		await settleOwnedStash(tx, userId, id, true);
 		return tx.savingsGoal.update({ where: { id, userId }, data: fields });
 	});
 
@@ -92,7 +94,7 @@ export const moveMoney = (
 	direction: "in" | "out",
 ) =>
 	savingsTransaction(async (tx) => {
-		await settleOwnedStash(tx, userId, id);
+		await settleOwnedStash(tx, userId, id, true);
 		return moveStash(
 			tx,
 			userId,
@@ -103,7 +105,7 @@ export const moveMoney = (
 
 export const removeStash = (userId: string, id: string) =>
 	savingsTransaction(async (tx) => {
-		const savingsGoal = await settleOwnedStash(tx, userId, id);
+		const savingsGoal = await settleOwnedStash(tx, userId, id, true);
 		if (savingsGoal.balance > 0)
 			await moveStash(tx, userId, savingsGoal.id, -savingsGoal.balance);
 		await tx.savingsGoal.delete({ where: { id, userId, balance: 0 } });

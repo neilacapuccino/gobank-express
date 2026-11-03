@@ -16,9 +16,7 @@ export function SessionGuard({
 	children: ReactNode;
 }) {
 	const queryClient = useQueryClient();
-	const [status, setStatus] = useState<"checking" | "ready" | "error">(
-		"checking",
-	);
+	const [ready, setReady] = useState(false);
 
 	useEffect(() => {
 		let active = true;
@@ -30,7 +28,7 @@ export function SessionGuard({
 			active = false;
 			clearClientSession();
 			queryClient.clear();
-			setStatus("checking");
+			setReady(false);
 			window.location.replace("/signin");
 		};
 		const post = (action: "end" | "resume") =>
@@ -49,6 +47,7 @@ export function SessionGuard({
 		}
 
 		activateClientSession(sessionId);
+		setReady(true);
 		const resume = async () => {
 			if (!active || renewing) return;
 			renewing = true;
@@ -62,10 +61,8 @@ export function SessionGuard({
 				if (!response.ok) throw new Error("Session check failed");
 				const result = (await response.json()) as { expiresAt: string };
 				expiresAt = result.expiresAt;
-				setStatus("ready");
 			} catch {
-				if (active && !expiresAt) setStatus("error");
-				else if (expiresAt && Date.parse(expiresAt) <= Date.now()) leave();
+				if (expiresAt && Date.parse(expiresAt) <= Date.now()) leave();
 			} finally {
 				renewing = false;
 			}
@@ -101,23 +98,10 @@ export function SessionGuard({
 		};
 	}, [sessionId, queryClient]);
 
-	if (status === "ready") return children;
+	if (ready) return children;
 	return (
-		<div className="py-8 text-center text-sm">
-			<p role="status" className="text-ink-muted">
-				{status === "error"
-					? "Unable to check your session."
-					: "Checking your session…"}
-			</p>
-			{status === "error" && (
-				<button
-					type="button"
-					className="text-brand mt-4 min-h-11 px-4 font-medium"
-					onClick={() => window.location.reload()}
-				>
-					Try again
-				</button>
-			)}
-		</div>
+		<p role="status" className="text-ink-muted py-8 text-center text-sm">
+			Checking your session…
+		</p>
 	);
 }

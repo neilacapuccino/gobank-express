@@ -194,9 +194,14 @@ export async function moveStash(
 	});
 }
 
-export async function settleStashInterest(tx: Tx, savingsGoal: SavingsGoal) {
+export async function settleStashInterest(
+	tx: Tx,
+	savingsGoal: SavingsGoal,
+	persist = false,
+) {
 	const result = compoundInterest(savingsGoal, new Date());
-	if (result.days === 0) return savingsGoal;
+	if (result.days === 0 || (result.earned === 0 && !persist))
+		return savingsGoal;
 	const data = {
 		balance: result.balance,
 		interestRemainder: result.interestRemainder,
