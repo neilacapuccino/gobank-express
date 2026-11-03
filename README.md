@@ -212,7 +212,17 @@ Run inside `gobank/`.
 | `npm run db:studio` | Browse the database |
 | `npm test` | Unit tests |
 | `npm run test:integration` | Full banking flow against the database (creates and removes its own test accounts) |
+| `npm run test:e2e` | Browser smoke tests with Playwright in your installed Google Chrome (starts the dev server if needed) |
 | `npm run check:ci` | Format, lint, typecheck, unit tests and production build |
+
+## Deploy
+
+The app deploys to any Node host; on Vercel:
+
+1. Import the GitHub repository and set **Root Directory** to `gobank`.
+2. Add the same variables as `.env` in **Settings → Environment Variables**.
+3. Run `npm run db:migrate` once against the production database.
+4. For Google sign-in, add `https://<your-domain>/api/auth/google/callback` as a redirect URI in Google Cloud.
 
 ## Troubleshooting
 
