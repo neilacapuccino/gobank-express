@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
-import { getBitcoinChart, getBitcoinQuote } from "./bitcoin.market";
+import { getBitcoinChart, getBitcoinQuote } from "./bitcoin-market.server";
 import { getBitcoinPortfolio, tradeBitcoin } from "./bitcoin.service";
 import { BITCOIN_RANGES, MAX_CENTAVOS } from "./bitcoin.types";
 

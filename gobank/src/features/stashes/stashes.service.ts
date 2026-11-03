@@ -13,14 +13,15 @@ async function savingsTransaction<T>(
 		try {
 			return await db.$transaction(work, { isolationLevel: "Serializable" });
 		} catch (error) {
-			if (
-				asDatabaseError(error)?.code !== "P2034" &&
-				!(error instanceof AppError && error.code === "CONFLICT")
-			)
-				throw error;
+			const writeConflict = asDatabaseError(error)?.code === "P2034";
+			const changedMeanwhile =
+				error instanceof AppError && error.code === "CONFLICT";
+
+			if (!writeConflict && !changedMeanwhile) throw error;
 		}
 	}
-	return fail("CONFLICT", "Your savings changed. Please try again.");
+
+	return fail("CONFLICT", MESSAGES.savingsChanged);
 }
 
 export const listStashes = (userId: string) =>
@@ -29,9 +30,12 @@ export const listStashes = (userId: string) =>
 			where: { userId },
 			orderBy: { createdAt: "asc" },
 		});
+
 		const settled: typeof savingsGoals = [];
-		for (const savingsGoal of savingsGoals)
+		for (const savingsGoal of savingsGoals) {
 			settled.push(await settleStashInterest(tx, savingsGoal));
+		}
+
 		return settled;
 	});
 
@@ -105,8 +109,11 @@ export const moveMoney = (
 export const removeStash = (userId: string, id: string) =>
 	savingsTransaction(async (tx) => {
 		const savingsGoal = await settleOwnedStash(tx, userId, id, true);
-		if (savingsGoal.balance > 0)
+
+		if (savingsGoal.balance > 0) {
 			await moveStash(tx, userId, savingsGoal.id, -savingsGoal.balance);
+		}
+
 		await tx.savingsGoal.delete({ where: { id, userId, balance: 0 } });
 		return { returned: savingsGoal.balance };
 	});

@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { PIN_LENGTH, validatePin, validateUsername } from "./auth.rules";
+import {
+	PIN_LENGTH,
+	USERNAME_MAX,
+	USERNAME_MIN,
+	validatePin,
+	validateUsername,
+} from "./auth.rules";
 import {
 	isSupportedCardBrand,
 	type CardBrandId,
@@ -33,4 +39,17 @@ export const username = z
 	.refine(
 		(value) => validateUsername(value).state === "available",
 		"Choose another username",
+	);
+
+export const existingUsername = z
+	.string()
+	.trim()
+	.toLowerCase()
+	.transform((value) => value.replace(/^@/, ""))
+	.pipe(
+		z
+			.string()
+			.min(USERNAME_MIN)
+			.max(USERNAME_MAX)
+			.regex(/^[a-z0-9_]+$/),
 	);

@@ -1,7 +1,13 @@
 import { z } from "zod";
 import { profileFields } from "~/shared/lib/schemas";
-import { cardBrand, pin, pinChange, pinDigits, username } from "./auth.schemas";
-import { USERNAME_MAX, USERNAME_MIN } from "./auth.rules";
+import {
+	cardBrand,
+	existingUsername,
+	pin,
+	pinChange,
+	pinDigits,
+	username,
+} from "./auth.schemas";
 import { endSession } from "~/server/session";
 import {
 	createTRPCRouter,
@@ -39,23 +45,7 @@ export const authRouter = createTRPCRouter({
 		),
 
 	signIn: publicProcedure
-		.input(
-			z.object({
-				username: z
-					.string()
-					.trim()
-					.toLowerCase()
-					.transform((value) => value.replace(/^@/, ""))
-					.pipe(
-						z
-							.string()
-							.min(USERNAME_MIN)
-							.max(USERNAME_MAX)
-							.regex(/^[a-z0-9_]+$/),
-					),
-				pin: pinDigits,
-			}),
-		)
+		.input(z.object({ username: existingUsername, pin: pinDigits }))
 		.mutation(({ input }) => signIn(input.username, input.pin)),
 
 	signInWithGooglePin: publicProcedure

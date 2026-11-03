@@ -27,6 +27,9 @@ export type UsernameCheck =
 	| { state: "error"; message: string }
 	| { state: "available" };
 
+export const cleanUsernameInput = (raw: string) =>
+	raw.toLowerCase().replace(/[^a-z0-9_]/g, "");
+
 export function validateUsername(raw: string): UsernameCheck {
 	const value = raw.trim().toLowerCase();
 
@@ -58,13 +61,11 @@ export function validateUsername(raw: string): UsernameCheck {
 export function validatePin(pin: string): string | null {
 	if (!/^\d{6}$/.test(pin)) return `Use ${PIN_LENGTH} digits`;
 
-	if (/^(\d)\1+$/.test(pin)) {
-		return "Avoid repeating the same digit";
-	}
+	const sameDigitRepeated = /^(\d)\1+$/.test(pin);
+	if (sameDigitRepeated) return "Avoid repeating the same digit";
 
-	if ("0123456789".includes(pin) || "9876543210".includes(pin)) {
-		return "Avoid sequences like 123456";
-	}
+	const isSequence = "0123456789".includes(pin) || "9876543210".includes(pin);
+	if (isSequence) return "Avoid sequences like 123456";
 
 	return null;
 }
@@ -72,10 +73,12 @@ export function validatePin(pin: string): string | null {
 export const lockExpiry = (now: Date) =>
 	new Date(now.getTime() + PIN_LOCK_MINUTES * 60_000);
 
-export const lockMinutesLeft = (lockedUntil: Date | null, now: Date) =>
-	lockedUntil
-		? Math.max(0, Math.ceil((lockedUntil.getTime() - now.getTime()) / 60_000))
-		: 0;
+export function lockMinutesLeft(lockedUntil: Date | null, now: Date) {
+	if (!lockedUntil) return 0;
+
+	const millisecondsLeft = lockedUntil.getTime() - now.getTime();
+	return Math.max(0, Math.ceil(millisecondsLeft / 60_000));
+}
 
 export type RegistrationDraft = {
 	username: string;

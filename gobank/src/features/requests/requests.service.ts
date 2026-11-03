@@ -60,10 +60,7 @@ export const respondToRequest = (
 
 			return sent;
 		},
-		{
-			timeout: 15000,
-			maxWait: 10000,
-		},
+		{ maxWait: 10_000, timeout: 15_000 },
 	);
 
 export async function cancelRequest(userId: string, id: string) {

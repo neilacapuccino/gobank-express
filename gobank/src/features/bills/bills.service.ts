@@ -20,6 +20,7 @@ export async function payBill(
 		where: { id: billerId, active: true },
 	});
 	if (!biller) return fail("NOT_FOUND", "This biller is not available.");
+
 	return db.$transaction((tx) =>
 		spend(tx, {
 			userId,

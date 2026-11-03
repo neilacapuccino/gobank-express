@@ -1,7 +1,27 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
+type SignedBody = { payload?: unknown; expiresAt?: unknown };
+
 const sign = (body: string, secret: string) =>
 	createHmac("sha256", secret).update(body).digest("base64url");
+
+const encode = (value: unknown) =>
+	Buffer.from(JSON.stringify(value)).toString("base64url");
+
+function decode(body: string): SignedBody | null {
+	try {
+		return JSON.parse(Buffer.from(body, "base64url").toString()) as SignedBody;
+	} catch {
+		return null;
+	}
+}
+
+function signaturesMatch(body: string, signature: string, secret: string) {
+	const expected = Buffer.from(sign(body, secret));
+	const given = Buffer.from(signature);
+
+	return expected.length === given.length && timingSafeEqual(expected, given);
+}
 
 export function signToken(
 	payload: unknown,
@@ -9,28 +29,20 @@ export function signToken(
 	ttlMs: number,
 	now = Date.now(),
 ) {
-	const body = Buffer.from(
-		JSON.stringify({ payload, expiresAt: now + ttlMs }),
-	).toString("base64url");
+	const body = encode({ payload, expiresAt: now + ttlMs });
+
 	return `${body}.${sign(body, secret)}`;
 }
 
 export function readToken(token: string, secret: string, now = Date.now()) {
 	const [body, signature, extra] = token.split(".");
-	if (!body || !signature || extra !== undefined) return null;
-	const expected = Buffer.from(sign(body, secret));
-	const given = Buffer.from(signature);
-	if (expected.length !== given.length || !timingSafeEqual(expected, given))
-		return null;
-	try {
-		const parsed = JSON.parse(Buffer.from(body, "base64url").toString()) as {
-			payload?: unknown;
-			expiresAt?: unknown;
-		};
-		if (typeof parsed.expiresAt !== "number" || parsed.expiresAt <= now)
-			return null;
-		return { payload: parsed.payload };
-	} catch {
-		return null;
-	}
+
+	const wellFormed = body && signature && extra === undefined;
+	if (!wellFormed || !signaturesMatch(body, signature, secret)) return null;
+
+	const decoded = decode(body);
+	const expiresAt = decoded?.expiresAt;
+	if (typeof expiresAt !== "number" || expiresAt <= now) return null;
+
+	return { payload: decoded?.payload };
 }

@@ -4,7 +4,7 @@ import {
 	pointsEarned,
 } from "~/shared/lib/money";
 import { compoundInterest } from "~/shared/lib/savings-interest";
-import { newReference } from "~/server/codes";
+import { newReference } from "~/server/identifiers";
 import { asDatabaseError, fail, MESSAGES } from "~/server/errors";
 import type {
 	CardKind,
@@ -30,44 +30,68 @@ type Entry = {
 	details?: Prisma.InputJsonObject;
 };
 
-const SPENDING: TransactionKind[] = ["transfer", "bill", "load"];
-const EARNS_POINTS: TransactionKind[] = ["transfer", "bill"];
+type Spending = Omit<Entry, "points"> & { card: CardKind };
 
-const startOfManilaDay = (now: Date) =>
-	new Date(
-		`${now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" })}T00:00:00+08:00`,
-	);
+const SPENDING_KINDS: TransactionKind[] = ["transfer", "bill", "load"];
+const KINDS_THAT_EARN_POINTS: TransactionKind[] = ["transfer", "bill"];
 
-const guard = <T>(
-	query: Promise<T>,
-	message: string | (() => Promise<string>),
-) =>
-	query.catch(async (error: unknown) => {
-		if (asDatabaseError(error)?.code === "P2025") {
-			return fail(
-				"BAD_REQUEST",
-				typeof message === "string" ? message : await message(),
-			);
-		}
-		throw error;
+const startOfManilaDay = (now: Date) => {
+	const manilaDate = now.toLocaleDateString("en-CA", {
+		timeZone: "Asia/Manila",
 	});
+
+	return new Date(`${manilaDate}T00:00:00+08:00`);
+};
+
+async function orFailWith<T>(
+	conditionalUpdate: Promise<T>,
+	explainFailure: string | (() => Promise<string>),
+) {
+	try {
+		return await conditionalUpdate;
+	} catch (error) {
+		const noRowMatched = asDatabaseError(error)?.code === "P2025";
+		if (!noRowMatched) throw error;
+
+		const message =
+			typeof explainFailure === "string"
+				? explainFailure
+				: await explainFailure();
+		return fail("BAD_REQUEST", message);
+	}
+}
+
+async function whyPostFailed(
+	tx: Tx,
+	userId: string,
+	amount: number,
+	points: number,
+) {
+	const current = await tx.user.findUniqueOrThrow({
+		where: { id: userId },
+		select: { balance: true, points: true },
+	});
+
+	if (current.balance + amount < 0) return MESSAGES.insufficientBalance;
+	if (current.points + points < 0) return MESSAGES.notEnoughPoints;
+	return MESSAGES.accountLimit;
+}
 
 export async function post(
 	tx: Tx,
 	{ userId, amount, points = 0, reference = newReference(), ...rest }: Entry,
 ) {
-	const user = await guard(
+	const moneyOut = Math.max(0, -amount);
+	const moneyIn = Math.max(0, amount);
+	const pointsOut = Math.max(0, -points);
+	const pointsIn = Math.max(0, points);
+
+	const user = await orFailWith(
 		tx.user.update({
 			where: {
 				id: userId,
-				balance: {
-					gte: Math.max(0, -amount),
-					lte: MAX_BALANCE_CENTAVOS - Math.max(0, amount),
-				},
-				points: {
-					gte: Math.max(0, -points),
-					lte: MAX_REWARD_POINTS - Math.max(0, points),
-				},
+				balance: { gte: moneyOut, lte: MAX_BALANCE_CENTAVOS - moneyIn },
+				points: { gte: pointsOut, lte: MAX_REWARD_POINTS - pointsIn },
 			},
 			data: {
 				balance: { increment: amount },
@@ -75,15 +99,7 @@ export async function post(
 			},
 			select: { balance: true },
 		}),
-		async () => {
-			const current = await tx.user.findUniqueOrThrow({
-				where: { id: userId },
-				select: { balance: true, points: true },
-			});
-			if (current.balance + amount < 0) return MESSAGES.insufficientBalance;
-			if (current.points + points < 0) return MESSAGES.notEnoughPoints;
-			return MESSAGES.accountLimit;
-		},
+		() => whyPostFailed(tx, userId, amount, points),
 	);
 
 	return tx.transaction.create({
@@ -102,20 +118,19 @@ export async function spentToday(tx: Tx, userId: string) {
 	const today = await tx.transaction.aggregate({
 		where: {
 			userId,
-			kind: { in: SPENDING },
+			kind: { in: SPENDING_KINDS },
 			amount: { lt: 0 },
 			createdAt: { gte: startOfManilaDay(new Date()) },
 		},
 		_sum: { amount: true },
 	});
+
 	return -(today._sum.amount ?? 0);
 }
 
-export async function spend(
-	tx: Tx,
-	{ card, ...entry }: Omit<Entry, "points"> & { card: CardKind },
-) {
+export async function spend(tx: Tx, { card, ...entry }: Spending) {
 	await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${entry.userId} FOR UPDATE`;
+
 	const user = await tx.user.findUniqueOrThrow({
 		where: { id: entry.userId },
 		select: {
@@ -126,22 +141,29 @@ export async function spend(
 			},
 		},
 	});
-	const used = user.cards[0];
-	if (!used) return fail("NOT_FOUND", "Your card details were not found.");
-	if (used.locked) fail("BAD_REQUEST", MESSAGES.cardLocked);
+
+	const usedCard = user.cards[0];
+	if (!usedCard) return fail("NOT_FOUND", MESSAGES.cardNotFound);
+	if (usedCard.locked) fail("BAD_REQUEST", MESSAGES.cardLocked);
 
 	const spent = await spentToday(tx, entry.userId);
-	if (entry.amount + spent > user.cardDailyLimit) {
+	if (spent + entry.amount > user.cardDailyLimit) {
 		fail("BAD_REQUEST", MESSAGES.overDailyLimit);
 	}
+
+	const earnsPoints = KINDS_THAT_EARN_POINTS.includes(entry.kind);
 
 	return post(tx, {
 		...entry,
 		amount: -entry.amount,
-		points: EARNS_POINTS.includes(entry.kind) ? pointsEarned(entry.amount) : 0,
+		points: earnsPoints ? pointsEarned(entry.amount) : 0,
 		details: {
 			...entry.details,
-			card: { kind: card, network: used.brand, last4: used.number.slice(-4) },
+			card: {
+				kind: card,
+				network: usedCard.brand,
+				last4: usedCard.number.slice(-4),
+			},
 		},
 	});
 }
@@ -159,6 +181,7 @@ export async function transfer(
 		WHERE "id" IN (${from.id}, ${to.id})
 		ORDER BY "id" FOR UPDATE
 	`;
+
 	const reference = newReference();
 	const details = note ? { note } : undefined;
 
@@ -172,6 +195,7 @@ export async function transfer(
 		details,
 		card,
 	});
+
 	await post(tx, {
 		userId: to.id,
 		kind: "transfer",
@@ -181,6 +205,7 @@ export async function transfer(
 		counterpartyId: from.id,
 		details,
 	});
+
 	return sent;
 }
 
@@ -190,7 +215,7 @@ export async function moveStash(
 	savingsGoalId: string,
 	amount: number,
 ) {
-	const savingsGoal = await guard(
+	const savingsGoal = await orFailWith(
 		tx.savingsGoal.update({
 			where: { id: savingsGoalId, userId, balance: { gte: -amount } },
 			data: { balance: { increment: amount } },
@@ -198,15 +223,42 @@ export async function moveStash(
 		MESSAGES.notEnoughInStash,
 	);
 
+	const action = amount > 0 ? "deposit" : "withdrawal";
+
 	return post(tx, {
 		userId,
 		kind: "stash",
-		title:
-			amount > 0
-				? `GoalSave deposit · ${savingsGoal.name}`
-				: `GoalSave withdrawal · ${savingsGoal.name}`,
+		title: `GoalSave ${action} · ${savingsGoal.name}`,
 		amount: -amount,
 		savingsGoalId,
+	});
+}
+
+async function recordInterest(
+	tx: Tx,
+	savingsGoal: SavingsGoal,
+	result: ReturnType<typeof compoundInterest>,
+) {
+	const user = await tx.user.findUniqueOrThrow({
+		where: { id: savingsGoal.userId },
+		select: { balance: true },
+	});
+
+	await tx.transaction.create({
+		data: {
+			userId: savingsGoal.userId,
+			savingsGoalId: savingsGoal.id,
+			reference: newReference(),
+			kind: "interest",
+			title: `Interest earned · ${savingsGoal.name}`,
+			amount: result.earned,
+			balanceAfter: user.balance,
+			details: {
+				savingsBalanceAfter: result.balance,
+				annualRate: savingsGoal.annualInterestRate,
+				days: result.days,
+			},
+		},
 	});
 }
 
@@ -216,14 +268,17 @@ export async function settleStashInterest(
 	persist = false,
 ) {
 	const result = compoundInterest(savingsGoal, new Date());
-	if (result.days === 0 || (result.earned === 0 && !persist))
-		return savingsGoal;
-	const data = {
+
+	const nothingToSave = result.days === 0 || (result.earned === 0 && !persist);
+	if (nothingToSave) return savingsGoal;
+
+	const settled = {
 		balance: result.balance,
 		interestRemainder: result.interestRemainder,
 		interestCalculatedAt: result.interestCalculatedAt,
 		updatedAt: result.interestCalculatedAt,
 	};
+
 	const updated = await tx.savingsGoal.updateMany({
 		where: {
 			id: savingsGoal.id,
@@ -231,34 +286,11 @@ export async function settleStashInterest(
 			balance: savingsGoal.balance,
 			interestCalculatedAt: savingsGoal.interestCalculatedAt,
 		},
-		data,
+		data: settled,
 	});
-	if (updated.count !== 1)
-		fail("CONFLICT", "Your savings changed. Please try again.");
-	if (result.earned > 0) {
-		const user = await tx.user.findUniqueOrThrow({
-			where: { id: savingsGoal.userId },
-			select: { balance: true },
-		});
-		await tx.transaction.create({
-			data: {
-				userId: savingsGoal.userId,
-				savingsGoalId: savingsGoal.id,
-				reference: newReference(),
-				kind: "interest",
-				title: `Interest earned · ${savingsGoal.name}`,
-				amount: result.earned,
-				balanceAfter: user.balance,
-				details: {
-					savingsBalanceAfter: result.balance,
-					annualRate: savingsGoal.annualInterestRate,
-					days: result.days,
-				},
-			},
-		});
-	}
-	return {
-		...savingsGoal,
-		...data,
-	};
+	if (updated.count !== 1) fail("CONFLICT", MESSAGES.savingsChanged);
+
+	if (result.earned > 0) await recordInterest(tx, savingsGoal, result);
+
+	return { ...savingsGoal, ...settled };
 }

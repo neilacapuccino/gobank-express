@@ -9,12 +9,13 @@ export const FILTER_LABELS: Record<ActivityFilter, string> = {
 
 type AmountWhere = { amount?: { gt: number } | { lt: number } };
 
-export const filterWhere = (filter: ActivityFilter): AmountWhere =>
-	filter === "in"
-		? { amount: { gt: 0 } }
-		: filter === "out"
-			? { amount: { lt: 0 } }
-			: {};
+const FILTER_WHERE: Record<ActivityFilter, AmountWhere> = {
+	all: {},
+	in: { amount: { gt: 0 } },
+	out: { amount: { lt: 0 } },
+};
+
+export const filterWhere = (filter: ActivityFilter) => FILTER_WHERE[filter];
 
 const dayKey = (date: Date) =>
 	`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
@@ -39,9 +40,12 @@ export function groupByDay<T extends { createdAt: Date }>(
 	for (const item of items) {
 		const key = dayKey(item.createdAt);
 		const last = groups.at(-1);
-		if (last?.key === key) last.items.push(item);
-		else
+		if (last?.key === key) {
+			last.items.push(item);
+		} else {
 			groups.push({ key, label: dayLabel(item.createdAt, now), items: [item] });
+		}
 	}
+
 	return groups;
 }

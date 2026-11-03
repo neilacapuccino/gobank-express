@@ -1,13 +1,15 @@
 import { pointsValue } from "~/shared/lib/money";
+import { activityFields } from "~/features/activity/activity.fields";
 import { db } from "~/server/db";
 import { post } from "~/server/ledger";
+import { pageArgs, toPage } from "~/server/pagination";
 
 export const redeemPoints = (userId: string, points: number) =>
 	db.$transaction((tx) =>
 		post(tx, {
 			userId,
 			kind: "reward",
-			title: `Cash back · ${points.toLocaleString()} points`,
+			title: `Cash back · ${points.toLocaleString("en-PH")} points`,
 			amount: pointsValue(points),
 			points: -points,
 		}),
@@ -28,6 +30,7 @@ export async function getRewardsSummary(userId: string) {
 			_sum: { points: true, amount: true },
 		}),
 	]);
+
 	return {
 		points: user.points,
 		lifetimeEarned: earned._sum.points ?? 0,
@@ -41,23 +44,12 @@ export async function listRewardActivity(
 	cursor: string | null | undefined,
 	limit: number,
 ) {
-	const items = await db.transaction.findMany({
+	const rows = await db.transaction.findMany({
 		where: { userId, points: { not: 0 } },
-		select: {
-			id: true,
-			reference: true,
-			kind: true,
-			title: true,
-			amount: true,
-			points: true,
-			createdAt: true,
-		},
+		select: activityFields,
 		orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-		take: limit + 1,
-		...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+		...pageArgs(cursor, limit),
 	});
-	const hasMore = items.length > limit;
-	if (hasMore) items.pop();
-	const next = hasMore ? items.at(-1)?.id : null;
-	return { items, next };
+
+	return toPage(rows, limit);
 }

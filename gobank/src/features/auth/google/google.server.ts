@@ -6,12 +6,8 @@ const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
-export const googleEnabled = () =>
-	Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.AUTH_SECRET);
-
-const redirectUri = (origin: string) => `${origin}/api/auth/google/callback`;
-
 const tokenResponse = z.object({ access_token: z.string().min(1) });
+
 const profileResponse = z.object({
 	sub: z.string().min(1),
 	email: z.string().optional(),
@@ -26,9 +22,20 @@ export type GoogleProfile = {
 	name: string;
 };
 
+export const googleEnabled = () =>
+	Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.AUTH_SECRET);
+
+const redirectUri = (origin: string) => `${origin}/api/auth/google/callback`;
+
+const randomToken = () => randomBytes(32).toString("base64url");
+
+const codeChallengeFor = (verifier: string) =>
+	createHash("sha256").update(verifier).digest("base64url");
+
 export function startGoogleSignIn(origin: string) {
-	const state = randomBytes(32).toString("base64url");
-	const verifier = randomBytes(32).toString("base64url");
+	const state = randomToken();
+	const verifier = randomToken();
+
 	const url = new URL(AUTH_URL);
 	url.search = new URLSearchParams({
 		client_id: env.GOOGLE_CLIENT_ID ?? "",
@@ -36,19 +43,20 @@ export function startGoogleSignIn(origin: string) {
 		response_type: "code",
 		scope: "openid email profile",
 		state,
-		code_challenge: createHash("sha256").update(verifier).digest("base64url"),
+		code_challenge: codeChallengeFor(verifier),
 		code_challenge_method: "S256",
 		prompt: "select_account",
 	}).toString();
+
 	return { url: url.toString(), state, verifier };
 }
 
-export async function fetchGoogleProfile(
+async function exchangeCodeForAccessToken(
 	code: string,
 	verifier: string,
 	origin: string,
-): Promise<GoogleProfile> {
-	const tokenReply = await fetch(TOKEN_URL, {
+) {
+	const reply = await fetch(TOKEN_URL, {
 		method: "POST",
 		headers: { "content-type": "application/x-www-form-urlencoded" },
 		body: new URLSearchParams({
@@ -61,15 +69,27 @@ export async function fetchGoogleProfile(
 		}),
 		cache: "no-store",
 	});
-	if (!tokenReply.ok) throw new Error("Google rejected the sign-in code");
-	const { access_token } = tokenResponse.parse(await tokenReply.json());
+	if (!reply.ok) throw new Error("Google rejected the sign-in code");
 
-	const profileReply = await fetch(USERINFO_URL, {
-		headers: { authorization: `Bearer ${access_token}` },
+	const { access_token } = tokenResponse.parse(await reply.json());
+	return access_token;
+}
+
+export async function fetchGoogleProfile(
+	code: string,
+	verifier: string,
+	origin: string,
+): Promise<GoogleProfile> {
+	const accessToken = await exchangeCodeForAccessToken(code, verifier, origin);
+
+	const reply = await fetch(USERINFO_URL, {
+		headers: { authorization: `Bearer ${accessToken}` },
 		cache: "no-store",
 	});
-	if (!profileReply.ok) throw new Error("Google did not return a profile");
-	const profile = profileResponse.parse(await profileReply.json());
+	if (!reply.ok) throw new Error("Google did not return a profile");
+
+	const profile = profileResponse.parse(await reply.json());
+
 	return {
 		sub: profile.sub,
 		email: profile.email ?? null,

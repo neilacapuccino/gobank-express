@@ -41,9 +41,11 @@ export const getSpending = async (userId: string) => {
 		}),
 		spentToday(db, userId),
 	]);
-	const { cards, ...rest } = account;
+
+	const { cards, ...limits } = account;
+
 	return {
-		...rest,
+		...limits,
 		dailyLeft: Math.max(0, account.cardDailyLimit - spent),
 		cards: cards.map(({ number, ...card }) => ({
 			...card,

@@ -1,4 +1,5 @@
 import { db } from "~/server/db";
+import { pageArgs, toPage } from "~/server/pagination";
 import { activityFields, MAIN_ACCOUNT_KINDS } from "./activity.fields";
 import { filterWhere, type ActivityFilter } from "./activity.rules";
 
@@ -8,17 +9,14 @@ export async function listActivity(
 	limit: number,
 	filter: ActivityFilter = "all",
 ) {
-	const items = await db.transaction.findMany({
+	const rows = await db.transaction.findMany({
 		where: { userId, kind: MAIN_ACCOUNT_KINDS, ...filterWhere(filter) },
 		select: activityFields,
 		orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-		take: limit + 1,
-		...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+		...pageArgs(cursor, limit),
 	});
-	const hasMore = items.length > limit;
-	if (hasMore) items.pop();
-	const next = hasMore ? items.at(-1)?.id : null;
-	return { items, next };
+
+	return toPage(rows, limit);
 }
 
 export const getTransaction = (userId: string, reference: string) =>

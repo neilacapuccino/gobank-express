@@ -11,22 +11,36 @@ export const PARTY = {
 	profilePhoto: true,
 } as const;
 
-export async function findRecipient(handle: string, self: string) {
+const LOOKS_LIKE_PHONE = /^[+()\d\s-]+$/;
+const PH_MOBILE = /^09\d{9}$/;
+
+function recipientSearch(handle: string) {
 	const input = handle.trim().toLowerCase();
 	const value = input.replace(/^@/, "");
-	const mobile = /^[+()\d\s-]+$/.test(value) ? normalizeMobile(value) : null;
+
+	if (input.startsWith("@")) return { username: value };
+
 	const gmail = normalizeGmail(value);
-	const where = input.startsWith("@")
-		? { username: value }
-		: {
-				OR: [
-					{ accountNumber: value.replace(/[\s-]/g, "") },
-					{ username: value },
-					...(gmail ? [{ gmail, googleId: { not: null } }] : []),
-					...(mobile && /^09\d{9}$/.test(mobile) ? [{ mobile }] : []),
-				],
-			};
-	const user = await db.user.findFirst({ where, select: PARTY });
+	const mobile = LOOKS_LIKE_PHONE.test(value) ? normalizeMobile(value) : null;
+
+	const byGmail = gmail ? [{ gmail, googleId: { not: null } }] : [];
+	const byMobile = mobile && PH_MOBILE.test(mobile) ? [{ mobile }] : [];
+
+	return {
+		OR: [
+			{ accountNumber: value.replace(/[\s-]/g, "") },
+			{ username: value },
+			...byGmail,
+			...byMobile,
+		],
+	};
+}
+
+export async function findRecipient(handle: string, self: string) {
+	const user = await db.user.findFirst({
+		where: recipientSearch(handle),
+		select: PARTY,
+	});
 
 	if (!user) return fail("NOT_FOUND", MESSAGES.recipientNotFound);
 	if (user.id === self) fail("BAD_REQUEST", MESSAGES.ownAccount);
