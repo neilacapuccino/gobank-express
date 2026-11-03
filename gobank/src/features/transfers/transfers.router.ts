@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { centavos, optionalText } from "~/shared/lib/schemas";
+import { cardKind, centavos, optionalText } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import {
 	findRecipient,
@@ -22,9 +22,10 @@ export const transfersRouter = createTRPCRouter({
 				to: z.string().trim().min(1),
 				amount: centavos,
 				note: optionalText(120),
+				card: cardKind,
 			}),
 		)
 		.mutation(({ ctx, input }) =>
-			sendMoney(ctx.userId, input.to, input.amount, input.note),
+			sendMoney(ctx.userId, input.to, input.amount, input.note, input.card),
 		),
 });

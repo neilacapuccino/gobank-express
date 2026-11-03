@@ -7,6 +7,7 @@ import { compoundInterest } from "~/shared/lib/savings-interest";
 import { newReference } from "~/server/codes";
 import { asDatabaseError, fail, MESSAGES } from "~/server/errors";
 import type {
+	CardKind,
 	Prisma,
 	SavingsGoal,
 	TransactionKind,
@@ -26,7 +27,7 @@ type Entry = {
 	counterpartyId?: string;
 	savingsGoalId?: string;
 	billerId?: string;
-	details?: Prisma.InputJsonValue;
+	details?: Prisma.InputJsonObject;
 };
 
 const SPENDING: TransactionKind[] = ["transfer", "bill", "load"];
@@ -110,13 +111,24 @@ export async function spentToday(tx: Tx, userId: string) {
 	return -(today._sum.amount ?? 0);
 }
 
-export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
+export async function spend(
+	tx: Tx,
+	{ card, ...entry }: Omit<Entry, "points"> & { card: CardKind },
+) {
 	await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${entry.userId} FOR UPDATE`;
 	const user = await tx.user.findUniqueOrThrow({
 		where: { id: entry.userId },
-		select: { cardLocked: true, cardDailyLimit: true },
+		select: {
+			cardDailyLimit: true,
+			cards: {
+				where: { kind: card },
+				select: { brand: true, number: true, locked: true },
+			},
+		},
 	});
-	if (user.cardLocked) fail("BAD_REQUEST", MESSAGES.cardLocked);
+	const used = user.cards[0];
+	if (!used) return fail("NOT_FOUND", "Your card details were not found.");
+	if (used.locked) fail("BAD_REQUEST", MESSAGES.cardLocked);
 
 	const spent = await spentToday(tx, entry.userId);
 	if (entry.amount + spent > user.cardDailyLimit) {
@@ -127,6 +139,10 @@ export async function spend(tx: Tx, entry: Omit<Entry, "points">) {
 		...entry,
 		amount: -entry.amount,
 		points: EARNS_POINTS.includes(entry.kind) ? pointsEarned(entry.amount) : 0,
+		details: {
+			...entry.details,
+			card: { kind: card, network: used.brand, last4: used.number.slice(-4) },
+		},
 	});
 }
 
@@ -135,6 +151,7 @@ export async function transfer(
 	from: Party,
 	to: Party,
 	amount: number,
+	card: CardKind,
 	note?: string | null,
 ) {
 	await tx.$queryRaw`
@@ -153,6 +170,7 @@ export async function transfer(
 		reference,
 		counterpartyId: to.id,
 		details,
+		card,
 	});
 	await post(tx, {
 		userId: to.id,

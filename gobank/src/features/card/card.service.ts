@@ -8,11 +8,11 @@ import { fail } from "~/server/errors";
 import { isSupportedCardBrand, type CardBrandId } from "./card-brands";
 
 type CardSettings = {
-	cardLocked?: boolean;
+	lock?: { kind: CardKind; locked: boolean };
 	cardDailyLimit?: number;
 };
 
-type CardPolicy = { cardLocked: boolean; cardDailyLimit: number };
+type CardPolicy = { cardDailyLimit: number };
 type Tx = Prisma.TransactionClient;
 
 const CARD_FIELDS = {
@@ -21,6 +21,7 @@ const CARD_FIELDS = {
 	number: true,
 	expiresAt: true,
 	cvvEncrypted: true,
+	locked: true,
 	user: { select: { fullName: true } },
 } as const;
 
@@ -54,7 +55,7 @@ const storedCvv = (card: { number: string; cvvEncrypted: string | null }) => {
 
 async function lockCardAccount(tx: Tx, userId: string) {
 	const [account] = await tx.$queryRaw<CardPolicy[]>`
-		SELECT "cardLocked", "cardDailyLimit" FROM "User"
+		SELECT "cardDailyLimit" FROM "User"
 		WHERE "id" = ${userId} FOR UPDATE
 	`;
 	if (!account) return fail("NOT_FOUND", "This account no longer exists.");
@@ -139,7 +140,6 @@ export async function getCard(userId: string) {
 	const { cards, ...account } = await db.user.findUniqueOrThrow({
 		where: { id: userId },
 		select: {
-			cardLocked: true,
 			cardDailyLimit: true,
 			cards: { select: CARD_FIELDS },
 		},
@@ -152,13 +152,23 @@ export async function getCard(userId: string) {
 	}, TRANSACTION_OPTIONS);
 }
 
-export const updateCard = (userId: string, settings: CardSettings) =>
+export const updateCard = (
+	userId: string,
+	{ lock, cardDailyLimit }: CardSettings,
+) =>
 	db.$transaction(async (tx) => {
 		await lockCardAccount(tx, userId);
+		await accountCards(tx, userId);
+		if (lock)
+			await tx.card.update({
+				where: { userId_kind: { userId, kind: lock.kind } },
+				data: { locked: lock.locked },
+				select: { id: true },
+			});
 		const account = await tx.user.update({
 			where: { id: userId },
-			data: settings,
-			select: { cardLocked: true, cardDailyLimit: true },
+			data: cardDailyLimit === undefined ? {} : { cardDailyLimit },
+			select: { cardDailyLimit: true },
 		});
 		return { ...(await accountCards(tx, userId)), ...account };
 	}, TRANSACTION_OPTIONS);

@@ -57,7 +57,6 @@ model User {
   gmail             String?   @unique
   googleId          String?   @unique
   accountNumber     String    @unique
-  cardLocked        Boolean   @default(false)
   cardDailyLimit    Int       @default(2000000)
   balance           Int       @default(0)
   points            Int       @default(0)
@@ -112,6 +111,7 @@ model Card {
   number       String    @unique
   cvvHash      String?
   cvvEncrypted String?
+  locked       Boolean   @default(false)
   expiresAt    DateTime
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

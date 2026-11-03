@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { centavos, optionalText } from "~/shared/lib/schemas";
+import { cardKind, centavos, optionalText } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import {
 	cancelRequest,
@@ -22,9 +22,15 @@ export const requestsRouter = createTRPCRouter({
 		),
 
 	respond: protectedProcedure
-		.input(z.object({ id: z.string().min(1), accept: z.boolean() }))
+		.input(
+			z.object({
+				id: z.string().min(1),
+				accept: z.boolean(),
+				card: cardKind.default("physical"),
+			}),
+		)
 		.mutation(({ ctx, input }) =>
-			respondToRequest(ctx.userId, input.id, input.accept),
+			respondToRequest(ctx.userId, input.id, input.accept, input.card),
 		),
 
 	cancel: protectedProcedure

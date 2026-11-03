@@ -15,6 +15,8 @@ import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { useSpendLimit } from "~/shared/hooks/use-spend-limit";
 import { CardLockedNotice } from "~/features/card/components/card-locked-notice";
+import { CardPicker } from "~/features/card/components/card-picker";
+import { paidWithDetail } from "~/features/card/card-label";
 import { CATEGORIES, findCategory, type Category } from "../bill-categories";
 import { BillerCard } from "./biller-card";
 import { CategoryCard } from "./category-card";
@@ -59,6 +61,7 @@ export function BillPayment() {
 						{ label: "Date", value: dateTime(pay.data.createdAt) },
 						{ label: "Points earned", value: `+${pay.data.points}` },
 						{ label: "Balance", value: peso(pay.data.balanceAfter) },
+						...paidWithDetail(pay.data.details),
 					]}
 				>
 					<p className="text-ink text-[14px] font-medium">{biller?.name}</p>
@@ -95,6 +98,12 @@ export function BillPayment() {
 					>
 						<p className="text-ink text-[14px] font-medium">{biller.name}</p>
 					</TransactionSummary>
+					<CardPicker
+						cards={limit.cards}
+						value={limit.card}
+						onChange={limit.setCard}
+						disabled={pay.isPending}
+					/>
 					<FormError error={pay.error ? errorMessage(pay.error) : null} />
 					<div className="mt-auto pt-8">
 						<Button
@@ -105,6 +114,7 @@ export function BillPayment() {
 									billerId: biller.id,
 									accountNumber,
 									amount: amountCentavos,
+									card: limit.card,
 								});
 							}}
 						>

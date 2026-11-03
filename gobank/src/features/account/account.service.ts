@@ -30,13 +30,25 @@ export const getSpending = async (userId: string) => {
 	const [account, spent] = await Promise.all([
 		db.user.findUniqueOrThrow({
 			where: { id: userId },
-			select: { balance: true, cardLocked: true, cardDailyLimit: true },
+			select: {
+				balance: true,
+				cardDailyLimit: true,
+				cards: {
+					select: { kind: true, brand: true, number: true, locked: true },
+					orderBy: { kind: "asc" },
+				},
+			},
 		}),
 		spentToday(db, userId),
 	]);
+	const { cards, ...rest } = account;
 	return {
-		...account,
+		...rest,
 		dailyLeft: Math.max(0, account.cardDailyLimit - spent),
+		cards: cards.map(({ number, ...card }) => ({
+			...card,
+			last4: number.slice(-4),
+		})),
 	};
 };
 

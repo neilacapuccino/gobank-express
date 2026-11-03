@@ -4,6 +4,7 @@ import { buttonClass } from "~/shared/ui/button";
 import { PageHeader } from "~/shared/ui/page-header";
 import { TransactionSummary } from "~/shared/ui/transaction-summary";
 import type { RouterOutputs } from "~/trpc/react";
+import { paidWithDetail } from "~/features/card/card-label";
 
 export function ReceiptScreen({
 	transaction,
@@ -29,6 +30,7 @@ export function ReceiptScreen({
 			label: "Points",
 			value: transaction.points.toLocaleString(),
 		});
+	details.push(...paidWithDetail(transaction.details));
 	return (
 		<div className="flex flex-1 flex-col gap-7">
 			<PageHeader title="Receipt" back="/transactions" />

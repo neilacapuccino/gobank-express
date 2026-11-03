@@ -10,6 +10,9 @@ import { Button } from "~/shared/ui/button";
 import { PageHeader } from "~/shared/ui/page-header";
 import { errorMessage } from "~/trpc/error-message";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { CardPicker } from "~/features/card/components/card-picker";
+import { useSpendLimit } from "~/shared/hooks/use-spend-limit";
+import { MAX_TRANSACTION_CENTAVOS } from "~/shared/lib/money";
 
 type MoneyRequest = RouterOutputs["notifications"]["list"]["items"][number];
 type Direction = "received" | "sent";
@@ -147,6 +150,7 @@ function RequestCard({
 
 function RequestActions({ id, received }: { id: string; received: boolean }) {
 	const utils = api.useUtils();
+	const limit = useSpendLimit(MAX_TRANSACTION_CENTAVOS);
 	const [reviewing, setReviewing] = useState(false);
 	const refresh = async () => {
 		await Promise.all([
@@ -181,10 +185,16 @@ function RequestActions({ id, received }: { id: string; received: boolean }) {
 				<p className="text-ink-soft mb-3 text-[13px]">
 					Pay from your main account?
 				</p>
+				<CardPicker
+					cards={limit.cards}
+					value={limit.card}
+					onChange={limit.setCard}
+					disabled={pending}
+				/>
 				<FormError error={error ? errorMessage(error) : null} />
 				<Button
 					disabled={pending}
-					onClick={() => respond.mutate({ id, accept: true })}
+					onClick={() => respond.mutate({ id, accept: true, card: limit.card })}
 				>
 					{pending ? "Paying…" : "Confirm payment"}
 				</Button>

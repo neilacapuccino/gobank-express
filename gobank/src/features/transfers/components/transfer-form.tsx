@@ -21,6 +21,8 @@ import {
 import { useRecipientSearch } from "~/shared/hooks/use-recipient-search";
 import { useSpendLimit } from "~/shared/hooks/use-spend-limit";
 import { CardLockedNotice } from "~/features/card/components/card-locked-notice";
+import { CardPicker } from "~/features/card/components/card-picker";
+import { paidWithDetail } from "~/features/card/card-label";
 
 export function TransferForm() {
 	const router = useRouter();
@@ -62,6 +64,7 @@ export function TransferForm() {
 						{ label: "Reference", value: send.data.reference },
 						{ label: "Date", value: dateTime(send.data.createdAt) },
 						{ label: "Balance", value: peso(send.data.balanceAfter) },
+						...paidWithDetail(send.data.details),
 					]}
 				/>
 			</TransactionReceipt>
@@ -157,6 +160,12 @@ export function TransferForm() {
 						amount={amountCentavos}
 						note={note.trim()}
 					/>
+					<CardPicker
+						cards={limit.cards}
+						value={limit.card}
+						onChange={limit.setCard}
+						disabled={send.isPending}
+					/>
 					<FormError error={send.error ? errorMessage(send.error) : null} />
 					<div className="mt-auto pt-8">
 						<Button
@@ -167,6 +176,7 @@ export function TransferForm() {
 									to: `@${search.recipient.username}`,
 									amount: amountCentavos,
 									note: note.trim(),
+									card: limit.card,
 								});
 							}}
 						>

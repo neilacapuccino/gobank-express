@@ -2,6 +2,7 @@ import { normalizeGmail, normalizeMobile } from "~/shared/lib/contact";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { transfer } from "~/server/ledger";
+import type { CardKind } from "../../../generated/prisma";
 
 export const PARTY = {
 	id: true,
@@ -65,6 +66,7 @@ export async function sendMoney(
 	to: string,
 	amount: number,
 	note: string | null,
+	card: CardKind,
 ) {
 	const receiver = await findRecipient(to, userId);
 
@@ -73,5 +75,7 @@ export async function sendMoney(
 		select: { id: true, username: true },
 	});
 
-	return db.$transaction((tx) => transfer(tx, sender, receiver, amount, note));
+	return db.$transaction((tx) =>
+		transfer(tx, sender, receiver, amount, card, note),
+	);
 }

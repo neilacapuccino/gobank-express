@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { centavos } from "~/shared/lib/schemas";
+import { cardKind, centavos } from "~/shared/lib/schemas";
 import {
 	createTRPCRouter,
 	protectedProcedure,
@@ -19,9 +19,16 @@ export const billsRouter = createTRPCRouter({
 					.trim()
 					.regex(/^\d{4,20}$/, "Check the account number"),
 				amount: centavos,
+				card: cardKind,
 			}),
 		)
 		.mutation(({ ctx, input }) =>
-			payBill(ctx.userId, input.billerId, input.accountNumber, input.amount),
+			payBill(
+				ctx.userId,
+				input.billerId,
+				input.accountNumber,
+				input.amount,
+				input.card,
+			),
 		),
 });

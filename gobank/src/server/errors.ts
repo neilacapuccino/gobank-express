@@ -17,7 +17,7 @@ export const MESSAGES = {
 	notEnoughPoints: "Not enough points",
 	accountLimit: "This transaction would exceed the account limit",
 	notEnoughInStash: "Not enough in this Stash",
-	cardLocked: "Unlock your card to spend",
+	cardLocked: "This card is locked. Unlock it or pay with your other card.",
 	overDailyLimit: "This goes over your daily limit",
 	recipientNotFound: "No GoBank account matches that",
 	ownAccount: "That is your own account",

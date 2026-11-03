@@ -21,6 +21,8 @@ import { errorMessage } from "~/trpc/error-message";
 import { api } from "~/trpc/react";
 import { useSpendLimit } from "~/shared/hooks/use-spend-limit";
 import { CardLockedNotice } from "~/features/card/components/card-locked-notice";
+import { CardPicker } from "~/features/card/components/card-picker";
+import { paidWithDetail } from "~/features/card/card-label";
 import { MAX_LOAD_CENTAVOS, MIN_LOAD_CENTAVOS } from "../load.rules";
 
 const LOAD_PRESETS = [10, 15, 20, 50, 100, 300, 500, 1000];
@@ -56,6 +58,7 @@ export function LoadForm() {
 						{ label: "Reference", value: load.data.reference },
 						{ label: "Date", value: dateTime(load.data.createdAt) },
 						{ label: "Balance", value: peso(load.data.balanceAfter) },
+						...paidWithDetail(load.data.details),
 					]}
 				/>
 			</TransactionReceipt>
@@ -88,13 +91,23 @@ export function LoadForm() {
 						amount={amountCentavos}
 						details={[{ label: "Mobile", value: formatMobile(mobile) }]}
 					/>
+					<CardPicker
+						cards={limit.cards}
+						value={limit.card}
+						onChange={limit.setCard}
+						disabled={load.isPending}
+					/>
 					<FormError error={load.error ? errorMessage(load.error) : null} />
 					<div className="mt-auto pt-8">
 						<Button
 							disabled={load.isPending}
 							onClick={() => {
 								if (!validDetails || load.isPending) return;
-								load.mutate({ mobile, amount: amountCentavos });
+								load.mutate({
+									mobile,
+									amount: amountCentavos,
+									card: limit.card,
+								});
 							}}
 						>
 							{load.isPending ? "Buying…" : `Buy ${peso(amountCentavos)}`}

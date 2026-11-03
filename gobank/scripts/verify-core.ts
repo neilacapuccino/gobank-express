@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { db } from "../src/server/db";
-import { newAccountNumber } from "../src/server/codes";
 import { AppError, MESSAGES, asDatabaseError } from "../src/server/errors";
 import {
 	createRegisteredAccount,
@@ -68,15 +67,20 @@ try {
 	drafts.push(cardDraftId(prepared.token));
 	const owner = await createRegisteredAccount(registration, prepared.token);
 	users.push(owner.id);
-	const other = await db.user.create({
-		data: {
-			username: `core_${suffix}_b`,
-			fullName: "Other fixture",
-			accountNumber: newAccountNumber(),
-			pinHash: "fixture-only",
-		},
-		select: { id: true, username: true },
-	});
+	const otherPreview = await createCardPreview("mastercard");
+	drafts.push(cardDraftId(otherPreview.token));
+	const other = {
+		username: `core_${suffix}_b`,
+		...(await createRegisteredAccount(
+			{
+				...registration,
+				username: `core_${suffix}_b`,
+				fullName: "Other fixture",
+				brand: "mastercard",
+			},
+			otherPreview.token,
+		)),
+	};
 	users.push(other.id);
 	const cards = await getCard(owner.id);
 	assert.equal(cards.physical.number, prepared.preview.number);
@@ -140,8 +144,14 @@ try {
 	});
 	billerId = biller.id;
 	await deposit(owner.id, 100_000);
-	const bill = await payBill(owner.id, biller.id, "00112233", 5_000);
-	await buyLoad(owner.id, "09123456789", 10_000);
+	const bill = await payBill(
+		owner.id,
+		biller.id,
+		"00112233",
+		5_000,
+		"physical",
+	);
+	await buyLoad(owner.id, "09123456789", 10_000, "virtual");
 	assert.equal(await balance(owner.id), 85_000);
 	assert.equal((await getOverview(owner.id)).points, 1);
 	assert.equal((await getTransaction(owner.id, bill.reference)).id, bill.id);
@@ -151,12 +161,18 @@ try {
 	);
 	const beforeFailure = await getOverview(owner.id);
 	await assert.rejects(
-		buyLoad(owner.id, "09123456789", 100_000),
+		buyLoad(owner.id, "09123456789", 100_000, "physical"),
 		rejectsMessage(MESSAGES.insufficientBalance),
 	);
 	assert.deepEqual(await getOverview(owner.id), beforeFailure);
 
-	const sent = await sendMoney(owner.id, `@${other.username}`, 12_345, null);
+	const sent = await sendMoney(
+		owner.id,
+		`@${other.username}`,
+		12_345,
+		null,
+		"physical",
+	);
 	const entries = await db.transaction.findMany({
 		where: { reference: sent.reference },
 	});
@@ -188,16 +204,30 @@ try {
 	);
 	assert.equal((await listNotifications(owner.id, "received")).items.length, 0);
 
-	await updateCard(owner.id, { cardLocked: true });
+	await updateCard(owner.id, { lock: { kind: "physical", locked: true } });
 	const locked = await getOverview(owner.id);
 	await assert.rejects(
-		sendMoney(owner.id, other.username, 100, null),
+		sendMoney(owner.id, other.username, 100, null, "physical"),
 		rejectsMessage(MESSAGES.cardLocked),
 	);
 	assert.deepEqual(await getOverview(owner.id), locked);
-	await updateCard(owner.id, { cardLocked: false, cardDailyLimit: 0 });
+	const viaVirtual = await sendMoney(
+		owner.id,
+		other.username,
+		100,
+		null,
+		"virtual",
+	);
+	assert.equal(
+		(viaVirtual.details as { card: { kind: string } }).card.kind,
+		"virtual",
+	);
+	await updateCard(owner.id, {
+		lock: { kind: "physical", locked: false },
+		cardDailyLimit: 0,
+	});
 	await assert.rejects(
-		buyLoad(owner.id, "09123456789", 1_000),
+		buyLoad(owner.id, "09123456789", 1_000, "physical"),
 		rejectsMessage(MESSAGES.overDailyLimit),
 	);
 

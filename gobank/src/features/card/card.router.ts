@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cardKind } from "~/shared/lib/schemas";
 import { createTRPCRouter, protectedProcedure } from "~/server/trpc";
 import { getCard, revealCvv, updateCard } from "./card.service";
 import { MAX_DAILY_LIMIT_CENTAVOS } from "./card.rules";
@@ -6,13 +7,13 @@ import { MAX_DAILY_LIMIT_CENTAVOS } from "./card.rules";
 export const cardRouter = createTRPCRouter({
 	get: protectedProcedure.query(({ ctx }) => getCard(ctx.userId)),
 	revealCvv: protectedProcedure
-		.input(z.object({ kind: z.enum(["physical", "virtual"]) }))
+		.input(z.object({ kind: cardKind }))
 		.query(({ ctx, input }) => revealCvv(ctx.userId, input.kind)),
 
 	update: protectedProcedure
 		.input(
 			z.object({
-				cardLocked: z.boolean().optional(),
+				lock: z.object({ kind: cardKind, locked: z.boolean() }).optional(),
 				cardDailyLimit: z
 					.number()
 					.int()

@@ -125,10 +125,11 @@ function CardControls({ card }: { card: CardOverview }) {
 			<CardDetails
 				key={`${selectedKind}:${selectedCard.number}`}
 				card={selectedCard}
-				cardLocked={card.cardLocked}
+				cardLocked={selectedCard.locked}
 			/>
 			<CardSettings
-				cardLocked={card.cardLocked}
+				kind={selectedKind}
+				cardLocked={selectedCard.locked}
 				cardDailyLimit={card.cardDailyLimit}
 			/>
 		</>
@@ -295,9 +296,15 @@ function CardDetails({
 }
 
 function CardSettings({
+	kind,
 	cardLocked,
 	cardDailyLimit,
-}: Pick<CardOverview, "cardLocked" | "cardDailyLimit">) {
+}: {
+	kind: CardKind;
+	cardLocked: boolean;
+	cardDailyLimit: number;
+}) {
+	const name = kind === "physical" ? "Physical card" : "Virtual card";
 	const utils = api.useUtils();
 	const [limitDraft, setLimitDraft] = useState<string | null>(null);
 	const [message, setMessage] = useState("");
@@ -309,18 +316,15 @@ function CardSettings({
 			utils.card.get.setData(undefined, updated);
 			if (settings.cardDailyLimit !== undefined) setLimitDraft(null);
 			setMessage(
-				settings.cardDailyLimit !== undefined
-					? "Daily limit saved."
-					: updated.cardLocked
-						? "Cards locked."
-						: "Cards unlocked.",
+				settings.lock
+					? `${settings.lock.kind === "physical" ? "Physical" : "Virtual"} card ${updated[settings.lock.kind].locked ? "locked" : "unlocked"}.`
+					: "Daily limit saved.",
 			);
 		},
 	});
 	const limit = limitDraft ?? String(toPesos(cardDailyLimit));
 	const limitInCentavos = toCentavos(Number(limit));
-	const savingLock =
-		update.isPending && update.variables.cardLocked !== undefined;
+	const savingLock = update.isPending && update.variables.lock !== undefined;
 	const canSaveLimit =
 		limit.trim() !== "" &&
 		Number.isFinite(limitInCentavos) &&
@@ -348,10 +352,12 @@ function CardSettings({
 							cardLocked ? "text-ink-muted" : "text-brand",
 						)}
 					>
-						{cardLocked ? "Locked" : "Unlocked"}
+						{name} {cardLocked ? "locked" : "unlocked"}
 					</h2>
 					<p className="text-ink-muted mt-1 text-[12px]">
-						Transfers, bills and mobile load.
+						{cardLocked
+							? "Payments with this card are blocked."
+							: "Can pay transfers, bills and load."}
 					</p>
 				</div>
 				<button
@@ -359,7 +365,7 @@ function CardSettings({
 					disabled={update.isPending}
 					onClick={() => {
 						setMessage("");
-						update.mutate({ cardLocked: !cardLocked });
+						update.mutate({ lock: { kind, locked: !cardLocked } });
 					}}
 					className="border-line-strong text-ink bg-surface enabled:hover:bg-surface-raised focus-visible:outline-brand inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium focus-visible:outline-2 disabled:opacity-45"
 				>
@@ -373,7 +379,7 @@ function CardSettings({
 			</div>
 			<form onSubmit={saveLimit} className="border-line mt-4 border-t pt-4">
 				<TextField
-					label="Daily spending limit"
+					label="Daily spending limit (both cards)"
 					prefix="₱"
 					name="cardDailyLimit"
 					hint={`Up to ${peso(MAX_DAILY_LIMIT_CENTAVOS)} a day. ₱0 blocks spending.`}

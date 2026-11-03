@@ -2,6 +2,7 @@ import { findRecipient } from "~/features/transfers/transfers.service";
 import { db } from "~/server/db";
 import { fail, MESSAGES } from "~/server/errors";
 import { transfer } from "~/server/ledger";
+import type { CardKind } from "../../../generated/prisma";
 
 export async function requestMoney(
 	userId: string,
@@ -21,7 +22,12 @@ export async function requestMoney(
 	});
 }
 
-export const respondToRequest = (userId: string, id: string, accept: boolean) =>
+export const respondToRequest = (
+	userId: string,
+	id: string,
+	accept: boolean,
+	card: CardKind = "physical",
+) =>
 	db.$transaction(
 		async (tx) => {
 			const claimed = await tx.moneyRequest.updateMany({
@@ -43,6 +49,7 @@ export const respondToRequest = (userId: string, id: string, accept: boolean) =>
 				request.payer,
 				request.requester,
 				request.amount,
+				card,
 				request.note,
 			);
 

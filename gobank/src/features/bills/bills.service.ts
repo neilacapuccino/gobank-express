@@ -1,6 +1,7 @@
 import { db } from "~/server/db";
 import { fail } from "~/server/errors";
 import { spend } from "~/server/ledger";
+import type { CardKind } from "../../../generated/prisma";
 
 export const listBillers = () =>
 	db.biller.findMany({
@@ -13,6 +14,7 @@ export async function payBill(
 	billerId: string,
 	accountNumber: string,
 	amount: number,
+	card: CardKind,
 ) {
 	const biller = await db.biller.findFirst({
 		where: { id: billerId, active: true },
@@ -26,6 +28,7 @@ export async function payBill(
 			amount,
 			billerId: biller.id,
 			details: { accountNumber },
+			card,
 		}),
 	);
 }

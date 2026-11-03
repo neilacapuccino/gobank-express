@@ -16,6 +16,8 @@ export const mobile = z
 	.refine((value) => !validateMobile(value), "Use the format 09XXXXXXXXX")
 	.transform((value) => blankToNull(normalizeMobile(value)));
 
+export const cardKind = z.enum(["physical", "virtual"]);
+
 export const optionalText = (max: number) =>
 	z.string().trim().max(max).transform(blankToNull);
 
