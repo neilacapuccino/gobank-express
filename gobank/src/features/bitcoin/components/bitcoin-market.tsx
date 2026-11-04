@@ -70,22 +70,6 @@ export function MarketPrice({
 						<p className="text-ink-muted mt-0.5 text-[11px]">BTC / PHP</p>
 					</div>
 				</div>
-
-				<button
-					type="button"
-					onClick={onRefresh}
-					aria-label="Refresh Bitcoin price"
-					className="text-ink-muted flex min-h-10 items-center gap-1.5 text-[10px]"
-				>
-					<span
-						className={cn(
-							"h-1.5 w-1.5 rounded-full",
-							fresh ? "bg-mint" : "bg-amber-300",
-						)}
-					/>
-					{status}
-					<RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
-				</button>
 			</div>
 
 			<div className="mt-5 flex items-baseline gap-2">
@@ -113,9 +97,22 @@ export function MarketPrice({
 			) : null}
 
 			{!quote && status === "Feed offline" ? (
-				<p role="status" className="mt-3 text-[11px] text-amber-200">
-					Market data is unavailable. Use refresh to try again.
-				</p>
+				<div role="status" className="mt-3 text-[11px] text-amber-200">
+					<p>Market data is unavailable.</p>
+					<button
+						type="button"
+						onClick={onRefresh}
+						disabled={refreshing}
+						className="text-mint mt-2 inline-flex min-h-10 items-center gap-1.5 disabled:opacity-45"
+					>
+						<RefreshCw
+							size={12}
+							className={refreshing ? "animate-spin" : ""}
+							aria-hidden
+						/>
+						{refreshing ? "Retrying…" : "Retry"}
+					</button>
+				</div>
 			) : null}
 		</section>
 	);
