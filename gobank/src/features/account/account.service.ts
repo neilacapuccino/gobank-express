@@ -68,8 +68,11 @@ export const getProfile = async (userId: string) => {
 			createdAt: true,
 		},
 	});
-	const { googleId, ...details } = profile;
-	return { ...details, gmail: googleId ? details.gmail : null };
+
+	const { googleId, gmail, ...details } = profile;
+	const googleLinked = googleId !== null;
+
+	return { ...details, googleLinked, gmail: googleLinked ? gmail : null };
 };
 
 type ProfileUpdate = {

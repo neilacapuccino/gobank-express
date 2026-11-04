@@ -13,7 +13,10 @@ import {
 	createCardPreview,
 } from "../src/features/auth/card-preview.service";
 import { verifyPin } from "../src/features/auth/pin";
-import { linkGoogle } from "../src/features/auth/google/google.service";
+import {
+	linkGoogle,
+	unlinkGoogle,
+} from "../src/features/auth/google/google.service";
 import {
 	getOverview,
 	getProfile,
@@ -146,7 +149,17 @@ async function checkGoogleLinking(owner: Account, other: Account) {
 		"email-in-use",
 	);
 
-	assert.equal((await getProfile(owner.id)).gmail, google.email);
+	const linkedProfile = await getProfile(owner.id);
+	assert.equal(linkedProfile.googleLinked, true);
+	assert.equal(linkedProfile.gmail, google.email);
+
+	assert.deepEqual(await unlinkGoogle(owner.id), { unlinked: true });
+	const unlinkedProfile = await getProfile(owner.id);
+	assert.equal(unlinkedProfile.googleLinked, false);
+	assert.equal(unlinkedProfile.gmail, null);
+	assert.deepEqual(await unlinkGoogle(owner.id), { unlinked: false });
+
+	assert.equal(await linkGoogle(owner.id, google), "linked");
 }
 
 async function checkProfile(owner: Account, other: Account) {

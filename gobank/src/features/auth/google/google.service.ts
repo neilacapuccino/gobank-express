@@ -93,6 +93,15 @@ export async function linkGoogle(userId: string, profile: GoogleProfile) {
 	}
 }
 
+export async function unlinkGoogle(userId: string) {
+	const unlinked = await db.user.updateMany({
+		where: { id: userId, googleId: { not: null } },
+		data: { googleId: null, gmail: null },
+	});
+
+	return { unlinked: unlinked.count === 1 };
+}
+
 async function attachGoogleId(accountId: string, identity: GoogleIdentity) {
 	const sameGoogle = { googleId: identity.sub };
 	const unlinkedSameGmail = identity.gmail
@@ -104,6 +113,13 @@ async function attachGoogleId(accountId: string, identity: GoogleIdentity) {
 			where: { id: accountId, OR: [sameGoogle, ...unlinkedSameGmail] },
 			data: { googleId: identity.sub },
 		});
+
+		if (linked.count && identity.gmail) {
+			await db.user.updateMany({
+				where: { id: accountId, gmail: null },
+				data: { gmail: identity.gmail },
+			});
+		}
 
 		if (!linked.count) fail("CONFLICT", EMAIL_IN_USE);
 	} catch (error) {

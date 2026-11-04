@@ -85,7 +85,11 @@ export function EditProfileForm({ profile }: { profile: Profile }) {
 						setValue((current) => ({ ...current, ...patch }))
 					}
 				/>
-				<GmailLink gmail={profile.gmail} />
+				<GmailLink
+					linked={profile.googleLinked}
+					gmail={profile.gmail}
+					editable
+				/>
 			</div>
 
 			{save.error ? (
