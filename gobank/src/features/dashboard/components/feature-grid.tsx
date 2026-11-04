@@ -1,6 +1,7 @@
 import { ArrowRight, Gem } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { cn } from "~/shared/lib/cn";
 import { PocketIcon } from "~/shared/ui/pocket-art";
 
 type Feature = {
@@ -9,6 +10,7 @@ type Feature = {
 	description: string;
 	meta?: string;
 	icon: ReactNode;
+	highlighted?: boolean;
 };
 
 const SHORTCUTS = [
@@ -23,9 +25,21 @@ function FeatureRow({ feature }: { feature: Feature }) {
 	return (
 		<Link
 			href={feature.href}
-			className={`border-line bg-surface hover:bg-surface-raised flex min-h-[116px] items-center gap-3 rounded-[28px] border p-5 shadow-[0_5px_18px_-10px_#00000080] transition-colors ${FOCUS_RING}`}
+			className={cn(
+				"flex min-h-[116px] items-center gap-3 rounded-[28px] border p-5 shadow-[0_5px_18px_-10px_#00000080] transition-colors",
+				FOCUS_RING,
+				feature.highlighted
+					? "border-gold/15 hover:border-gold/25 bg-linear-to-r from-[#211f1b] via-[#1c1c1f] to-[#18181b]"
+					: "border-line bg-surface hover:bg-surface-raised",
+			)}
 		>
-			<span className="grid h-12 w-12 shrink-0 place-items-center">
+			<span
+				className={cn(
+					"grid h-12 w-12 shrink-0 place-items-center",
+					feature.highlighted &&
+						"border-gold/20 rounded-2xl border bg-linear-to-br from-[#373025] to-[#211d17]",
+				)}
+			>
 				{feature.icon}
 			</span>
 
@@ -62,11 +76,14 @@ export function FeatureGrid({
 			href: "/rewards",
 			title: "GoRewards",
 			description: `${points.toLocaleString("en-PH")} points`,
+			highlighted: true,
 			icon: (
 				<Gem
 					size={26}
 					strokeWidth={1.7}
-					className="text-ink-soft"
+					fill="currentColor"
+					fillOpacity={0.08}
+					className="text-gold"
 					aria-hidden
 				/>
 			),
