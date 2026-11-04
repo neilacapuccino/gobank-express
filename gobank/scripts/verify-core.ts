@@ -137,6 +137,7 @@ async function checkGoogleLinking(owner: Account, other: Account) {
 		email: `core.${suffix}@gmail.com`,
 		emailVerified: true,
 		name: "Core fixture",
+		picture: null,
 	};
 	const schoolAccount = { ...google, email: `core.${suffix}@school.edu` };
 	const sameGmailOtherGoogle = { ...google, sub: `google_${suffix}_b` };

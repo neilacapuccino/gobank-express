@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import sharp from "sharp";
-import { normalizeProfilePhoto } from "./profile-photo.server";
+import {
+	isGooglePhotoUrl,
+	normalizeProfilePhoto,
+} from "./profile-photo.server";
 import { MAX_PHOTO_BYTES } from "./profile-photo.schema";
 
 const toDataUrl = (bytes: Buffer, type = "png") =>
@@ -49,4 +52,20 @@ void test("a photo over the size limit is rejected", async () => {
 	const tooLarge = Buffer.alloc(MAX_PHOTO_BYTES + 1);
 
 	await assert.rejects(normalizeProfilePhoto(toDataUrl(tooLarge)), /too large/);
+});
+
+void test("only Google's own photo links are downloaded at sign-up", () => {
+	const googlePhoto = "https://lh3.googleusercontent.com/a/photo=s96-c";
+
+	assert.equal(isGooglePhotoUrl(googlePhoto), true);
+	assert.equal(isGooglePhotoUrl(googlePhoto.replace("https", "http")), false);
+	assert.equal(
+		isGooglePhotoUrl("https://googleusercontent.com.evil.test/a"),
+		false,
+	);
+	assert.equal(
+		isGooglePhotoUrl("https://evil.test/googleusercontent.com"),
+		false,
+	);
+	assert.equal(isGooglePhotoUrl("not a link"), false);
 });

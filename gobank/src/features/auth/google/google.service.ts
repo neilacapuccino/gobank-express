@@ -63,6 +63,7 @@ export async function signInWithGoogle(profile: GoogleProfile) {
 		sub: profile.sub,
 		gmail: gmailOf(profile),
 		name: profile.name,
+		picture: profile.picture,
 	};
 
 	const result = await findGoogleAccount(identity);

@@ -13,6 +13,7 @@ import {
 	MAX_PIN_ATTEMPTS,
 	PIN_LOCK_MINUTES,
 } from "./auth.rules";
+import { photoFromGoogle } from "~/features/account/profile-photo.server";
 import { hashPin, verifyPin } from "./pin";
 import {
 	clearRegistrationCard,
@@ -32,6 +33,7 @@ type Registration = {
 	mobile: string | null;
 	googleId?: string;
 	gmail?: string | null;
+	profilePhoto?: string | null;
 };
 
 type PinAccount = {
@@ -91,7 +93,12 @@ export async function register(profile: Registration, withGoogle: boolean) {
 	}
 
 	const registration = google
-		? { ...profile, googleId: google.sub, gmail: google.gmail }
+		? {
+				...profile,
+				googleId: google.sub,
+				gmail: google.gmail,
+				profilePhoto: await photoFromGoogle(google.picture),
+			}
 		: profile;
 
 	const user = await createRegisteredAccount(

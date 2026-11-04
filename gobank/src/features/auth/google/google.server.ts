@@ -13,6 +13,7 @@ const profileResponse = z.object({
 	email: z.string().optional(),
 	email_verified: z.boolean().optional(),
 	name: z.string().optional(),
+	picture: z.string().url().optional(),
 });
 
 export type GoogleProfile = {
@@ -20,6 +21,7 @@ export type GoogleProfile = {
 	email: string | null;
 	emailVerified: boolean;
 	name: string;
+	picture: string | null;
 };
 
 export const googleEnabled = () =>
@@ -95,5 +97,6 @@ export async function fetchGoogleProfile(
 		email: profile.email ?? null,
 		emailVerified: profile.email_verified === true,
 		name: profile.name?.trim() ?? "",
+		picture: profile.picture ?? null,
 	};
 }

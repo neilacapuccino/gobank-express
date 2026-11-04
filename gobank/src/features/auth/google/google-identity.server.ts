@@ -10,9 +10,10 @@ const identity = z.object({
 	sub: z.string().min(1),
 	gmail: z.string().nullable(),
 	name: z.string(),
+	picture: z.string().url().nullable().default(null),
 });
 
-export type GoogleIdentity = z.infer<typeof identity>;
+export type GoogleIdentity = z.input<typeof identity>;
 
 export async function rememberGoogleIdentity(value: GoogleIdentity) {
 	if (!env.AUTH_SECRET) throw new Error("AUTH_SECRET is not set");
