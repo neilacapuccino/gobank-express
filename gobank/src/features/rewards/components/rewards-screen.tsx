@@ -99,25 +99,28 @@ export function RewardsScreen() {
 						) : (
 							<Progress points={summary.data.points}>
 								<Button
-									className="mt-5"
+									className="disabled:bg-line! disabled:text-ink-soft! mt-5"
+									aria-describedby="rewards-redemption-minimum"
 									disabled={summary.data.points < MIN_REDEEM_POINTS}
 									onClick={() => setConverting(true)}
 								>
-									Convert to cash
+									Redeem
 								</Button>
 							</Progress>
 						)}
 					</PointsCard>
 
 					<section aria-labelledby="history-heading">
-						<div className="mb-3 flex items-baseline justify-between">
+						<div className="mb-3 flex items-baseline justify-between gap-3">
 							<h2
 								id="history-heading"
-								className="text-ink text-[15px] font-semibold"
+								className="text-ink text-[16px] font-semibold"
 							>
 								History
 							</h2>
-							<p className="text-ink-muted text-[12px]">1 pt per ₱50 spent</p>
+							<p className="text-ink-soft text-right text-[13px]">
+								1 pt per ₱50 spent
+							</p>
 						</div>
 						<RewardHistory />
 					</section>
@@ -137,19 +140,23 @@ function PointsCard({
 	const rate = `${formatPoints(MIN_REDEEM_POINTS)} pts = ${peso(pointsValue(MIN_REDEEM_POINTS))}`;
 
 	return (
-		<section className="bg-surface-raised text-ink rounded-[28px] px-6 py-6 shadow-[0_10px_26px_-12px_#00000080]">
+		<section className="bg-surface-raised border-line text-ink rounded-[28px] border p-5 shadow-[0_10px_26px_-12px_#00000080]">
 			<div className="flex items-center justify-between">
-				<p className="text-ink-muted text-[13px]">GoRewards points</p>
-				<Gem size={16} className="text-ink-muted" aria-hidden />
+				<p className="text-ink-soft text-[14px] font-medium">
+					GoRewards points
+				</p>
+				<span className="bg-brand-soft text-mint ring-brand-line grid h-9 w-9 place-items-center rounded-full ring-1">
+					<Gem size={18} aria-hidden />
+				</span>
 			</div>
 
 			<p className="mt-2 text-[40px] leading-none font-semibold tracking-tight tabular-nums">
 				{formatPoints(points)}
-				<span className="text-ink-muted ml-2 text-[15px] font-medium">pts</span>
+				<span className="text-ink-soft ml-2 text-[16px] font-medium">pts</span>
 			</p>
 
-			<dl className="border-line mt-6 grid grid-cols-2 gap-4 border-t pt-4">
-				<SummaryItem label="Cash value" value={peso(pointsValue(points))} />
+			<dl className="border-line mt-6 grid grid-cols-[0.8fr_1.2fr] gap-4 border-t pt-4">
+				<SummaryItem label="Points value" value={peso(pointsValue(points))} />
 				<SummaryItem label="Conversion rate" value={rate} />
 			</dl>
 
@@ -161,8 +168,8 @@ function PointsCard({
 function SummaryItem({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="min-w-0">
-			<dt className="text-ink-muted text-[12px]">{label}</dt>
-			<dd className="text-ink mt-1 truncate text-[14px] font-medium tabular-nums">
+			<dt className="text-ink-soft text-[13px]">{label}</dt>
+			<dd className="text-ink mt-1 text-[15px] font-medium tabular-nums">
 				{value}
 			</dd>
 		</div>
@@ -179,29 +186,37 @@ function Progress({
 	const missing = pointsToNextPeso(points);
 	const progress = Math.min(100, (points / MIN_REDEEM_POINTS) * 100);
 
-	if (!missing) return children;
-
 	return (
 		<>
-			<div
-				className="bg-line mt-6 h-1.5 overflow-hidden rounded-full"
-				role="progressbar"
-				aria-label={`Points toward ${peso(pointsValue(MIN_REDEEM_POINTS))}`}
-				aria-valuemin={0}
-				aria-valuemax={100}
-				aria-valuenow={Math.round(progress)}
-			>
-				<span
-					className="bg-ink-soft block h-full rounded-full"
-					style={{ width: `${progress}%` }}
-				/>
-			</div>
+			{missing > 0 ? (
+				<div className="mt-6">
+					<div
+						className="bg-line h-2 overflow-hidden rounded-full"
+						role="progressbar"
+						aria-label={`Points toward ${peso(pointsValue(MIN_REDEEM_POINTS))}`}
+						aria-valuemin={0}
+						aria-valuemax={100}
+						aria-valuenow={Math.round(progress)}
+					>
+						<span
+							className="bg-mint block h-full rounded-full"
+							style={{ width: `${progress}%` }}
+						/>
+					</div>
 
-			<p className="text-ink-muted mt-2 text-[12.5px]">
-				{formatPoints(missing)} pts more to convert to cash
-			</p>
+					<p className="text-ink-soft mt-2.5 text-[13px]">
+						{formatPoints(missing)} pts more to redeem
+					</p>
+				</div>
+			) : null}
 
 			{children}
+			<p
+				id="rewards-redemption-minimum"
+				className="text-ink-soft mt-3 text-center text-[13px]"
+			>
+				Minimum {formatPoints(MIN_REDEEM_POINTS)} points to redeem
+			</p>
 		</>
 	);
 }
@@ -225,7 +240,7 @@ function ConvertPanel({
 
 	return (
 		<div className="border-line mt-6 border-t pt-5">
-			<p className="text-ink-soft mb-3 text-[13px]">Points to convert</p>
+			<p className="text-ink-soft mb-3 text-[13px]">Points to redeem</p>
 			<div className="grid grid-cols-4 gap-2" role="radiogroup">
 				{options.map((value) => (
 					<button
@@ -253,7 +268,7 @@ function ConvertPanel({
 				onClick={() => onConfirm(selected)}
 			>
 				{pending
-					? "Converting…"
+					? "Redeeming…"
 					: `Get ${peso(pointsValue(selected))} for ${formatPoints(selected)} pts`}
 			</Button>
 			<Button variant="ghost" disabled={pending} onClick={onCancel}>

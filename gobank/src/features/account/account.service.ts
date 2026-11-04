@@ -1,5 +1,7 @@
 import { db } from "~/server/db";
+import { MESSAGES } from "~/server/errors";
 import { spentToday } from "~/server/ledger";
+import { verifyAccountPin } from "~/features/auth/auth.service";
 import {
 	activityFields,
 	MAIN_ACCOUNT_KINDS,
@@ -93,4 +95,12 @@ export const updateProfile = async (userId: string, profile: ProfileUpdate) => {
 		},
 		select: { id: true },
 	});
+};
+
+export const deleteAccount = async (userId: string, pin: string) => {
+	await verifyAccountPin(userId, pin, MESSAGES.wrongPin);
+
+	await db.user.delete({ where: { id: userId }, select: { id: true } });
+
+	return { deleted: true };
 };

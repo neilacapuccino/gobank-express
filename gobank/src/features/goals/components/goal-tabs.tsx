@@ -4,6 +4,7 @@ import { useState, type KeyboardEvent } from "react";
 import { cn } from "~/shared/lib/cn";
 import { peso, shortDate } from "~/shared/lib/format";
 import type { RouterOutputs } from "~/trpc/react";
+import { CloseGoal } from "./close-goal";
 
 type Goal = RouterOutputs["goals"]["get"];
 type Tab = "overview" | "transactions";
@@ -38,19 +39,22 @@ function OverviewRow({
 	);
 }
 
-function GoalOverview({ goal }: { goal: Goal }) {
+function GoalOverview({ goal, disabled }: { goal: Goal; disabled: boolean }) {
 	const rate = `${(goal.annualInterestRate * 100).toFixed(2)}% p.a.`;
 	const target = goal.targetAmount ? peso(goal.targetAmount) : "Not set";
 
 	return (
-		<dl className="divide-line divide-y">
-			<OverviewRow label="Annual growth rate" value={rate} highlight />
-			<OverviewRow label="Target" value={target} />
-			<OverviewRow
-				label="Progress"
-				value={progressLabel(goal.balance, goal.targetAmount)}
-			/>
-		</dl>
+		<>
+			<dl className="divide-line divide-y">
+				<OverviewRow label="Annual growth rate" value={rate} highlight />
+				<OverviewRow label="Target" value={target} />
+				<OverviewRow
+					label="Progress"
+					value={progressLabel(goal.balance, goal.targetAmount)}
+				/>
+			</dl>
+			<CloseGoal goalId={goal.id} balance={goal.balance} disabled={disabled} />
+		</>
 	);
 }
 
@@ -95,7 +99,13 @@ function GoalTransactions({ goal }: { goal: Goal }) {
 	);
 }
 
-export function GoalTabs({ goal }: { goal: Goal }) {
+export function GoalTabs({
+	goal,
+	disabled,
+}: {
+	goal: Goal;
+	disabled: boolean;
+}) {
 	const [tab, setTab] = useState<Tab>("overview");
 
 	const switchWithArrows = (event: KeyboardEvent) => {
@@ -138,7 +148,7 @@ export function GoalTabs({ goal }: { goal: Goal }) {
 
 			<div id="goal-panel" role="tabpanel" aria-labelledby={`goal-${tab}`}>
 				{tab === "overview" ? (
-					<GoalOverview goal={goal} />
+					<GoalOverview goal={goal} disabled={disabled} />
 				) : (
 					<GoalTransactions goal={goal} />
 				)}

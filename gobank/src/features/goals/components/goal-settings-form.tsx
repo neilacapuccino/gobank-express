@@ -1,9 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { isPesoInput } from "~/shared/lib/amount-input";
-import { peso } from "~/shared/lib/format";
 import { toCentavos, toPesos } from "~/shared/lib/money";
 import { Button } from "~/shared/ui/button";
 import { FormError } from "~/shared/ui/money-form-ui";
@@ -21,77 +19,8 @@ import { GoalIconPicker } from "./goal-icon-picker";
 type Goal = {
 	id: string;
 	name: string;
-	balance: number;
 	targetAmount: number | null;
 };
-
-function CloseGoal({
-	goalId,
-	balance,
-	disabled,
-}: {
-	goalId: string;
-	balance: number;
-	disabled: boolean;
-}) {
-	const router = useRouter();
-	const [confirming, setConfirming] = useState(false);
-
-	const remove = api.goals.remove.useMutation({
-		onSuccess: () => {
-			router.replace("/goals");
-			router.refresh();
-		},
-	});
-
-	const busy = disabled || remove.isPending || remove.isSuccess;
-
-	if (!confirming) {
-		return (
-			<button
-				type="button"
-				disabled={busy}
-				onClick={() => setConfirming(true)}
-				className="text-danger h-11 w-full text-sm font-medium disabled:opacity-45"
-			>
-				Close goal
-			</button>
-		);
-	}
-
-	return (
-		<div
-			className="border-line space-y-3 rounded-xl border p-4"
-			role="region"
-			aria-label="Close goal confirmation"
-		>
-			<h3 className="font-semibold">Close this goal?</h3>
-			<p className="text-ink-soft text-[13px] leading-relaxed">
-				{peso(balance)} will return to your main account. This goal will be
-				removed, and past transfers will stay in your account activity.
-			</p>
-
-			<FormError error={errorMessage(remove.error)} />
-
-			<button
-				type="button"
-				disabled={busy}
-				onClick={() => remove.mutate({ id: goalId })}
-				className="bg-danger-soft text-danger h-11 w-full rounded-xl text-sm font-semibold disabled:opacity-45"
-			>
-				{remove.isPending ? "Closing goal…" : "Close goal and return savings"}
-			</button>
-			<button
-				type="button"
-				disabled={busy}
-				onClick={() => setConfirming(false)}
-				className="text-ink-muted h-10 w-full text-sm"
-			>
-				Keep goal
-			</button>
-		</div>
-	);
-}
 
 export function GoalSettingsForm({
 	goal,
@@ -103,7 +32,7 @@ export function GoalSettingsForm({
 	goal: Goal;
 	icon: GoalIcon;
 	onIconChange: (icon: GoalIcon) => void;
-	onDone: (message: string) => void;
+	onDone: () => void;
 	onCancel: () => void;
 }) {
 	const [name, setName] = useState(goal.name);
@@ -112,7 +41,7 @@ export function GoalSettingsForm({
 	);
 
 	const update = api.goals.update.useMutation({
-		onSuccess: () => onDone("Goal settings saved."),
+		onSuccess: () => onDone(),
 	});
 
 	const targetCentavos = toCentavos(Number(target));
@@ -175,12 +104,6 @@ export function GoalSettingsForm({
 			<Button type="submit" disabled={!canSave}>
 				{update.isPending ? "Saving…" : "Save settings"}
 			</Button>
-
-			<CloseGoal
-				goalId={goal.id}
-				balance={goal.balance}
-				disabled={update.isPending}
-			/>
 
 			<button
 				type="button"

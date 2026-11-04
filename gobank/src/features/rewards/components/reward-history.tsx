@@ -30,7 +30,7 @@ export function RewardHistory() {
 
 	if (history.isLoading) {
 		return (
-			<p role="status" className="text-ink-muted py-8 text-center text-[14px]">
+			<p role="status" className="text-ink-soft py-8 text-center text-[14px]">
 				Loading history…
 			</p>
 		);
@@ -40,8 +40,8 @@ export function RewardHistory() {
 		<div>
 			{isEmpty ? (
 				<div className="border-line flex flex-col items-center gap-3 rounded-2xl border px-5 py-9 text-center">
-					<Gem size={24} className="text-ink-faint" aria-hidden />
-					<p className="text-ink-muted text-[13.5px]">
+					<Gem size={24} className="text-mint" aria-hidden />
+					<p className="text-ink-soft text-[14px]">
 						No points yet. Send money or pay a bill to start earning.
 					</p>
 				</div>
@@ -97,8 +97,8 @@ function RewardRow({ item }: { item: RewardItem }) {
 				className={cn(
 					"grid h-9 w-9 shrink-0 place-items-center rounded-full",
 					redeemed
-						? "bg-brand-soft text-brand"
-						: "bg-surface-raised text-ink-soft",
+						? "bg-surface-raised text-ink-soft"
+						: "bg-brand-soft text-mint",
 				)}
 			>
 				<Icon size={16} aria-hidden />
@@ -107,7 +107,7 @@ function RewardRow({ item }: { item: RewardItem }) {
 				<span className="text-ink block truncate text-[14px] font-medium">
 					{redeemed ? "Cash back" : item.title}
 				</span>
-				<span className="text-ink-muted block truncate text-[12px]">
+				<span className="text-ink-soft block truncate text-[13px]">
 					{shortDate(item.createdAt)}
 					{spent}
 				</span>
@@ -116,14 +116,14 @@ function RewardRow({ item }: { item: RewardItem }) {
 				<span
 					className={cn(
 						"block text-[14px] font-semibold tabular-nums",
-						redeemed ? "text-ink-soft" : "text-ink",
+						redeemed ? "text-ink-soft" : "text-mint",
 					)}
 				>
 					{redeemed ? "−" : "+"}
 					{Math.abs(item.points).toLocaleString("en-PH")} pts
 				</span>
 				{redeemed ? (
-					<span className="text-brand block text-[12px] tabular-nums">
+					<span className="text-mint block text-[13px] tabular-nums">
 						+{peso(item.amount)}
 					</span>
 				) : null}

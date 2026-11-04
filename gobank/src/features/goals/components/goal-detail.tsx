@@ -1,7 +1,7 @@
 "use client";
 
 import { useIsMutating } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowUpRight, Settings2 } from "lucide-react";
+import { ArrowUpRight, Plus, Settings2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "~/shared/lib/cn";
 import { peso } from "~/shared/lib/format";
@@ -18,7 +18,7 @@ type Goal = RouterOutputs["goals"]["get"];
 type Action = "in" | "out" | "settings";
 
 const ACTIONS = [
-	{ id: "in", label: "Transfer in", icon: ArrowDownLeft },
+	{ id: "in", label: "Transfer in", icon: Plus },
 	{ id: "out", label: "Transfer out", icon: ArrowUpRight },
 	{ id: "settings", label: "Settings", icon: Settings2 },
 ] as const;
@@ -123,12 +123,12 @@ function GoalContent({ goal }: { goal: Goal }) {
 						goal={goal}
 						icon={icon}
 						onIconChange={setIcon}
-						onDone={finish}
+						onDone={close}
 						onCancel={close}
 					/>
 				) : null}
 
-				<GoalTabs goal={goal} />
+				<GoalTabs goal={goal} disabled={saving || action !== null} />
 			</div>
 		</div>
 	);

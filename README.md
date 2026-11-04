@@ -54,7 +54,7 @@ Open **http://localhost:3001** and sign in as **@maricel** or **@dante** with PI
 | `AUTH_SECRET`                              | Any random 32+ characters (needed for Google)                        |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional, see below; leave empty to hide the Google button           |
 
-**Google sign-in:** in [Google Cloud Console](https://console.cloud.google.com/), create an OAuth client ID (**Web application**), add the redirect URI `http://localhost:3001/api/auth/google/callback`, and copy the ID and secret into `.env`. Existing users can add Google under **Settings → Edit profile → Link Google**.
+**Google sign-in:** in [Google Cloud Console](https://console.cloud.google.com/), create an OAuth client ID (**Web application**), add the redirect URI `http://localhost:3001/api/auth/google/callback`, and copy the ID and secret into `.env`. Existing users can add Google under **Settings → Account settings → Link Google**.
 
 ## Architecture
 

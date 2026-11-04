@@ -3,7 +3,7 @@ import { EditProfileForm } from "~/features/account/components/edit-profile-form
 import { api } from "~/trpc/server";
 
 export const metadata: Metadata = {
-	title: "Edit profile",
+	title: "Account settings",
 };
 
 export default async function EditProfilePage() {

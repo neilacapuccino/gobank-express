@@ -163,7 +163,6 @@ export function LoadForm() {
 						type="tel"
 						inputMode="tel"
 						value={mobile}
-						hint="11 digits, like 09171234567"
 						error={mobileError}
 						onChange={(event) =>
 							setMobile(

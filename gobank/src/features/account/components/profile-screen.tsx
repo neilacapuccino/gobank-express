@@ -71,7 +71,7 @@ export function ProfileScreen({ profile }: { profile: Profile }) {
 			<nav className="mt-4 flex flex-col gap-2.5">
 				<ShortcutRow
 					href="/settings/profile"
-					label="Edit profile"
+					label="Account settings"
 					icon={UserPen}
 				/>
 				<ShortcutRow href="/settings/pin" label="Change PIN" icon={KeyRound} />

@@ -124,15 +124,9 @@ export function GoalSaveScreen() {
 		refetchInterval: REFRESH_EVERY_MS,
 	});
 	const [creating, setCreating] = useState(false);
-	const [notice, setNotice] = useState("");
 
 	const count = goals.data?.length ?? 0;
 	const full = count >= MAX_GOALS;
-
-	const startCreating = () => {
-		setNotice("");
-		setCreating(true);
-	};
 
 	const showCreatedGoal = (goal: Goal) => {
 		utils.goals.list.setData(undefined, (current) => [
@@ -140,7 +134,6 @@ export function GoalSaveScreen() {
 			goal,
 		]);
 		setCreating(false);
-		setNotice(`“${goal.name}” created.`);
 		router.refresh();
 	};
 
@@ -158,15 +151,6 @@ export function GoalSaveScreen() {
 			<PageHeader title="GoalSave" back="/dashboard" />
 
 			<SavingsOverview goals={goals.data} />
-
-			{notice ? (
-				<p
-					role="status"
-					className="bg-surface-raised text-ink-soft rounded-2xl p-3 text-[12px]"
-				>
-					{notice}
-				</p>
-			) : null}
 
 			{goals.isPending ? (
 				<p role="status" className="text-center text-sm">
@@ -196,7 +180,7 @@ export function GoalSaveScreen() {
 						<NewGoalButton
 							full={full}
 							wide={count === 0}
-							onClick={startCreating}
+							onClick={() => setCreating(true)}
 						/>
 						{goals.data.map((goal) => (
 							<GoalTile key={goal.id} goal={goal} />

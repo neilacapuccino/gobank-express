@@ -55,7 +55,7 @@ export function GmailLink({
 	const unlink = api.account.unlinkGoogle.useMutation({
 		onSuccess: () => {
 			setConfirmingUnlink(false);
-			setNotice("Google account unlinked.");
+			setNotice(null);
 			router.refresh();
 		},
 	});

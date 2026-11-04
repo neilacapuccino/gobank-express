@@ -30,29 +30,18 @@ function lockButtonLabel(saving: boolean, locked: boolean) {
 
 function useCardUpdate() {
 	const utils = api.useUtils();
-	const [message, setMessage] = useState("");
 
 	const update = api.card.update.useMutation({
 		onMutate: () => utils.card.get.cancel(),
-		onSuccess: (updated, settings) => {
+		onSuccess: (updated) => {
 			utils.card.get.setData(undefined, updated);
-
-			if (!settings.lock) {
-				setMessage("Daily limit saved.");
-				return;
-			}
-
-			const nowLocked = updated[settings.lock.kind].locked;
-			setMessage(
-				`${CARD_NAME[settings.lock.kind]} ${nowLocked ? "locked" : "unlocked"}.`,
-			);
 		},
 	});
 
 	const savingLock = update.isPending && update.variables.lock !== undefined;
 	const savingLimit = update.isPending && !savingLock;
 
-	return { update, message, setMessage, savingLock, savingLimit };
+	return { update, savingLock, savingLimit };
 }
 
 function DailyLimitField({
@@ -133,25 +122,21 @@ export function CardSettings({
 	locked: boolean;
 	cardDailyLimit: number;
 }) {
-	const { update, message, setMessage, savingLock, savingLimit } =
-		useCardUpdate();
+	const { update, savingLock, savingLimit } = useCardUpdate();
 
 	const toggleLock = () => {
-		setMessage("");
 		update.mutate({ lock: { kind, locked: !locked } });
 	};
 
 	const saveLimit = (centavos: number) => {
-		setMessage("");
 		update.mutate({ cardDailyLimit: centavos });
 	};
 
 	const clearFeedback = () => {
-		setMessage("");
 		update.reset();
 	};
 
-	const feedback = errorMessage(update.error) ?? message;
+	const error = errorMessage(update.error);
 
 	return (
 		<section
@@ -199,15 +184,9 @@ export function CardSettings({
 				onEdit={clearFeedback}
 			/>
 
-			{feedback ? (
-				<p
-					role={update.error ? "alert" : "status"}
-					className={cn(
-						"mt-3 text-[13px]",
-						update.error ? "text-danger" : "text-brand",
-					)}
-				>
-					{feedback}
+			{error ? (
+				<p role="alert" className="text-danger mt-3 text-[13px]">
+					{error}
 				</p>
 			) : null}
 		</section>
