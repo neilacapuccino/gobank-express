@@ -3,6 +3,7 @@ import type { FormEvent, ReactNode } from "react";
 import { ProfileAvatar } from "~/features/account/components/profile-avatar";
 import { isPesoInput } from "~/shared/lib/amount-input";
 import { cn } from "~/shared/lib/cn";
+import { useShakeOnError } from "~/shared/hooks/use-shake-on-error";
 import { BackButton } from "~/shared/ui/back-button";
 import { Button } from "~/shared/ui/button";
 import { TransactionSummary } from "~/shared/ui/transaction-summary";
@@ -233,6 +234,8 @@ export function AmountFields({
 	onNoteChange: (value: string) => void;
 	onContinue: () => void;
 }) {
+	const amountBox = useShakeOnError<HTMLDivElement>(error);
+
 	const acceptAmount = (value: string) => {
 		if (isPesoInput(value)) onAmountChange(value);
 	};
@@ -253,7 +256,15 @@ export function AmountFields({
 				>
 					Amount
 				</label>
-				<div className="border-line-strong bg-surface-sunken focus-within:border-brand flex items-center rounded-xl border px-4">
+				<div
+					ref={amountBox}
+					className={cn(
+						"bg-surface-sunken flex items-center rounded-xl border px-4",
+						error
+							? "border-danger"
+							: "border-line-strong focus-within:border-brand",
+					)}
+				>
 					<span aria-hidden className="text-ink-muted text-[24px]">
 						₱
 					</span>

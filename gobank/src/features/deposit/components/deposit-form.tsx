@@ -65,8 +65,8 @@ export function DepositForm() {
 				inputMode="decimal"
 				value={amount}
 				disabled={deposit.isPending}
-				aria-invalid={overLimit}
-				hint={`${overLimit ? "Maximum" : "Up to"} ${peso(MAX_DEPOSIT_CENTAVOS)}`}
+				hint={`Up to ${peso(MAX_DEPOSIT_CENTAVOS)}`}
+				error={overLimit ? `Maximum ${peso(MAX_DEPOSIT_CENTAVOS)}` : null}
 				onChange={(event) => {
 					if (isPesoInput(event.target.value)) setAmount(event.target.value);
 				}}

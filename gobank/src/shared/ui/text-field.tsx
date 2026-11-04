@@ -3,6 +3,7 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { useId } from "react";
 import { cn } from "~/shared/lib/cn";
+import { useShakeOnError } from "~/shared/hooks/use-shake-on-error";
 
 type TextFieldProps = Omit<
 	InputHTMLAttributes<HTMLInputElement>,
@@ -30,6 +31,7 @@ export function TextField({
 	const id = useId();
 	const descriptionId = `${id}-description`;
 	const description = error ?? hint;
+	const fieldBox = useShakeOnError<HTMLDivElement>(error);
 
 	return (
 		<div className="flex flex-col gap-1.5">
@@ -46,6 +48,7 @@ export function TextField({
 			</label>
 
 			<div
+				ref={fieldBox}
 				className={cn(
 					"bg-surface flex items-center rounded-xl border transition-colors duration-150",
 					error

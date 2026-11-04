@@ -4,6 +4,7 @@ import { ArrowDownLeft, ArrowUpRight, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { cn } from "~/shared/lib/cn";
+import { useShakeOnError } from "~/shared/hooks/use-shake-on-error";
 import { api, type RouterOutputs } from "~/trpc/react";
 import {
 	BITCOIN_FEE_CENTAVOS,
@@ -154,6 +155,7 @@ export function BitcoinTradeForm({
 		problem = "Buy some Bitcoin before making your first sale.";
 
 	const busy = tradeMutation.isPending;
+	const amountBox = useShakeOnError<HTMLDivElement>(problem);
 	const canReview =
 		Boolean(input.trade && portfolio && quote && fresh) && !busy;
 
@@ -218,7 +220,15 @@ export function BitcoinTradeForm({
 					</span>
 				</div>
 
-				<div className="bg-surface-sunken focus-within:border-mint/50 flex items-center gap-3 rounded-xl border border-white/10 px-4">
+				<div
+					ref={amountBox}
+					className={cn(
+						"bg-surface-sunken flex items-center gap-3 rounded-xl border px-4",
+						problem
+							? "border-rose-300/60"
+							: "focus-within:border-mint/50 border-white/10",
+					)}
+				>
 					<input
 						id="bitcoin-amount"
 						type="text"
